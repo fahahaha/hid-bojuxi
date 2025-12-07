@@ -1,152 +1,201 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import Versions from './components/Versions.vue'
-import { getElectronAPI, getEnvName } from './utils/env'
-
-const hidStatus = ref<string>('未连接')
-const hidDevices = ref<HIDDevice[]>([])
-const hidLogs = ref<string[]>([])
-
-const ipcHandle = (): void => {
-  const electronAPI = getElectronAPI()
-  if (electronAPI) {
-    electronAPI.ipcRenderer.send('ping')
-  } else {
-    console.log('Web 环境: 无法使用 IPC 通信')
-    alert('当前在 Web 环境中,IPC 功能不可用')
-  }
-}
-
-const addLog = (message: string): void => {
-  const timestamp = new Date().toLocaleTimeString()
-  hidLogs.value.unshift(`[${timestamp}] ${message}`)
-  if (hidLogs.value.length > 10) {
-    hidLogs.value.pop()
-  }
-}
-
-const testWebHID = async (): Promise<void> => {
-  try {
-    addLog(`当前环境: ${getEnvName()}`)
-
-    // 检查 WebHID API 是否可用
-    if (!navigator.hid) {
-      hidStatus.value = 'WebHID API 不可用'
-      addLog('错误: 浏览器不支持 WebHID API')
-      alert('当前浏览器不支持 WebHID API')
-      return
-    }
-
-    addLog('WebHID API 可用，正在请求设备...')
-    hidStatus.value = '正在请求设备...'
-
-    // 请求 HID 设备
-    const devices = await navigator.hid.requestDevice({
-      filters: []
-    })
-
-    if (devices.length === 0) {
-      hidStatus.value = '未选择设备'
-      addLog('用户未选择任何设备')
-      return
-    }
-
-    hidDevices.value = devices
-    const device = devices[0]
-
-    addLog(`已选择设备: ${device.productName || '未知设备'}`)
-    addLog(`厂商ID: ${device.vendorId}, 产品ID: ${device.productId}`)
-
-    // 打开设备
-    if (!device.opened) {
-      await device.open()
-      addLog('设备已打开')
-    }
-
-    hidStatus.value = `已连接: ${device.productName || '未知设备'}`
-    addLog('✓ WebHID 测试成功！')
-
-    // 监听输入数据
-    device.addEventListener('inputreport', (event) => {
-      const { data, reportId } = event
-      addLog(`收到数据 (Report ID: ${reportId}): ${new Uint8Array(data.buffer).join(', ')}`)
-    })
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    hidStatus.value = `错误: ${errorMessage}`
-    addLog(`错误: ${errorMessage}`)
-    console.error('WebHID 测试失败:', error)
-  }
-}
-
-const disconnectHID = async (): Promise<void> => {
-  try {
-    for (const device of hidDevices.value) {
-      if (device.opened) {
-        await device.close()
-        addLog(`设备已断开: ${device.productName || '未知设备'}`)
-      }
-    }
-    hidDevices.value = []
-    hidStatus.value = '未连接'
-    addLog('所有设备已断开')
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    addLog(`断开失败: ${errorMessage}`)
-    console.error('断开设备失败:', error)
-  }
-}
-</script>
-
 <template>
-  <img alt="logo" class="logo" src="./assets/electron.svg" />
-  <div class="creator">啊啊啊 Powered by electron-vite</div>
-  <div class="text">
-    Build an Electron app with
-    <span class="vue">Vue</span>
-    and
-    <span class="ts">TypeScript</span>
-  </div>
-  <p class="tip">Please try pressing <code>F12</code> to open the devTool</p>
-
-  <!-- WebHID 测试区域 -->
-  <div class="webhid-section">
-    <div class="webhid-status">
-      <span class="status-label">WebHID 状态:</span>
-      <span class="status-value" :class="{ connected: hidDevices.length > 0 }">
-        {{ hidStatus }}
-      </span>
-    </div>
-    <div class="webhid-actions">
-      <button class="hid-button primary" @click="testWebHID">
-        🔌 连接 HID 设备
-      </button>
-      <button
-        class="hid-button secondary"
-        @click="disconnectHID"
-        :disabled="hidDevices.length === 0"
-      >
-        ❌ 断开设备
-      </button>
-    </div>
-    <div v-if="hidLogs.length > 0" class="webhid-logs">
-      <div class="logs-title">操作日志:</div>
-      <div class="logs-content">
-        <div v-for="(log, index) in hidLogs" :key="index" class="log-item">
-          {{ log }}
+  <div class="min-h-screen bg-gray-50">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300">
+      <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <i class="fa fa-mouse-pointer text-white text-xl"></i>
+          </div>
+          <h1 class="text-xl font-bold text-dark">通用游戏鼠标驱动</h1>
+          <span class="text-gray-medium text-sm hidden md:inline-block">支持多种游戏鼠标</span>
         </div>
+
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center text-sm">
+            <span
+              class="w-2 h-2 rounded-full mr-2"
+              :class="isConnected ? 'bg-success' : 'bg-danger'"
+            ></span>
+            <span>{{ isConnected ? '已连接设备' : '未连接设备' }}</span>
+          </div>
+          <button @click="handleConnect" class="btn-primary text-sm">
+            <i class="fa fa-plug mr-1"></i> 连接设备
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 设备状态概览卡片 -->
+    <main class="container mx-auto px-4 py-6">
+      <div
+        class="bg-white rounded-xl shadow-sm p-5 mb-6 transition-all duration-300"
+        :class="{ 'opacity-50 pointer-events-none': !isConnected }"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <i class="fa fa-battery-three-quarters text-primary text-xl"></i>
+            </div>
+            <div>
+              <p class="text-gray-medium text-sm">电池状态</p>
+              <p class="font-medium">{{ deviceStatus.battery }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+              <i class="fa fa-refresh text-secondary text-xl"></i>
+            </div>
+            <div>
+              <p class="text-gray-medium text-sm">当前回报率</p>
+              <p class="font-medium">{{ deviceStatus.reportRate }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+              <i class="fa fa-tachometer text-accent text-xl"></i>
+            </div>
+            <div>
+              <p class="text-gray-medium text-sm">当前CPI</p>
+              <p class="font-medium">{{ deviceStatus.cpi }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
+              <i class="fa fa-lightbulb-o text-warning text-xl"></i>
+            </div>
+            <div>
+              <p class="text-gray-medium text-sm">背光模式</p>
+              <p class="font-medium">{{ deviceStatus.backlight }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 标签页导航 -->
+      <div class="border-b border-gray-light mb-6">
+        <div class="flex overflow-x-auto scrollbar-hide space-x-1 md:space-x-4">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            class="px-4 py-3 text-sm md:text-base whitespace-nowrap transition-all duration-200"
+            :class="activeTab === tab.id ? 'tab-active' : 'text-gray-dark hover:text-primary'"
+          >
+            <i :class="tab.icon" class="mr-2"></i>{{ tab.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 标签页内容 -->
+      <div class="tab-contents">
+        <BasicSettings v-if="activeTab === 'basic'" />
+        <BacklightSettings v-if="activeTab === 'backlight'" />
+        <ButtonMapping v-if="activeTab === 'buttons'" />
+        <MacroManagement v-if="activeTab === 'macro'" />
+        <DeviceInfo v-if="activeTab === 'device'" />
+      </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-light mt-10 py-6">
+      <div class="container mx-auto px-4 text-center text-gray-medium text-sm">
+        <p>通用游戏鼠标驱动程序 v1.0.1</p>
+        <p class="mt-1">© 2026 博巨矽科技有限公司 版权所有</p>
+      </div>
+    </footer>
+
+    <!-- 通知提示框 -->
+    <div
+      v-if="notification.show"
+      class="fixed bottom-5 right-5 p-4 rounded-lg shadow-lg transform transition-all duration-300 max-w-md"
+      :class="[
+        notification.show ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0',
+        notificationClass
+      ]"
+    >
+      <div class="flex items-start">
+        <div class="mr-3 text-xl">
+          <i :class="notificationIcon"></i>
+        </div>
+        <div class="flex-1">
+          <h4 class="font-medium">{{ notification.title }}</h4>
+          <p class="text-sm text-gray-dark mt-1 whitespace-pre-line">{{ notification.message }}</p>
+        </div>
+        <button @click="hideNotification" class="ml-auto text-gray-medium hover:text-dark">
+          <i class="fa fa-times"></i>
+        </button>
       </div>
     </div>
   </div>
-
-  <div class="actions">
-    <div class="action">
-      <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">Documentation</a>
-    </div>
-    <div class="action">
-      <a target="_blank" rel="noreferrer" @click="ipcHandle">Send IPC</a>
-    </div>
-  </div>
-  <Versions />
 </template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useWebUSB } from './composables/useWebUSB'
+import BasicSettings from './components/BasicSettings.vue'
+import BacklightSettings from './components/BacklightSettings.vue'
+import ButtonMapping from './components/ButtonMapping.vue'
+import MacroManagement from './components/MacroManagement.vue'
+import DeviceInfo from './components/DeviceInfo.vue'
+
+const { isConnected, deviceStatus, connectDevice } = useWebUSB()
+
+const activeTab = ref('basic')
+
+const tabs = [
+  { id: 'basic', label: '基础设置', icon: 'fa fa-sliders' },
+  { id: 'backlight', label: '背光设置', icon: 'fa fa-lightbulb-o' },
+  { id: 'buttons', label: '改键设置', icon: 'fa fa-keyboard-o' },
+  { id: 'macro', label: '宏管理', icon: 'fa fa-list-ol' },
+  { id: 'device', label: '设备信息', icon: 'fa fa-info-circle' }
+]
+
+const notification = ref({
+  show: false,
+  type: 'info',
+  title: '',
+  message: ''
+})
+
+const notificationClass = computed(() => {
+  const classes: { [key: string]: string } = {
+    success: 'bg-success/10 border border-success/30',
+    error: 'bg-danger/10 border border-danger/30',
+    warning: 'bg-warning/10 border border-warning/30',
+    info: 'bg-primary/10 border border-primary/30'
+  }
+  return classes[notification.value.type] || classes.info
+})
+
+const notificationIcon = computed(() => {
+  const icons: { [key: string]: string } = {
+    success: 'fa fa-check-circle text-success',
+    error: 'fa fa-exclamation-circle text-danger',
+    warning: 'fa fa-exclamation-triangle text-warning',
+    info: 'fa fa-info-circle text-primary'
+  }
+  return icons[notification.value.type] || icons.info
+})
+
+async function handleConnect() {
+  const result = await connectDevice()
+  showNotification(result.success ? 'success' : 'error', result.success ? '连接成功' : '连接失败', result.message)
+}
+
+function showNotification(type: string, title: string, message: string) {
+  notification.value = { show: true, type, title, message }
+  setTimeout(hideNotification, 30000)
+}
+
+function hideNotification() {
+  notification.value.show = false
+}
+</script>
+
+<style scoped>
+/* 组件特定样式 */
+</style>

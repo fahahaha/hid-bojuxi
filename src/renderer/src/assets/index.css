@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* 自定义主题变量 */
+@theme {
+  --color-primary: #165DFF;
+  --color-secondary: #36CFC9;
+  --color-accent: #722ED1;
+  --color-dark: #1D2129;
+  --color-light: #F2F3F5;
+  --color-success: #00B42A;
+  --color-warning: #FF7D00;
+  --color-danger: #F53F3F;
+  --color-gray-dark: #4E5969;
+  --color-gray-medium: #86909C;
+  --color-gray-light: #C9CDD4;
+
+  --font-family-sans: Inter, system-ui, sans-serif;
+}
+
+/* 自定义工具类 */
+@utility tab-active {
+  border-bottom-width: 2px;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+@utility card-hover {
+  transition: all 0.3s;
+  &:hover {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    transform: translateY(-0.25rem);
+  }
+}
+
+@utility btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  outline: none;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 90%, black);
+  }
+
+  &:active {
+    background-color: color-mix(in srgb, var(--color-primary) 80%, black);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, transparent);
+  }
+}
+
+@utility btn-secondary {
+  background-color: white;
+  color: var(--color-dark);
+  border: 1px solid var(--color-gray-light);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  outline: none;
+
+  &:hover {
+    background-color: var(--color-light);
+  }
+
+  &:active {
+    background-color: var(--color-gray-light);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-gray-medium) 30%, transparent);
+  }
+}
+
+@utility input-control {
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, transparent);
+    border-color: var(--color-primary);
+  }
+}
+
+@utility setting-active {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* 全局样式 */
+body {
+  background-color: rgb(249 250 251);
+  font-family: var(--font-family-sans);
+  color: var(--color-dark);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 滚动条样式 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
