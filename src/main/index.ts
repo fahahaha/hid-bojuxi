@@ -17,6 +17,21 @@ function createWindow(): void {
     }
   })
 
+  // 启用 WebHID 权限
+  mainWindow.webContents.session.on('select-hid-device', (event, details, callback) => {
+    event.preventDefault()
+    if (details.deviceList && details.deviceList.length > 0) {
+      callback(details.deviceList[0].deviceId)
+    }
+  })
+
+  mainWindow.webContents.session.setDevicePermissionHandler((details) => {
+    if (details.deviceType === 'hid') {
+      return true
+    }
+    return false
+  })
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
