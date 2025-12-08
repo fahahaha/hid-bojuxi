@@ -3,7 +3,9 @@
     <h3 class="text-lg font-semibold mb-4 flex items-center">
       <i class="fa fa-keyboard-o text-primary mr-2"></i>鼠标按键自定义
     </h3>
-    <p class="text-gray-medium text-sm mb-6">自定义鼠标各按键的功能，可设置为单键、组合键、宏或其他功能</p>
+    <p class="text-gray-medium text-sm mb-6">
+      自定义鼠标各按键的功能，可设置为单键、组合键、宏或其他功能
+    </p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 鼠标按键示意图 -->
@@ -17,7 +19,9 @@
               :key="index"
               @click="selectButton(index)"
               class="button-marker absolute rounded-md flex items-center justify-center cursor-pointer transition-colors"
-              :class="selectedButton === index ? 'bg-primary/30' : 'bg-primary/20 hover:bg-primary/25'"
+              :class="
+                selectedButton === index ? 'bg-primary/30' : 'bg-primary/20 hover:bg-primary/25'
+              "
               :style="button.style"
             >
               <span class="text-xs font-medium">{{ index + 1 }}</span>
@@ -31,7 +35,10 @@
         <div class="border rounded-xl p-5">
           <div class="flex justify-between items-center mb-4">
             <h4 class="font-medium">{{ buttonNames[selectedButton] }}</h4>
-            <button @click="resetButton" class="text-sm text-gray-medium hover:text-primary transition-colors">
+            <button
+              @click="resetButton"
+              class="text-sm text-gray-medium hover:text-primary transition-colors"
+            >
               <i class="fa fa-refresh mr-1"></i>恢复默认
             </button>
           </div>
@@ -64,7 +71,11 @@
             <div v-if="functionType === 'combination'">
               <label class="block text-sm text-gray-dark mb-2">组合键</label>
               <div class="flex flex-wrap gap-2 mb-2">
-                <label v-for="modifier in modifiers" :key="modifier.value" class="inline-flex items-center">
+                <label
+                  v-for="modifier in modifiers"
+                  :key="modifier.value"
+                  class="inline-flex items-center"
+                >
                   <input
                     type="checkbox"
                     v-model="selectedModifiers"

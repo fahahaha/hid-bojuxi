@@ -4,22 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-这是一个基于 Electron + Vue 3 + TypeScript 的通用游戏鼠标驱动程序，支持通过 WebHID 和 WebUSB API 与游戏鼠标设备进行通信。
+这是一个基于 Electron + Vue 3 + TypeScript 的通用游戏鼠标驱动程序，支持通过 WebHID API 与游戏鼠标设备进行通信。
 
 ## 开发命令
 
 ### 安装依赖
+
 ```bash
 npm install
 ```
 
 ### 开发模式
+
 ```bash
 npm run dev          # 启动 Electron 开发模式
 npm run dev:web      # 启动 Web 开发模式（仅渲染进程）
 ```
 
 ### 类型检查
+
 ```bash
 npm run typecheck           # 检查所有 TypeScript 类型
 npm run typecheck:node      # 仅检查主进程和预加载脚本
@@ -27,12 +30,14 @@ npm run typecheck:web       # 仅检查渲染进程
 ```
 
 ### 代码质量
+
 ```bash
 npm run lint         # 运行 ESLint 检查
 npm run format       # 使用 Prettier 格式化代码
 ```
 
 ### 构建
+
 ```bash
 npm run build              # 构建所有进程代码
 npm run build:unpack       # 构建并解包（不打包成安装程序）
@@ -42,6 +47,7 @@ npm run build:linux        # 构建 Linux 安装程序
 ```
 
 ### Web 版本
+
 ```bash
 npm run build:web          # 构建 Web 版本
 npm run preview:web        # 预览 Web 版本构建结果
@@ -70,18 +76,22 @@ npm run preview:web        # 预览 Web 版本构建结果
 #### 设备通信层 (Composables)
 
 **`src/renderer/src/composables/useWebHID.ts`**
+
 - 使用 WebHID API 与 HID 设备通信
 - 支持多种设备协议：Razer、Logitech、SteelSeries、通用协议
 - 实现命令重试机制（默认 3 次）
 - 提供设备连接、状态查询、参数设置等功能
 
-**`src/renderer/src/composables/useWebUSB.ts`**
-- 使用 WebUSB API 与 USB 设备通信
-- 与 useWebHID 提供相同的接口，但使用不同的底层协议
-- 包含 HID 接口检测和受保护类设备的错误处理
-- 支持报告描述符解析
+**`src/renderer/src/protocols/`**
+
+- 协议配置化架构，每个设备品牌独立配置文件
+- `index.ts`: 协议接口定义
+- `registry.ts`: 协议注册中心
+- `razer.ts`, `logitech.ts`, `steelseries.ts`: 各品牌协议实现
+- `generic.ts`: 通用协议（默认）
 
 **设备协议支持**：
+
 - 自动检测设备品牌（通过产品名称）
 - 根据品牌使用不同的命令格式：
   - Razer: 命令前缀 `0x00`
@@ -100,6 +110,7 @@ npm run preview:web        # 预览 Web 版本构建结果
 ### 设备通信协议
 
 #### 命令结构
+
 - **Set Report**: 发送命令到设备
   - 使用 USB Control Transfer Out (request 0x09)
   - 格式: `[reportId, ...commandData]`
@@ -109,6 +120,7 @@ npm run preview:web        # 预览 Web 版本构建结果
   - 返回设备响应数据
 
 #### 主要功能命令
+
 - 设备信息查询: `[0x01, 0x01]`
 - 电池状态: `[0x02/0x03, 0x01]` (根据协议)
 - 回报率设置: `[0x03/0x04, 0x02, value]`
@@ -128,7 +140,9 @@ npm run preview:web        # 预览 Web 版本构建结果
 ## 重要注意事项
 
 ### WebHID 权限处理
+
 主进程中已配置自动授予 HID 设备权限：
+
 ```typescript
 mainWindow.webContents.session.on('select-hid-device', (event, details, callback) => {
   event.preventDefault()
@@ -139,16 +153,20 @@ mainWindow.webContents.session.on('select-hid-device', (event, details, callback
 ```
 
 ### 设备协议检测
-设备协议通过产品名称自动检测，修改协议检测逻辑时需要同时更新 `useWebHID.ts` 和 `useWebUSB.ts`。
+
+设备协议通过产品名称自动检测，采用协议配置化架构。添加新设备只需在 `src/renderer/src/protocols/` 目录下创建新的协议配置文件并注册即可。
 
 ### 命令重试机制
+
 所有设备通信命令都包含重试机制（默认 3 次），每次重试间隔 100ms。修改重试次数需要调整 `commandRetries` 常量。
 
 ### 类型定义
+
 - WebHID 类型: `src/renderer/src/types/webhid.d.ts`
-- WebUSB 类型: `src/renderer/src/types/webusb.d.ts`
+- 协议接口: `src/renderer/src/protocols/index.ts`
 
 ### 构建注意事项
+
 - 构建前会自动运行类型检查
 - Windows 构建需要在 Windows 系统上执行
 - macOS 构建需要在 macOS 系统上执行

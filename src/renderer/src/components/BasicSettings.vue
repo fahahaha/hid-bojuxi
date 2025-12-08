@@ -5,7 +5,9 @@
       <h3 class="text-lg font-semibold mb-4 flex items-center">
         <i class="fa fa-refresh text-secondary mr-2"></i>回报率设置
       </h3>
-      <p class="text-gray-medium text-sm mb-4">调整鼠标的回报率，更高的回报率提供更流畅的光标移动</p>
+      <p class="text-gray-medium text-sm mb-4">
+        调整鼠标的回报率，更高的回报率提供更流畅的光标移动
+      </p>
 
       <div class="flex items-center justify-between">
         <div class="flex space-x-2">
@@ -14,7 +16,11 @@
             :key="rate"
             @click="handleSetReportRate(rate)"
             class="px-4 py-2 rounded border transition-all duration-200"
-            :class="selectedReportRate === rate ? 'setting-active' : 'border-gray-light hover:border-primary'"
+            :class="
+              selectedReportRate === rate
+                ? 'setting-active'
+                : 'border-gray-light hover:border-primary'
+            "
           >
             {{ rate }} Hz
           </button>
@@ -112,9 +118,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useWebUSB } from '../composables/useWebUSB'
+import { useWebHID } from '../composables/useWebHID'
 
-const { setReportRate, setCPI } = useWebUSB()
+const { setReportRate, setCPI } = useWebHID()
 
 const reportRates = [125, 250, 500, 1000]
 const selectedReportRate = ref(1000)

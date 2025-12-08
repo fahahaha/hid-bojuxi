@@ -90,9 +90,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useWebUSB } from '../composables/useWebUSB'
+import { useWebHID } from '../composables/useWebHID'
 
-const { deviceInfo, deviceStatus } = useWebUSB()
+const { deviceInfo, deviceStatus } = useWebHID()
 
 const batteryPercent = computed(() => deviceStatus.value.battery)
 

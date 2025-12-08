@@ -1,18 +1,18 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* 自定义主题变量 */
 @theme {
-  --color-primary: #165DFF;
-  --color-secondary: #36CFC9;
-  --color-accent: #722ED1;
-  --color-dark: #1D2129;
-  --color-light: #F2F3F5;
-  --color-success: #00B42A;
-  --color-warning: #FF7D00;
-  --color-danger: #F53F3F;
-  --color-gray-dark: #4E5969;
-  --color-gray-medium: #86909C;
-  --color-gray-light: #C9CDD4;
+  --color-primary: #165dff;
+  --color-secondary: #36cfc9;
+  --color-accent: #722ed1;
+  --color-dark: #1d2129;
+  --color-light: #f2f3f5;
+  --color-success: #00b42a;
+  --color-warning: #ff7d00;
+  --color-danger: #f53f3f;
+  --color-gray-dark: #4e5969;
+  --color-gray-medium: #86909c;
+  --color-gray-light: #c9cdd4;
 
   --font-family-sans: Inter, system-ui, sans-serif;
 }

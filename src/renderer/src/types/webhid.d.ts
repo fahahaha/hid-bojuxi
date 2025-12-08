@@ -10,14 +10,8 @@ interface HIDDevice {
   sendReport(reportId: number, data: BufferSource): Promise<void>
   sendFeatureReport(reportId: number, data: BufferSource): Promise<void>
   receiveFeatureReport(reportId: number): Promise<DataView>
-  addEventListener(
-    type: 'inputreport',
-    listener: (event: HIDInputReportEvent) => void
-  ): void
-  removeEventListener(
-    type: 'inputreport',
-    listener: (event: HIDInputReportEvent) => void
-  ): void
+  addEventListener(type: 'inputreport', listener: (event: HIDInputReportEvent) => void): void
+  removeEventListener(type: 'inputreport', listener: (event: HIDInputReportEvent) => void): void
 }
 
 interface HIDCollectionInfo {

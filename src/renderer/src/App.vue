@@ -135,14 +135,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useWebUSB } from './composables/useWebUSB'
+import { useWebHID } from './composables/useWebHID'
 import BasicSettings from './components/BasicSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
 import MacroManagement from './components/MacroManagement.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 
-const { isConnected, deviceStatus, connectDevice } = useWebUSB()
+const { isConnected, deviceStatus, connectDevice } = useWebHID()
 
 const activeTab = ref('basic')
 
@@ -183,7 +183,11 @@ const notificationIcon = computed(() => {
 
 async function handleConnect() {
   const result = await connectDevice()
-  showNotification(result.success ? 'success' : 'error', result.success ? '连接成功' : '连接失败', result.message)
+  showNotification(
+    result.success ? 'success' : 'error',
+    result.success ? '连接成功' : '连接失败',
+    result.message
+  )
 }
 
 function showNotification(type: string, title: string, message: string) {

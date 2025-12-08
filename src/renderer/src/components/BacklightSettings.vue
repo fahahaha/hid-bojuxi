@@ -13,7 +13,11 @@
           :key="mode.value"
           @click="handleSetBacklightMode(mode.value)"
           class="w-full text-left px-4 py-3 rounded border flex items-center transition-all duration-200"
-          :class="selectedMode === mode.value ? 'setting-active' : 'border-gray-light hover:border-primary'"
+          :class="
+            selectedMode === mode.value
+              ? 'setting-active'
+              : 'border-gray-light hover:border-primary'
+          "
         >
           <span class="w-3 h-3 rounded-full mr-3" :class="mode.iconClass"></span>
           <span>{{ mode.label }}</span>
@@ -43,10 +47,7 @@
           </div>
 
           <div class="flex items-center space-x-3">
-            <div
-              class="w-10 h-10 rounded-full"
-              :style="{ backgroundColor: selectedColor }"
-            ></div>
+            <div class="w-10 h-10 rounded-full" :style="{ backgroundColor: selectedColor }"></div>
             <input
               type="text"
               v-model="selectedColor"
@@ -113,26 +114,24 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useWebUSB } from '../composables/useWebUSB'
+import { useWebHID } from '../composables/useWebHID'
 
-const { setBacklightMode, setBacklightBrightness, setBacklightFrequency, setBacklightColor } = useWebUSB()
+const { setBacklightMode, setBacklightBrightness, setBacklightFrequency, setBacklightColor } =
+  useWebHID()
 
 const backlightModes = [
   { value: 0, label: '常灭', iconClass: 'bg-gray-medium' },
   { value: 1, label: '常亮', iconClass: 'bg-white border border-gray-light' },
   { value: 2, label: '呼吸', iconClass: 'bg-primary animate-pulse' },
   { value: 3, label: 'APM模式', iconClass: 'bg-secondary' },
-  { value: 4, label: '全光谱', iconClass: 'bg-gradient-to-r from-red-500 via-green-500 to-blue-500' }
+  {
+    value: 4,
+    label: '全光谱',
+    iconClass: 'bg-gradient-to-r from-red-500 via-green-500 to-blue-500'
+  }
 ]
 
-const presetColors = [
-  '#FF3B30',
-  '#FF9500',
-  '#FFCC00',
-  '#34C759',
-  '#007AFF',
-  '#AF52DE'
-]
+const presetColors = ['#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF', '#AF52DE']
 
 const frequencyLabels = ['极慢', '慢', '中等', '快', '极快']
 

@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./src/renderer/index.html",
-    "./src/renderer/src/**/*.{vue,js,ts,jsx,tsx}",
-  ],
+  content: ['./src/renderer/index.html', './src/renderer/src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -20,9 +17,9 @@ export default {
         'gray-light': '#C9CDD4'
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
-    },
+        sans: ['Inter', 'system-ui', 'sans-serif']
+      }
+    }
   },
-  plugins: [],
+  plugins: []
 }

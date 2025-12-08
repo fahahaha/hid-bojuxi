@@ -13,7 +13,11 @@
           :key="index"
           @click="selectMacro(index)"
           class="w-full text-left px-4 py-3 rounded border flex justify-between items-center transition-all duration-200"
-          :class="selectedMacroIndex === index ? 'setting-active' : 'border-gray-light hover:border-primary'"
+          :class="
+            selectedMacroIndex === index
+              ? 'setting-active'
+              : 'border-gray-light hover:border-primary'
+          "
         >
           <span>{{ macro.name }}</span>
           <span class="text-xs text-gray-medium">{{ macro.actions.length }}个动作</span>
@@ -98,7 +102,10 @@
           <div>
             <label class="block text-sm text-gray-dark mb-2">宏动作列表</label>
             <div class="border rounded-md max-h-60 overflow-y-auto">
-              <div v-if="currentMacro.actions.length === 0" class="p-4 text-center text-gray-medium text-sm">
+              <div
+                v-if="currentMacro.actions.length === 0"
+                class="p-4 text-center text-gray-medium text-sm"
+              >
                 录制宏动作后将显示在这里
               </div>
               <div
@@ -108,10 +115,14 @@
                 class="p-3 border-b last:border-0 flex justify-between items-center hover:bg-gray-50"
               >
                 <div class="flex items-center">
-                  <span class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs mr-3">
+                  <span
+                    class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs mr-3"
+                  >
                     {{ index + 1 }}
                   </span>
-                  <span>{{ action.type }}：<strong>{{ action.key }}</strong></span>
+                  <span
+                    >{{ action.type }}：<strong>{{ action.key }}</strong></span
+                  >
                 </div>
                 <span class="text-xs text-gray-medium">{{ action.delay }}ms</span>
               </div>
