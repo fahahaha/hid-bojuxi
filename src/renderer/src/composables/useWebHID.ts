@@ -132,6 +132,22 @@ export function useWebHID() {
         return { success: false, message: '请通过localhost或HTTPS访问以使用WebHID功能' }
       }
 
+      // 先检查是否有已授权的设备
+      const existingDevices = await navigator.hid.getDevices()
+      console.log(`[设备连接] 已授权设备数量: ${existingDevices.length}`)
+
+      // 如果有已授权的设备，先尝试关闭它们
+      for (const existingDevice of existingDevices) {
+        if (existingDevice.opened) {
+          console.log('[设备连接] 发现已打开的设备，正在关闭...')
+          try {
+            await existingDevice.close()
+          } catch (err) {
+            console.warn('[设备连接] 关闭已有设备失败', err)
+          }
+        }
+      }
+
       const devices = await navigator.hid.requestDevice({ filters: [] })
 
       if (devices.length === 0) {
@@ -162,7 +178,8 @@ export function useWebHID() {
       await getCurrentScrollDirection()
 
       // 定时更新电池状态
-      setInterval(getBattery, 5000)
+      await getBattery()
+      // setInterval(getBattery, 5000)
 
       // 监听设备断开
       navigator.hid.addEventListener('disconnect', (event: HIDConnectionEvent) => {

@@ -17,19 +17,61 @@ function createWindow(): void {
     }
   })
 
-  // 启用 WebHID 权限
-  mainWindow.webContents.session.on('select-hid-device', (event, details, callback) => {
-    event.preventDefault()
-    if (details.deviceList && details.deviceList.length > 0) {
-      callback(details.deviceList[0].deviceId)
-    }
-  })
-
   mainWindow.webContents.session.setDevicePermissionHandler((details) => {
     if (details.deviceType === 'hid') {
       return true
     }
     return false
+  })
+
+  // 设置权限检查处理器
+
+  // @ts-ignore
+  mainWindow.webContents.session.setPermissionCheckHandler(
+    (_webContents, permission, requestingOrigin, details) => {
+      console.log("setPermissionCheckHandler:",permission,requestingOrigin,details)
+      return true
+    }
+  )
+
+  // 设置权限请求处理器
+  mainWindow.webContents.session.setPermissionRequestHandler(
+    (_webContents, permission, callback, details) => {
+      console.log("setPermissionRequestHandler:",_webContents,permission,callback,details)
+      callback(true)
+    }
+  )
+
+  // 启用 WebHID 设备选择
+  mainWindow.webContents.session.on('select-hid-device', (event, details, callback) => {
+    event.preventDefault()
+
+    console.log('[HID 设备选择] 收到设备选择请求')
+    console.log('[HID 设备选择] 可用设备数量:', details.deviceList?.length || 0)
+
+    // 如果有设备列表，选择第一个设备（或根据条件筛选）
+    if (details.deviceList && details.deviceList.length > 0) {
+      // 打印所有可用设备
+      details.deviceList.forEach((device, index) => {
+        console.log(
+          `[HID 设备 ${index}] 设备 (VID: 0x${device.vendorId.toString(16)}, PID: 0x${device.productId.toString(16)})`
+        )
+      })
+
+      // 优先选择特定的设备（VID: 0xa8a4, PID: 0x2255）
+      const targetDevice = details.deviceList.find(
+        (device) => device.vendorId === 0xa8a4 && device.productId === 0x2255
+      )
+
+      // 如果找到目标设备，使用它；否则使用第一个设备
+      const selectedDevice = targetDevice || details.deviceList[0]
+      console.log(`[HID 设备选择] 已选择设备 (ID: ${selectedDevice.deviceId})`)
+      callback(selectedDevice.deviceId)
+    } else {
+      // 没有设备时，传递空字符串
+      console.warn('[HID 设备选择] 没有可用设备')
+      callback('')
+    }
   })
 
   mainWindow.on('ready-to-show', () => {
