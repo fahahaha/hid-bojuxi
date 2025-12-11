@@ -1,42 +1,39 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div class="device-info-container">
     <!-- 设备信息 -->
-    <div class="bg-white rounded-xl shadow-sm p-5 card-hover">
-      <h3 class="text-lg font-semibold mb-4 flex items-center">
-        <i class="fa fa-info-circle text-primary mr-2"></i>设备信息
+    <div class="info-card card-hover">
+      <h3 class="card-title">
+        <i class="fa fa-info-circle icon-primary"></i>设备信息
       </h3>
 
-      <div class="space-y-4">
-        <div class="flex justify-between pb-3 border-b border-gray-100">
-          <span class="text-gray-dark">设备名称</span>
-          <span class="font-medium">{{ deviceInfo.name }}</span>
+      <div class="info-list">
+        <div class="info-item">
+          <span class="info-label">设备名称</span>
+          <span class="info-value">{{ deviceInfo.name }}</span>
         </div>
-        <div class="flex justify-between pb-3 border-b border-gray-100">
-          <span class="text-gray-dark">设备型号</span>
-          <span class="font-medium">{{ deviceInfo.model }}</span>
+        <div class="info-item">
+          <span class="info-label">设备型号</span>
+          <span class="info-value">{{ deviceInfo.model }}</span>
         </div>
-        <div class="flex justify-between pb-3 border-b border-gray-100">
-          <span class="text-gray-dark">固件版本</span>
-          <span class="font-medium">{{ deviceInfo.firmwareVersion }}</span>
+        <div class="info-item">
+          <span class="info-label">固件版本</span>
+          <span class="info-value">{{ deviceInfo.firmwareVersion }}</span>
         </div>
-        <div class="flex justify-between pb-3 border-b border-gray-100">
-          <span class="text-gray-dark">连接方式</span>
-          <span class="font-medium">{{ deviceInfo.connectionType }}</span>
+        <div class="info-item">
+          <span class="info-label">连接方式</span>
+          <span class="info-value">{{ deviceInfo.connectionType }}</span>
         </div>
-        <div class="flex justify-between pb-3 border-b border-gray-100">
-          <span class="text-gray-dark">VID/PID</span>
-          <span class="font-medium">{{ deviceInfo.vidPid }}</span>
+        <div class="info-item">
+          <span class="info-label">VID/PID</span>
+          <span class="info-value">{{ deviceInfo.vidPid }}</span>
         </div>
-        <div class="flex justify-between">
-          <span class="text-gray-dark">设备协议</span>
-          <span class="font-medium">{{ deviceInfo.protocol }}</span>
+        <div class="info-item">
+          <span class="info-label">设备协议</span>
+          <span class="info-value">{{ deviceInfo.protocol }}</span>
         </div>
-        <div class="flex justify-between">
-          <span class="text-gray-dark">设备状态</span>
-          <span
-            class="font-medium"
-            :class="deviceInfo.status === '已连接' ? 'text-success' : 'text-danger'"
-          >
+        <div class="info-item">
+          <span class="info-label">设备状态</span>
+          <span class="info-value" :class="deviceInfo.status === '已连接' ? 'status-connected' : 'status-disconnected'">
             {{ deviceInfo.status }}
           </span>
         </div>
@@ -44,43 +41,39 @@
     </div>
 
     <!-- 电池和维护 -->
-    <div class="bg-white rounded-xl shadow-sm p-5 card-hover">
-      <h3 class="text-lg font-semibold mb-4 flex items-center">
-        <i class="fa fa-battery-three-quarters text-warning mr-2"></i>电池与维护
+    <div class="battery-card card-hover">
+      <h3 class="card-title">
+        <i class="fa fa-battery-three-quarters icon-warning"></i>电池与维护
       </h3>
 
-      <div class="space-y-6">
+      <div class="battery-section">
         <!-- 电池信息 -->
-        <div>
-          <div class="flex justify-between mb-2">
-            <span class="text-gray-dark">电池电量</span>
-            <span class="font-medium">{{ batteryPercent }}</span>
+        <div class="battery-info">
+          <div class="battery-header">
+            <span class="battery-label">电池电量</span>
+            <span class="battery-percent">{{ batteryPercent }}</span>
           </div>
-          <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              class="h-full rounded-full transition-all duration-300"
-              :class="batteryColorClass"
-              :style="{ width: batteryPercent }"
-            ></div>
+          <div class="battery-bar">
+            <div class="battery-fill" :class="batteryColorClass" :style="{ width: batteryPercent }"></div>
           </div>
-          <div class="flex justify-between mt-1 text-xs text-gray-medium">
+          <div class="battery-markers">
             <span>0%</span>
             <span>50%</span>
             <span>100%</span>
           </div>
-          <div class="mt-2 text-sm">
-            <i class="fa fa-info-circle text-gray-medium mr-1"></i>
+          <div class="battery-status">
+            <i class="fa fa-info-circle"></i>
             <span>{{ chargeStatus }}</span>
           </div>
         </div>
 
         <!-- 设备维护 -->
-        <div class="pt-2">
-          <button @click="checkUpdate" class="btn-primary w-full mb-3">
-            <i class="fa fa-download mr-1"></i>检查固件更新
+        <div class="maintenance-actions">
+          <button @click="checkUpdate" class="btn-primary action-btn">
+            <i class="fa fa-download"></i>检查固件更新
           </button>
-          <button @click="restoreDefaults" class="btn-secondary w-full">
-            <i class="fa fa-refresh mr-1"></i>恢复出厂设置
+          <button @click="restoreDefaults" class="btn-secondary action-btn">
+            <i class="fa fa-refresh"></i>恢复出厂设置
           </button>
         </div>
       </div>
@@ -98,9 +91,9 @@ const batteryPercent = computed(() => deviceStatus.value.battery)
 
 const batteryColorClass = computed(() => {
   const percent = parseInt(batteryPercent.value)
-  if (percent < 30) return 'bg-danger'
-  if (percent < 50) return 'bg-warning'
-  return 'bg-success'
+  if (percent < 30) return 'battery-low'
+  if (percent < 50) return 'battery-medium'
+  return 'battery-high'
 })
 
 const chargeStatus = computed(() => {
@@ -111,11 +104,11 @@ const chargeStatus = computed(() => {
 })
 
 function checkUpdate() {
-  alert('正在检查固件更新...\n\n当前固件已是最新版本，无需更新')
+  alert('正在检查固件更新...\n\n当前固件已是最新版本,无需更新')
 }
 
 function restoreDefaults() {
-  if (confirm('确定要恢复出厂设置吗？这将清除所有自定义设置并恢复默认值。')) {
+  if (confirm('确定要恢复出厂设置吗?这将清除所有自定义设置并恢复默认值。')) {
     alert('正在恢复出厂设置...')
     setTimeout(() => {
       alert('已成功恢复出厂设置')
@@ -123,3 +116,165 @@ function restoreDefaults() {
   }
 }
 </script>
+
+<style scoped>
+.device-info-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .device-info-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.info-card,
+.battery-card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1.25rem;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.card-title i {
+  margin-right: 0.5rem;
+}
+
+.icon-primary {
+  color: var(--color-primary);
+}
+
+.icon-warning {
+  color: var(--color-warning);
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgb(243, 244, 246);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.info-label {
+  color: var(--color-gray-dark);
+}
+
+.info-value {
+  font-weight: 500;
+}
+
+.status-connected {
+  color: var(--color-success);
+}
+
+.status-disconnected {
+  color: var(--color-danger);
+}
+
+.battery-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.battery-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.battery-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.battery-label {
+  color: var(--color-gray-dark);
+}
+
+.battery-percent {
+  font-weight: 500;
+}
+
+.battery-bar {
+  height: 0.75rem;
+  background-color: rgb(243, 244, 246);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.battery-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: all 0.3s;
+}
+
+.battery-low {
+  background-color: var(--color-danger);
+}
+
+.battery-medium {
+  background-color: var(--color-warning);
+}
+
+.battery-high {
+  background-color: var(--color-success);
+}
+
+.battery-markers {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+}
+
+.battery-status {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.battery-status i {
+  color: var(--color-gray-medium);
+}
+
+.maintenance-actions {
+  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.action-btn {
+  width: 100%;
+}
+
+.action-btn i {
+  margin-right: 0.25rem;
+}
+</style>

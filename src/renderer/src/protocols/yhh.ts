@@ -76,6 +76,12 @@ export const yhhProtocol: DeviceProtocol = {
       ...new Array(56).fill(0)
     ],
 
+    //和DPI一样
+    getScrollDirection: [
+      0x55, 0x0E, 0xA5, 0x0B, 0x2F, 0x01, 0x01, 0x00,
+      ...new Array(56).fill(0)
+    ],
+
     // 设置回报率 (暂不支持,需要抓包确认)
     setReportRate: (_rate: number) => {
       // 暂不支持,返回空数组
@@ -92,7 +98,41 @@ export const yhhProtocol: DeviceProtocol = {
     //        滚轮方向, 0x01,          // 滚轮方向 (0=正向, 1=反向)
     //        0x35, 0x02, 0x0A, 0x00,  // 固定尾部
     //        ...]
-    setDPI: (level: number, _value: number) => {
+    setDPI: (level: number, _value: number, scrollDirection?: number) => {
+      // 支持的DPI档位配置 (小端序)
+      const dpiLevels = [
+        0xE8, 0x03,  // 1000 DPI
+        0x78, 0x05,  // 1400 DPI
+        0xD0, 0x07,  // 2000 DPI
+        0x80, 0x0C,  // 3200 DPI
+        0x00, 0x19,  // 6400 DPI
+        0x00, 0x32   // 12800 DPI
+      ]
+
+      // 滚轮方向: 0=正向, 1=反向 (默认为0)
+      const wheelDirection = scrollDirection !== undefined ? scrollDirection : 0
+
+      // 构建完整命令
+      const command = [
+        0x55, 0x0F, 0xAE, 0x0A, 0x2F, 0x01, 0x01, 0x00,
+        0x00, 0x00,              // 固定
+        0x04, 0x06,              // DPI数量和标志
+        level,                   // 档位索引 (1-6)
+        ...dpiLevels,            // DPI配置数组
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // 填充
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        wheelDirection,          // 滚轮方向 (0=正向, 1=反向)
+        0x01,0x01, 0x35, 0x02, 0x0A,  // 固定尾部
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+      ]
+
+      return command
+    },
+
+    // 设置滚轮方向
+    // 使用与 setDPI 相同的命令格式,只修改滚轮方向位
+    setScrollDirection: (direction: number, currentLevel: number) => {
       // 支持的DPI档位配置 (小端序)
       const dpiLevels = [
         0xE8, 0x03,  // 1000 DPI
@@ -108,13 +148,13 @@ export const yhhProtocol: DeviceProtocol = {
         0x55, 0x0F, 0xAE, 0x0A, 0x2F, 0x01, 0x01, 0x00,
         0x00, 0x00,              // 固定
         0x04, 0x06,              // DPI数量和标志
-        level,                   // 档位索引 (1-6)
+        currentLevel,            // 当前档位索引 (1-6)
         ...dpiLevels,            // DPI配置数组
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // 填充
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00,                    // 滚轮方向 (0=正向)
-        0x01, 0x35, 0x02, 0x0A,  // 固定尾部
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        direction,               // 滚轮方向 (0=正向, 1=反向)
+        0x01,0x01, 0x35, 0x02, 0x0A,  // 固定尾部
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
       ]
 
@@ -257,8 +297,12 @@ export const yhhProtocol: DeviceProtocol = {
           extra: response[offset + 3]
         })
       }
-
       return buttons
+    },
+    scrollDirection: (response: Uint8Array) => {
+      //和DPI一样，只不过位于第4字节。 150为正向，151为方向
+      const value = response[3];
+      return value === 150 ? 0 : 1;
     }
   },
 
@@ -270,6 +314,7 @@ export const yhhProtocol: DeviceProtocol = {
     buttonCount: 8, // 按键数量
     hasRGB: false, // 暂不支持 RGB 背光
     hasBattery: false, // 有线鼠标，无电池
-    hasOnboardMemory: true // 支持板载内存
+    hasOnboardMemory: true, // 支持板载内存
+    hasScrollDirection: true // 支持滚轮方向
   }
 }

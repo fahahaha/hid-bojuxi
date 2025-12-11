@@ -24,7 +24,8 @@ const deviceStatus = ref({
   reportRate: '--',
   dpi: '--',
   dpiLevel: 1,
-  backlight: '--'
+  backlight: '--',
+  scrollDirection: 0 //正向0，反向1
 })
 
 export function useWebHID() {
@@ -157,7 +158,8 @@ export function useWebHID() {
       await getBattery()
       await getCurrentReportRate()
       await getCurrentDPI()
-      await getBacklightMode()
+      // await getBacklightMode()
+      await getCurrentScrollDirection()
 
       // 定时更新电池状态
       setInterval(getBattery, 5000)
@@ -297,6 +299,29 @@ export function useWebHID() {
   }
 
   /**
+   * 和DPI一样，获取当前滚轮方向
+   */
+  async function getCurrentScrollDirection(): Promise<void> {
+    if (!device || !currentProtocol.value || !currentProtocol.value.commands.getScrollDirection || !currentProtocol.value.parsers.scrollDirection) return
+
+    try {
+      const command = currentProtocol.value.commands.getScrollDirection
+      const response = await sendCommandAndWait(command)
+
+      if (!response || response.length < 3) {
+        deviceStatus.value.scrollDirection = 0
+        return
+      }
+
+      const scrollDirectionData = currentProtocol.value.parsers.scrollDirection(response)
+      deviceStatus.value.scrollDirection = scrollDirectionData
+    } catch (err) {
+      console.error('获取 滚轮方向 失败:', err)
+      deviceStatus.value.scrollDirection = 0
+    }
+  }
+
+  /**
    * 获取背光模式
    */
   async function getBacklightMode(): Promise<void> {
@@ -352,7 +377,8 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      const command = currentProtocol.value.commands.setDPI(level, value)
+      const scrollDirection = deviceStatus.value.scrollDirection
+      const command = currentProtocol.value.commands.setDPI(level, value,scrollDirection)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -457,6 +483,39 @@ export function useWebHID() {
   }
 
   /**
+   * 设置滚轮方向
+   */
+  async function setScrollDirection(
+    direction: number
+  ): Promise<{ success: boolean; message: string }> {
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
+
+    try {
+      // 检查协议是否支持滚轮方向设置
+      if (!currentProtocol.value.commands.setScrollDirection) {
+        return { success: false, message: '当前设备不支持滚轮方向设置' }
+      }
+
+      // 获取当前 DPI 档位
+      const currentLevel = deviceStatus.value.dpiLevel || 1
+
+      const command = currentProtocol.value.commands.setScrollDirection(direction, currentLevel)
+      const success = await sendReport(command)
+
+      if (!success) return { success: false, message: '发送命令失败' }
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      await getCurrentScrollDirection();
+
+      const directionText = direction === 0 ? '正向' : '反向'
+      return { success: true, message: `滚轮方向已设置为 ${directionText}` }
+    } catch (err: any) {
+      console.error('设置滚轮方向失败:', err)
+      return { success: false, message: '无法设置滚轮方向' }
+    }
+  }
+
+  /**
    * 获取当前设备协议
    */
   function getCurrentProtocol(): DeviceProtocol | null {
@@ -471,6 +530,7 @@ export function useWebHID() {
     connectDevice,
     setReportRate,
     setDPI,
+    setScrollDirection,
     setBacklightMode,
     setBacklightBrightness,
     setBacklightFrequency,

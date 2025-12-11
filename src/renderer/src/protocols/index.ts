@@ -23,11 +23,13 @@ export interface DeviceProtocol {
     getBacklight: number[]
     /** 获取按键映射命令 */
     getButtonMapping: number[]
+    /** 获取 滚轮 命令 */
+    getScrollDirection?: number[]
 
     /** 设置回报率 */
     setReportRate: (rate: number) => number[]
     /** 设置 DPI */
-    setDPI: (level: number, value: number) => number[]
+    setDPI: (level: number, value: number, scrollDirection?: number) => number[]
     /** 设置背光模式 */
     setBacklightMode: (mode: number) => number[]
     /** 设置背光亮度 */
@@ -36,6 +38,8 @@ export interface DeviceProtocol {
     setBacklightFrequency: (frequency: number) => number[]
     /** 设置背光颜色 */
     setBacklightColor: (r: number, g: number, b: number) => number[]
+    /** 设置滚轮方向 */
+    setScrollDirection?: (direction: number, currentLevel: number) => number[]
   }
 
   /** 响应解析器 */
@@ -64,6 +68,7 @@ export interface DeviceProtocol {
       modifier: number
       extra: number
     }>
+    scrollDirection?: (response: Uint8Array) => number
   }
 
   /** 设备特性配置 (可选) */
@@ -82,5 +87,7 @@ export interface DeviceProtocol {
     hasBattery?: boolean
     /** 是否支持板载内存 */
     hasOnboardMemory?: boolean
+    /** 是否支持的滚轮方向 */
+    hasScrollDirection?: boolean
   }
 }

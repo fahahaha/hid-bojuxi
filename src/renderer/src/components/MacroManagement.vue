@@ -1,95 +1,89 @@
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="macro-management">
     <!-- 宏列表 -->
-    <div class="bg-white rounded-xl shadow-sm p-5 card-hover">
-      <h3 class="text-lg font-semibold mb-4 flex items-center">
-        <i class="fa fa-list-ol text-primary mr-2"></i>宏列表
+    <div class="macro-list-card card-hover">
+      <h3 class="card-title">
+        <i class="fa fa-list-ol icon-primary"></i>宏列表
       </h3>
-      <p class="text-gray-medium text-sm mb-4">管理您的宏，最多可保存10组宏</p>
+      <p class="card-description">管理您的宏,最多可保存10组宏</p>
 
-      <div class="space-y-2 mb-4">
+      <div class="macro-buttons">
         <button
           v-for="(macro, index) in macros"
           :key="index"
           @click="selectMacro(index)"
-          class="w-full text-left px-4 py-3 rounded border flex justify-between items-center transition-all duration-200"
-          :class="
-            selectedMacroIndex === index
-              ? 'setting-active'
-              : 'border-gray-light hover:border-primary'
-          "
+          class="macro-button"
+          :class="{ 'setting-active': selectedMacroIndex === index }"
         >
-          <span>{{ macro.name }}</span>
-          <span class="text-xs text-gray-medium">{{ macro.actions.length }}个动作</span>
+          <span class="macro-name">{{ macro.name }}</span>
+          <span class="macro-count">{{ macro.actions.length }}个动作</span>
         </button>
       </div>
 
-      <div class="space-y-3">
-        <button @click="newMacro" class="btn-secondary w-full">
-          <i class="fa fa-plus mr-1"></i>新建宏
+      <div class="macro-actions">
+        <button @click="newMacro" class="btn-secondary action-btn">
+          <i class="fa fa-plus"></i>新建宏
         </button>
-        <button @click="deleteMacro" class="btn-secondary w-full text-danger border-danger/30">
-          <i class="fa fa-trash mr-1"></i>删除选中宏
+        <button @click="deleteMacro" class="btn-secondary action-btn delete-btn">
+          <i class="fa fa-trash"></i>删除选中宏
         </button>
       </div>
     </div>
 
     <!-- 宏录制和设置 -->
-    <div class="lg:col-span-2 space-y-6">
+    <div class="macro-settings">
       <!-- 录制控制 -->
-      <div class="bg-white rounded-xl shadow-sm p-5 card-hover">
-        <h3 class="text-lg font-semibold mb-4 flex items-center">
-          <i class="fa fa-circle-o-notch text-accent mr-2"></i>宏录制
+      <div class="record-card card-hover">
+        <h3 class="card-title">
+          <i class="fa fa-circle-o-notch icon-accent"></i>宏录制
         </h3>
 
-        <div class="flex flex-wrap gap-3 mb-4">
+        <div class="record-controls">
           <button @click="startRecord" :disabled="isRecording" class="btn-primary">
-            <i class="fa fa-circle mr-1"></i>开始录制
+            <i class="fa fa-circle"></i>开始录制
           </button>
           <button @click="stopRecord" :disabled="!isRecording" class="btn-secondary">
-            <i class="fa fa-stop mr-1"></i>停止录制
+            <i class="fa fa-stop"></i>停止录制
           </button>
           <button @click="cancelRecord" :disabled="!isRecording" class="btn-secondary">
-            <i class="fa fa-times mr-1"></i>取消录制
+            <i class="fa fa-times"></i>取消录制
           </button>
           <button @click="testMacro" class="btn-secondary">
-            <i class="fa fa-play mr-1"></i>测试宏
+            <i class="fa fa-play"></i>测试宏
           </button>
         </div>
 
-        <div v-if="isRecording" class="p-3 bg-accent/10 rounded-md text-sm flex items-center">
-          <i class="fa fa-circle text-accent animate-pulse mr-2"></i>
-          <span>正在录制... 请执行您的操作，完成后点击"停止录制"</span>
+        <div v-if="isRecording" class="recording-indicator">
+          <i class="fa fa-circle recording-icon"></i>
+          <span>正在录制... 请执行您的操作,完成后点击"停止录制"</span>
         </div>
       </div>
 
       <!-- 宏设置 -->
-      <div class="bg-white rounded-xl shadow-sm p-5 card-hover">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold flex items-center">
-            <i class="fa fa-cog text-primary mr-2"></i>宏设置
+      <div class="settings-card card-hover">
+        <div class="settings-header">
+          <h3 class="card-title">
+            <i class="fa fa-cog icon-primary"></i>宏设置
           </h3>
-          <div>
-            <button @click="saveMacro" class="btn-primary">
-              <i class="fa fa-save mr-1"></i>保存宏
-            </button>
-          </div>
+          <button @click="saveMacro" class="btn-primary">
+            <i class="fa fa-save"></i>保存宏
+          </button>
         </div>
 
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm text-gray-dark mb-2">宏名称</label>
+        <div class="settings-form">
+          <div class="form-group">
+            <label class="form-label">宏名称</label>
             <input
               type="text"
               v-model="currentMacro.name"
-              class="input-control w-full"
+              class="input-control"
               placeholder="输入宏名称"
             />
           </div>
 
-          <div>
-            <label class="block text-sm text-gray-dark mb-2">循环次数</label>
-            <select v-model="currentMacro.loopCount" class="input-control w-full">
+          <div class="form-group">
+            <label class="form-label">循环次数</label>
+            <select v-model="currentMacro.loopCount" class="form-select">
               <option :value="1">1次</option>
               <option :value="2">2次</option>
               <option :value="3">3次</option>
@@ -99,32 +93,23 @@
             </select>
           </div>
 
-          <div>
-            <label class="block text-sm text-gray-dark mb-2">宏动作列表</label>
-            <div class="border rounded-md max-h-60 overflow-y-auto">
-              <div
-                v-if="currentMacro.actions.length === 0"
-                class="p-4 text-center text-gray-medium text-sm"
-              >
+          <div class="form-group">
+            <label class="form-label">宏动作列表</label>
+            <div class="actions-list">
+              <div v-if="currentMacro.actions.length === 0" class="empty-actions">
                 录制宏动作后将显示在这里
               </div>
               <div
                 v-else
                 v-for="(action, index) in currentMacro.actions"
                 :key="index"
-                class="p-3 border-b last:border-0 flex justify-between items-center hover:bg-gray-50"
+                class="action-item"
               >
-                <div class="flex items-center">
-                  <span
-                    class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs mr-3"
-                  >
-                    {{ index + 1 }}
-                  </span>
-                  <span
-                    >{{ action.type }}：<strong>{{ action.key }}</strong></span
-                  >
+                <div class="action-info">
+                  <span class="action-number">{{ index + 1 }}</span>
+                  <span class="action-text">{{ action.type }}：<strong>{{ action.key }}</strong></span>
                 </div>
-                <span class="text-xs text-gray-medium">{{ action.delay }}ms</span>
+                <span class="action-delay">{{ action.delay }}ms</span>
               </div>
             </div>
           </div>
@@ -177,7 +162,7 @@ function newMacro() {
 }
 
 function deleteMacro() {
-  if (confirm(`确定要删除${currentMacro.value.name}吗？此操作不可撤销。`)) {
+  if (confirm(`确定要删除${currentMacro.value.name}吗?此操作不可撤销。`)) {
     macros.value[selectedMacroIndex.value] = {
       name: `宏 ${selectedMacroIndex.value + 1}`,
       loopCount: 1,
@@ -259,3 +244,251 @@ onUnmounted(() => {
   document.removeEventListener('keyup', handleKeyUp)
 })
 </script>
+
+<style scoped>
+.macro-management {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .macro-management {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+.macro-list-card,
+.record-card,
+.settings-card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1.25rem;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.card-title i {
+  margin-right: 0.5rem;
+}
+
+.icon-primary {
+  color: var(--color-primary);
+}
+
+.icon-accent {
+  color: var(--color-accent);
+}
+
+.card-description {
+  color: var(--color-gray-medium);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.macro-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.macro-button {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-gray-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  background-color: white;
+  cursor: pointer;
+}
+
+.macro-button:hover {
+  border-color: var(--color-primary);
+}
+
+.macro-name {
+  font-weight: 500;
+}
+
+.macro-count {
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+}
+
+.macro-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.action-btn {
+  width: 100%;
+}
+
+.action-btn i {
+  margin-right: 0.25rem;
+}
+
+.delete-btn {
+  color: var(--color-danger);
+  border-color: rgba(245, 63, 63, 0.3);
+}
+
+.macro-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.record-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.record-controls button i {
+  margin-right: 0.25rem;
+}
+
+.recording-indicator {
+  padding: 0.75rem;
+  background-color: rgba(114, 46, 209, 0.1);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recording-icon {
+  color: var(--color-accent);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.settings-header .card-title {
+  margin-bottom: 0;
+}
+
+.settings-header button i {
+  margin-right: 0.25rem;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-gray-dark);
+}
+
+.form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.5rem;
+  outline: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.form-select:focus {
+  border-color: var(--color-primary);
+}
+
+.actions-list {
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.375rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.empty-actions {
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-gray-medium);
+  font-size: 0.875rem;
+}
+
+.action-item {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-gray-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.action-item:last-child {
+  border-bottom: none;
+}
+
+.action-item:hover {
+  background-color: rgb(249, 250, 251);
+}
+
+.action-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.action-number {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background-color: rgb(229, 231, 235);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.action-text {
+  font-size: 0.875rem;
+}
+
+.action-delay {
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+}
+</style>
