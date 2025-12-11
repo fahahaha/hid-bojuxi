@@ -196,13 +196,13 @@ watch(isConnected, (connected) => {
 
 // 监听设备状态变化,回显当前 滚轮方向
 watch(() => deviceStatus.value.scrollDirection, (newScroll) => {
-  isReverseScroll.value = parseInt(newScroll) == 0 ? false : true
+  isReverseScroll.value = Number(newScroll) == 0 ? false : true
 }, { immediate: true })
 
 // 监听设备连接状态,初始化选中值,回显当前 滚轮方向
 watch(isConnected, (connected) => {
   if (connected) {
-    isReverseScroll.value = parseInt(deviceStatus.value.scrollDirection) == 0 ? false : true
+    isReverseScroll.value = Number(deviceStatus.value.scrollDirection) == 0 ? false : true
   }
 })
 

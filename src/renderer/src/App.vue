@@ -149,13 +149,7 @@ const notification = ref({
 })
 
 const notificationClass = computed(() => {
-  const classes: { [key: string]: string } = {
-    success: 'bg-success/10 border border-success/30',
-    error: 'bg-danger/10 border border-danger/30',
-    warning: 'bg-warning/10 border border-warning/30',
-    info: 'bg-primary/10 border border-primary/30'
-  }
-  return classes[notification.value.type] || classes.info
+  return notification.value.type
 })
 
 const notificationIcon = computed(() => {
