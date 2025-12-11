@@ -13,8 +13,9 @@ export const genericProtocol: DeviceProtocol = {
     getDeviceInfo: [0x01, 0x01],
     getBattery: [0x02, 0x01],
     getReportRate: [0x03, 0x01],
-    getCPI: [0x03, 0x03],
+    getDPI: [0x03, 0x03],
     getBacklight: [0x04, 0x01],
+    getButtonMapping: [0x05, 0x01],
 
     setReportRate: (rate: number) => {
       const rateMap: Record<number, number> = {
@@ -26,7 +27,7 @@ export const genericProtocol: DeviceProtocol = {
       return [0x03, 0x02, rateMap[rate] || 0x01]
     },
 
-    setCPI: (level: number, value: number) => {
+    setDPI: (level: number, value: number) => {
       const levelIndex = level - 1
       const valueHigh = (value >> 8) & 0xff
       const valueLow = value & 0xff
@@ -67,8 +68,16 @@ export const genericProtocol: DeviceProtocol = {
       return rateMap[response[0]] || 1000
     },
 
-    cpi: (response: Uint8Array) => (response[1] << 8) | response[2],
+    dpi: (response: Uint8Array) => {
+      const value = (response[1] << 8) | response[2]
+      return {
+        value,
+        level: 1
+      }
+    },
 
-    backlight: (response: Uint8Array) => response[0]
+    backlight: (response: Uint8Array) => response[0],
+
+    buttonMapping: (_response: Uint8Array) => []
   }
 }

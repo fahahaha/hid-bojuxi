@@ -58,8 +58,8 @@
               <i class="fa fa-tachometer text-accent text-xl"></i>
             </div>
             <div>
-              <p class="text-gray-medium text-sm">当前CPI</p>
-              <p class="font-medium">{{ deviceStatus.cpi }}</p>
+              <p class="text-gray-medium text-sm">当前DPI</p>
+              <p class="font-medium">{{ deviceStatus.dpi }}</p>
             </div>
           </div>
 

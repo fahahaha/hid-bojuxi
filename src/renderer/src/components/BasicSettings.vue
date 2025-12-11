@@ -1,15 +1,23 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- 回报率设置 -->
-    <div class="bg-white rounded-xl shadow-sm p-5 card-hover">
+    <div class="bg-white rounded-xl shadow-sm p-5 card-hover" :class="{ 'opacity-60': !supportsReportRate }">
       <h3 class="text-lg font-semibold mb-4 flex items-center">
         <i class="fa fa-refresh text-secondary mr-2"></i>回报率设置
+        <span v-if="!supportsReportRate" class="ml-2 text-xs text-red-500 font-normal">
+          (不支持)
+        </span>
       </h3>
       <p class="text-gray-medium text-sm mb-4">
         调整鼠标的回报率，更高的回报率提供更流畅的光标移动
       </p>
 
-      <div class="flex items-center justify-between">
+      <div v-if="!supportsReportRate" class="text-center py-4 text-gray-400">
+        <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
+        <p class="text-sm">当前设备不支持回报率设置功能</p>
+      </div>
+
+      <div v-else class="flex items-center justify-between">
         <div class="flex space-x-2">
           <button
             v-for="rate in reportRates"
@@ -28,87 +36,57 @@
       </div>
     </div>
 
-    <!-- CPI设置 -->
-    <div class="bg-white rounded-xl shadow-sm p-5 card-hover">
+    <!-- DPI设置 -->
+    <div class="bg-white rounded-xl shadow-sm p-5 card-hover" :class="{ 'opacity-60': !supportsDPI }">
       <h3 class="text-lg font-semibold mb-4 flex items-center">
-        <i class="fa fa-tachometer text-accent mr-2"></i>CPI设置
+        <i class="fa fa-tachometer text-accent mr-2"></i>DPI 设置
+        <span v-if="!supportsDPI" class="ml-2 text-xs text-red-500 font-normal">
+          (不支持)
+        </span>
       </h3>
-      <p class="text-gray-medium text-sm mb-4">调整鼠标的灵敏度，CPI值越高，光标移动速度越快</p>
+      <p class="text-gray-medium text-sm mb-4">
+        调整鼠标的灵敏度，DPI 值越高，光标移动速度越快
+        <span v-if="supportedDPI.length > 0" class="text-xs text-gray-400">
+          (支持 {{ supportedDPI.length }} 档)
+        </span>
+      </p>
 
-      <div class="space-y-6">
-        <!-- 当前CPI档位 -->
+      <div v-if="!supportsDPI" class="text-center py-4 text-gray-400">
+        <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
+        <p class="text-sm">当前设备不支持 DPI 设置功能</p>
+      </div>
+
+      <div v-else class="space-y-4">
+        <!-- DPI 档位选择 -->
         <div>
           <div class="flex justify-between items-center mb-2">
-            <label class="text-sm text-gray-dark">当前CPI档位</label>
-            <span class="text-sm font-medium">档位 {{ currentCpiLevel }}</span>
+            <label class="text-sm text-gray-dark">DPI 档位</label>
+            <span class="text-sm font-medium text-accent">{{ selectedDPI }} DPI</span>
           </div>
-          <div class="flex items-center">
-            <button
-              @click="decrementCpiLevel"
-              class="btn-secondary w-10 h-10 p-0 flex items-center justify-center"
-              :disabled="currentCpiLevel <= 1"
-            >
-              <i class="fa fa-minus"></i>
-            </button>
 
-            <div class="mx-4 flex-1">
-              <div class="h-2 bg-gray-100 rounded-full relative">
-                <div
-                  class="absolute top-0 bottom-0 w-1/7 bg-accent rounded-full transition-all duration-300"
-                  :style="{ left: `${((currentCpiLevel - 1) / 6) * 85.7}%` }"
-                ></div>
-                <div class="absolute top-0 left-0 w-full flex justify-between px-[-8px]">
-                  <span
-                    v-for="level in 7"
-                    :key="level"
-                    class="w-3 h-3 rounded-full -mt-0.5"
-                    :class="level <= currentCpiLevel ? 'bg-accent' : 'bg-gray-light'"
-                  ></span>
-                </div>
-              </div>
-              <div class="flex justify-between mt-1 text-xs text-gray-medium">
-                <span v-for="level in 7" :key="level">{{ level }}</span>
-              </div>
-            </div>
-
-            <button
-              @click="incrementCpiLevel"
-              class="btn-secondary w-10 h-10 p-0 flex items-center justify-center"
-              :disabled="currentCpiLevel >= 7"
+          <select
+            v-model.number="selectedDPI"
+            @change="handleSetDPI"
+            class="w-full px-4 py-3 border border-gray-light rounded-lg focus:outline-none focus:border-primary transition-colors duration-200 cursor-pointer hover:border-primary"
+          >
+            <option
+              v-for="option in dpiOptions"
+              :key="option.value"
+              :value="option.value"
             >
-              <i class="fa fa-plus"></i>
-            </button>
-          </div>
+              {{ option.label }}
+            </option>
+          </select>
         </div>
 
-        <!-- 自定义CPI值 -->
-        <div>
-          <div class="flex justify-between items-center mb-2">
-            <label class="text-sm text-gray-dark">CPI值设置</label>
-            <span class="text-sm font-medium">{{ cpiValue }}</span>
-          </div>
-          <div class="space-y-2">
-            <input
-              type="range"
-              v-model.number="cpiValue"
-              min="50"
-              max="16000"
-              step="50"
-              @change="handleSetCPI"
-              class="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-accent"
-            />
+        <!-- 当前状态显示 -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center justify-between">
             <div class="flex items-center">
-              <input
-                type="number"
-                v-model.number="cpiValue"
-                min="50"
-                max="16000"
-                step="50"
-                @change="handleSetCPI"
-                class="input-control w-24"
-              />
-              <span class="mx-2 text-gray-medium">CPI</span>
+              <i class="fa fa-info-circle text-primary mr-2"></i>
+              <span class="text-sm text-gray-dark">当前 DPI</span>
             </div>
+            <span class="text-lg font-semibold text-primary">{{ deviceStatus.dpi }} DPI</span>
           </div>
         </div>
       </div>
@@ -117,17 +95,69 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 
-const { setReportRate, setCPI } = useWebHID()
+const { setReportRate, setDPI, getCurrentProtocol, isConnected, deviceStatus } = useWebHID()
 
-const reportRates = [125, 250, 500, 1000]
+// 获取设备特性
+const deviceFeatures = computed(() => {
+  const protocol = getCurrentProtocol()
+  return protocol?.features || null
+})
+
+// 支持的回报率列表（根据设备特性动态调整）
+const reportRates = computed(() => {
+  return deviceFeatures.value?.supportedReportRates || [125, 250, 500, 1000]
+})
+
+// 支持的 DPI 档位列表
+const supportedDPI = computed(() => {
+  return deviceFeatures.value?.supportedDPI || []
+})
+
+// DPI 选项列表（用于下拉选择）
+const dpiOptions = computed(() => {
+  return supportedDPI.value.map((dpi, index) => ({
+    label: `档位 ${index + 1} - ${dpi} DPI`,
+    value: dpi,
+    level: index + 1
+  }))
+})
+
+// 是否支持回报率设置
+const supportsReportRate = computed(() => {
+  return isConnected.value && reportRates.value.length > 0
+})
+
+// 是否支持 DPI 设置
+const supportsDPI = computed(() => {
+  return isConnected.value && supportedDPI.value.length > 0
+})
+
 const selectedReportRate = ref(1000)
-const currentCpiLevel = ref(4)
-const cpiValue = ref(2000)
+const selectedDPI = ref(2000)
+
+// 监听设备状态变化，回显当前 DPI
+watch(() => deviceStatus.value.dpi, (newDPI) => {
+  if (newDPI && newDPI !== '--') {
+    selectedDPI.value = parseInt(newDPI)
+  }
+}, { immediate: true })
+
+// 监听设备连接状态，初始化选中值
+watch(isConnected, (connected) => {
+  if (connected && deviceStatus.value.dpi !== '--') {
+    selectedDPI.value = parseInt(deviceStatus.value.dpi)
+  }
+})
 
 async function handleSetReportRate(rate: number) {
+  if (!supportsReportRate.value) {
+    console.warn('当前设备不支持回报率设置')
+    return
+  }
+
   selectedReportRate.value = rate
   const result = await setReportRate(rate)
   if (!result.success) {
@@ -135,24 +165,23 @@ async function handleSetReportRate(rate: number) {
   }
 }
 
-function incrementCpiLevel() {
-  if (currentCpiLevel.value < 7) {
-    currentCpiLevel.value++
-    handleSetCPI()
+async function handleSetDPI() {
+  if (!supportsDPI.value) {
+    console.warn('当前设备不支持 DPI 设置')
+    return
   }
-}
 
-function decrementCpiLevel() {
-  if (currentCpiLevel.value > 1) {
-    currentCpiLevel.value--
-    handleSetCPI()
+  // 找到对应的档位
+  const dpiIndex = supportedDPI.value.indexOf(selectedDPI.value)
+  if (dpiIndex === -1) {
+    console.error('无效的 DPI 值')
+    return
   }
-}
 
-async function handleSetCPI() {
-  const result = await setCPI(currentCpiLevel.value, cpiValue.value)
+  const level = dpiIndex + 1
+  const result = await setDPI(level, selectedDPI.value)
   if (!result.success) {
-    console.error('设置CPI失败:', result.message)
+    console.error('设置 DPI 失败:', result.message)
   }
 }
 </script>

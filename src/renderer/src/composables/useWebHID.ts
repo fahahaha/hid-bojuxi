@@ -4,7 +4,7 @@ import type { DeviceProtocol } from '../protocols'
 
 // 全局状态
 let device: HIDDevice | null = null
-let currentProtocol: DeviceProtocol | null = null
+const currentProtocol = ref<DeviceProtocol | null>(null)
 const commandRetries = 3
 
 // 响应式状态
@@ -22,7 +22,8 @@ const deviceInfo = ref({
 const deviceStatus = ref({
   battery: '--',
   reportRate: '--',
-  cpi: '--',
+  dpi: '--',
+  dpiLevel: 1,
   backlight: '--'
 })
 
@@ -143,8 +144,8 @@ export function useWebHID() {
       )
 
       // 检测设备协议
-      currentProtocol = detectProtocol(device)
-      console.log(`[协议检测] 使用协议: ${currentProtocol.name}`)
+      currentProtocol.value = detectProtocol(device)
+      console.log(`[协议检测] 使用协议: ${currentProtocol.value.name}`)
 
       await device.open()
 
@@ -155,7 +156,7 @@ export function useWebHID() {
       await getDeviceInfo()
       await getBattery()
       await getCurrentReportRate()
-      await getCurrentCPI()
+      await getCurrentDPI()
       await getBacklightMode()
 
       // 定时更新电池状态
@@ -168,7 +169,7 @@ export function useWebHID() {
           isConnected.value = false
           deviceInfo.value.status = '未连接'
           device = null
-          currentProtocol = null
+          currentProtocol.value = null
         }
       })
 
@@ -183,21 +184,21 @@ export function useWebHID() {
    * 获取设备信息
    */
   async function getDeviceInfo(): Promise<void> {
-    if (!device || !currentProtocol) return
+    if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.commands.getDeviceInfo
+      const command = currentProtocol.value.commands.getDeviceInfo
       const response = await sendCommandAndWait(command)
 
       if (response && response.length >= 16) {
-        const info = currentProtocol.parsers.deviceInfo(response)
+        const info = currentProtocol.value.parsers.deviceInfo(response)
         deviceInfo.value = {
           name: info.name || device.productName || '未知设备',
           model: info.model || device.productId.toString(16),
           firmwareVersion: info.firmwareVersion,
           connectionType: '有线连接',
           vidPid: `0x${device.vendorId.toString(16).padStart(4, '0')}:0x${device.productId.toString(16).padStart(4, '0')}`,
-          protocol: currentProtocol.name,
+          protocol: currentProtocol.value.name,
           status: '已连接'
         }
       } else {
@@ -208,7 +209,7 @@ export function useWebHID() {
           firmwareVersion: '未知版本',
           connectionType: '有线连接',
           vidPid: `0x${device.vendorId.toString(16).padStart(4, '0')}:0x${device.productId.toString(16).padStart(4, '0')}`,
-          protocol: currentProtocol.name,
+          protocol: currentProtocol.value.name,
           status: '已连接'
         }
       }
@@ -225,10 +226,10 @@ export function useWebHID() {
    * 获取电池状态
    */
   async function getBattery(): Promise<void> {
-    if (!device || !currentProtocol) return
+    if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.commands.getBattery
+      const command = currentProtocol.value.commands.getBattery
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 2) {
@@ -237,7 +238,7 @@ export function useWebHID() {
         return
       }
 
-      const batteryLevel = currentProtocol.parsers.battery(response)
+      const batteryLevel = currentProtocol.value.parsers.battery(response)
       deviceStatus.value.battery = `${Math.max(0, Math.min(100, batteryLevel))}%`
     } catch (err) {
       console.error('获取电池状态失败:', err)
@@ -250,10 +251,10 @@ export function useWebHID() {
    * 获取当前回报率
    */
   async function getCurrentReportRate(): Promise<void> {
-    if (!device || !currentProtocol) return
+    if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.commands.getReportRate
+      const command = currentProtocol.value.commands.getReportRate
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 1) {
@@ -261,7 +262,7 @@ export function useWebHID() {
         return
       }
 
-      const rate = currentProtocol.parsers.reportRate(response)
+      const rate = currentProtocol.value.parsers.reportRate(response)
       deviceStatus.value.reportRate = `${rate} Hz`
     } catch (err) {
       console.error('获取回报率失败:', err)
@@ -270,25 +271,28 @@ export function useWebHID() {
   }
 
   /**
-   * 获取当前CPI
+   * 获取当前 DPI
    */
-  async function getCurrentCPI(): Promise<void> {
-    if (!device || !currentProtocol) return
+  async function getCurrentDPI(): Promise<void> {
+    if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.commands.getCPI
+      const command = currentProtocol.value.commands.getDPI
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 3) {
-        deviceStatus.value.cpi = '2000'
+        deviceStatus.value.dpi = '2000'
+        deviceStatus.value.dpiLevel = 1
         return
       }
 
-      const cpiValue = currentProtocol.parsers.cpi(response)
-      deviceStatus.value.cpi = `${cpiValue}`
+      const dpiData = currentProtocol.value.parsers.dpi(response)
+      deviceStatus.value.dpi = `${dpiData.value}`
+      deviceStatus.value.dpiLevel = dpiData.level
     } catch (err) {
-      console.error('获取CPI失败:', err)
-      deviceStatus.value.cpi = '2000'
+      console.error('获取 DPI 失败:', err)
+      deviceStatus.value.dpi = '2000'
+      deviceStatus.value.dpiLevel = 1
     }
   }
 
@@ -296,10 +300,10 @@ export function useWebHID() {
    * 获取背光模式
    */
   async function getBacklightMode(): Promise<void> {
-    if (!device || !currentProtocol) return
+    if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.commands.getBacklight
+      const command = currentProtocol.value.commands.getBacklight
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 1) {
@@ -307,7 +311,7 @@ export function useWebHID() {
         return
       }
 
-      const mode = currentProtocol.parsers.backlight(response)
+      const mode = currentProtocol.value.parsers.backlight(response)
       const modeNames = ['常灭', '常亮', '呼吸', 'APM模式', '全光谱']
       deviceStatus.value.backlight = modeNames[mode] || '未知'
     } catch (err) {
@@ -320,10 +324,10 @@ export function useWebHID() {
    * 设置回报率
    */
   async function setReportRate(rate: number): Promise<{ success: boolean; message: string }> {
-    if (!device || !currentProtocol) return { success: false, message: '设备未连接' }
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      const command = currentProtocol.commands.setReportRate(rate)
+      const command = currentProtocol.value.commands.setReportRate(rate)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -339,31 +343,27 @@ export function useWebHID() {
   }
 
   /**
-   * 设置CPI
+   * 设置 DPI
    */
-  async function setCPI(
+  async function setDPI(
     level: number,
     value: number
   ): Promise<{ success: boolean; message: string }> {
-    if (!device || !currentProtocol) return { success: false, message: '设备未连接' }
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      if (value < 50 || value > 16000 || value % 50 !== 0) {
-        return { success: false, message: 'CPI值必须是50-16000之间且是50的倍数' }
-      }
-
-      const command = currentProtocol.commands.setCPI(level, value)
+      const command = currentProtocol.value.commands.setDPI(level, value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
 
       await new Promise((resolve) => setTimeout(resolve, 100))
-      await getCurrentCPI()
+      await getCurrentDPI()
 
-      return { success: true, message: `CPI已设置为 ${value}` }
+      return { success: true, message: `DPI 已设置为 ${value}` }
     } catch (err: any) {
-      console.error('设置CPI失败:', err)
-      return { success: false, message: '无法设置CPI' }
+      console.error('设置 DPI 失败:', err)
+      return { success: false, message: '无法设置 DPI' }
     }
   }
 
@@ -371,11 +371,11 @@ export function useWebHID() {
    * 设置背光模式
    */
   async function setBacklightMode(mode: number): Promise<{ success: boolean; message: string }> {
-    if (!device || !currentProtocol) return { success: false, message: '设备未连接' }
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
       const modeNames = ['常灭', '常亮', '呼吸', 'APM模式', '全光谱']
-      const command = currentProtocol.commands.setBacklightMode(mode)
+      const command = currentProtocol.value.commands.setBacklightMode(mode)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -396,10 +396,10 @@ export function useWebHID() {
   async function setBacklightBrightness(
     brightness: number
   ): Promise<{ success: boolean; message: string }> {
-    if (!device || !currentProtocol) return { success: false, message: '设备未连接' }
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      const command = currentProtocol.commands.setBacklightBrightness(brightness)
+      const command = currentProtocol.value.commands.setBacklightBrightness(brightness)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -417,11 +417,11 @@ export function useWebHID() {
   async function setBacklightFrequency(
     frequency: number
   ): Promise<{ success: boolean; message: string }> {
-    if (!device || !currentProtocol) return { success: false, message: '设备未连接' }
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
       const frequencyLabels = ['极慢', '慢', '中等', '快', '极快']
-      const command = currentProtocol.commands.setBacklightFrequency(frequency)
+      const command = currentProtocol.value.commands.setBacklightFrequency(frequency)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -437,14 +437,14 @@ export function useWebHID() {
    * 设置背光颜色
    */
   async function setBacklightColor(color: string): Promise<{ success: boolean; message: string }> {
-    if (!device || !currentProtocol) return { success: false, message: '设备未连接' }
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
       const r = parseInt(color.slice(1, 3), 16)
       const g = parseInt(color.slice(3, 5), 16)
       const b = parseInt(color.slice(5, 7), 16)
 
-      const command = currentProtocol.commands.setBacklightColor(r, g, b)
+      const command = currentProtocol.value.commands.setBacklightColor(r, g, b)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -456,13 +456,21 @@ export function useWebHID() {
     }
   }
 
+  /**
+   * 获取当前设备协议
+   */
+  function getCurrentProtocol(): DeviceProtocol | null {
+    return currentProtocol.value
+  }
+
   return {
     isConnected: computed(() => isConnected.value),
     deviceInfo: computed(() => deviceInfo.value),
     deviceStatus: computed(() => deviceStatus.value),
+    getCurrentProtocol,
     connectDevice,
     setReportRate,
-    setCPI,
+    setDPI,
     setBacklightMode,
     setBacklightBrightness,
     setBacklightFrequency,

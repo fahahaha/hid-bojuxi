@@ -17,15 +17,17 @@ export interface DeviceProtocol {
     getBattery: number[]
     /** 获取回报率命令 */
     getReportRate: number[]
-    /** 获取 CPI 命令 */
-    getCPI: number[]
+    /** 获取 DPI 命令 */
+    getDPI: number[]
     /** 获取背光模式命令 */
     getBacklight: number[]
+    /** 获取按键映射命令 */
+    getButtonMapping: number[]
 
     /** 设置回报率 */
     setReportRate: (rate: number) => number[]
-    /** 设置 CPI */
-    setCPI: (level: number, value: number) => number[]
+    /** 设置 DPI */
+    setDPI: (level: number, value: number) => number[]
     /** 设置背光模式 */
     setBacklightMode: (mode: number) => number[]
     /** 设置背光亮度 */
@@ -48,9 +50,37 @@ export interface DeviceProtocol {
     battery: (response: Uint8Array) => number
     /** 解析回报率 */
     reportRate: (response: Uint8Array) => number
-    /** 解析 CPI */
-    cpi: (response: Uint8Array) => number
+    /** 解析 DPI (返回当前 DPI 值和档位) */
+    dpi: (response: Uint8Array) => {
+      value: number
+      level: number
+    }
     /** 解析背光模式 */
     backlight: (response: Uint8Array) => number
+    /** 解析按键映射 */
+    buttonMapping: (response: Uint8Array) => Array<{
+      index: number
+      code: number
+      modifier: number
+      extra: number
+    }>
+  }
+
+  /** 设备特性配置 (可选) */
+  features?: {
+    /** 支持的 DPI 档位列表 */
+    supportedDPI?: number[]
+    /** 最大 DPI 档位数 */
+    maxDPILevels?: number
+    /** 支持的回报率列表 */
+    supportedReportRates?: number[]
+    /** 按键数量 */
+    buttonCount?: number
+    /** 是否支持 RGB 背光 */
+    hasRGB?: boolean
+    /** 是否有电池 */
+    hasBattery?: boolean
+    /** 是否支持板载内存 */
+    hasOnboardMemory?: boolean
   }
 }

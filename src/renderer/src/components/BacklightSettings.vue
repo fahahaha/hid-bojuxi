@@ -1,13 +1,21 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <!-- 背光模式 -->
-    <div class="bg-white rounded-xl shadow-sm p-5 card-hover md:col-span-1">
+    <div class="bg-white rounded-xl shadow-sm p-5 card-hover md:col-span-1" :class="{ 'opacity-60': !supportsRGB }">
       <h3 class="text-lg font-semibold mb-4 flex items-center">
         <i class="fa fa-lightbulb-o text-warning mr-2"></i>背光模式
+        <span v-if="!supportsRGB" class="ml-2 text-xs text-red-500 font-normal">
+          (不支持)
+        </span>
       </h3>
       <p class="text-gray-medium text-sm mb-4">选择鼠标的LED背光效果模式</p>
 
-      <div class="space-y-3">
+      <div v-if="!supportsRGB" class="text-center py-8 text-gray-400">
+        <i class="fa fa-exclamation-circle text-3xl mb-2"></i>
+        <p class="text-sm">当前设备不支持背光功能</p>
+      </div>
+
+      <div v-else class="space-y-3">
         <button
           v-for="mode in backlightModes"
           :key="mode.value"
@@ -26,13 +34,21 @@
     </div>
 
     <!-- 背光颜色和亮度 -->
-    <div class="bg-white rounded-xl shadow-sm p-5 card-hover md:col-span-2">
+    <div class="bg-white rounded-xl shadow-sm p-5 card-hover md:col-span-2" :class="{ 'opacity-60': !supportsRGB }">
       <h3 class="text-lg font-semibold mb-4 flex items-center">
         <i class="fa fa-paint-brush text-primary mr-2"></i>背光颜色与亮度
+        <span v-if="!supportsRGB" class="ml-2 text-xs text-red-500 font-normal">
+          (不支持)
+        </span>
       </h3>
       <p class="text-gray-medium text-sm mb-4">自定义鼠标背光的颜色和亮度</p>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-if="!supportsRGB" class="text-center py-12 text-gray-400">
+        <i class="fa fa-exclamation-circle text-3xl mb-2"></i>
+        <p class="text-sm">当前设备不支持背光颜色和亮度设置</p>
+      </div>
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- 颜色选择 -->
         <div>
           <label class="block text-sm text-gray-dark mb-2">背光颜色</label>
@@ -101,23 +117,34 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="mt-6 flex justify-end space-x-3">
-        <button @click="resetBacklight" class="btn-secondary">
-          <i class="fa fa-refresh mr-1"></i>重置
-        </button>
+        <div class="mt-6 flex justify-end space-x-3">
+          <button @click="resetBacklight" class="btn-secondary">
+            <i class="fa fa-refresh mr-1"></i>重置
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 
-const { setBacklightMode, setBacklightBrightness, setBacklightFrequency, setBacklightColor } =
+const { setBacklightMode, setBacklightBrightness, setBacklightFrequency, setBacklightColor, getCurrentProtocol, isConnected } =
   useWebHID()
+
+// 获取设备特性
+const deviceFeatures = computed(() => {
+  const protocol = getCurrentProtocol()
+  return protocol?.features || null
+})
+
+// 是否支持 RGB 背光
+const supportsRGB = computed(() => {
+  return isConnected.value && (deviceFeatures.value?.hasRGB !== false)
+})
 
 const backlightModes = [
   { value: 0, label: '常灭', iconClass: 'bg-gray-medium' },
@@ -141,6 +168,11 @@ const brightness = ref(80)
 const frequency = ref(3)
 
 async function handleSetBacklightMode(mode: number) {
+  if (!supportsRGB.value) {
+    console.warn('当前设备不支持背光设置')
+    return
+  }
+
   selectedMode.value = mode
   const result = await setBacklightMode(mode)
   if (!result.success) {
@@ -149,6 +181,11 @@ async function handleSetBacklightMode(mode: number) {
 }
 
 async function handleSetColor(color: string) {
+  if (!supportsRGB.value) {
+    console.warn('当前设备不支持背光颜色设置')
+    return
+  }
+
   selectedColor.value = color
   const result = await setBacklightColor(color)
   if (!result.success) {
@@ -157,6 +194,11 @@ async function handleSetColor(color: string) {
 }
 
 async function handleSetBrightness() {
+  if (!supportsRGB.value) {
+    console.warn('当前设备不支持背光亮度设置')
+    return
+  }
+
   const result = await setBacklightBrightness(brightness.value)
   if (!result.success) {
     console.error('设置背光亮度失败:', result.message)
@@ -164,6 +206,11 @@ async function handleSetBrightness() {
 }
 
 async function handleSetFrequency() {
+  if (!supportsRGB.value) {
+    console.warn('当前设备不支持背光频率设置')
+    return
+  }
+
   const result = await setBacklightFrequency(frequency.value)
   if (!result.success) {
     console.error('设置背光频率失败:', result.message)

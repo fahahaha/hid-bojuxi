@@ -1,9 +1,6 @@
 import { DeviceProtocol } from './index'
-import { razerProtocol } from './razer'
-import { logitechProtocol } from './logitech'
-import { steelseriesProtocol } from './steelseries'
 import { genericProtocol } from './generic'
-import {yhhProtocol} from "./yhh";
+import { yhhProtocol } from './yhh'
 
 /**
  * 协议注册表
@@ -12,9 +9,6 @@ import {yhhProtocol} from "./yhh";
  */
 export const protocolRegistry: DeviceProtocol[] = [
   yhhProtocol,
-  razerProtocol,
-  logitechProtocol,
-  steelseriesProtocol,
   genericProtocol // 默认协议，匹配所有设备
 ]
 
