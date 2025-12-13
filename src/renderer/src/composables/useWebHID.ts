@@ -120,6 +120,51 @@ export function useWebHID() {
   }
 
   /**
+   * 尝试获取设备信息以验证设备是否可用
+   * @param testDevice 要测试的设备
+   * @returns 是否成功获取设备信息
+   */
+  async function tryGetDeviceInfo(testDevice: HIDDevice): Promise<boolean> {
+    try {
+      const protocol = detectProtocol(testDevice)
+      const command = protocol.commands.getDeviceInfo
+
+      console.log(`[设备验证] 尝试获取设备信息: ${testDevice.productName || '未知设备'}`)
+
+      // 发送获取设备信息命令
+      await testDevice.sendReport(0, new Uint8Array(command))
+
+      // 等待响应（超时时间设置为 500ms，比正常的短一些）
+      const response = await new Promise<Uint8Array | null>((resolve) => {
+        const timeoutId = setTimeout(() => {
+          testDevice.removeEventListener('inputreport', handler)
+          resolve(null)
+        }, 500)
+
+        const handler = (event: HIDInputReportEvent) => {
+          clearTimeout(timeoutId)
+          testDevice.removeEventListener('inputreport', handler)
+          const data = new Uint8Array(event.data.buffer)
+          resolve(data)
+        }
+
+        testDevice.addEventListener('inputreport', handler)
+      })
+
+      if (response && response.length > 0) {
+        console.log(`[设备验证] 成功: ${testDevice.productName || '未知设备'}`)
+        return true
+      }
+
+      console.log(`[设备验证] 失败: 未收到响应`)
+      return false
+    } catch (err) {
+      console.log(`[设备验证] 失败:`, err)
+      return false
+    }
+  }
+
+  /**
    * 初始化设备连接（内部函数）
    * @param selectedDevice 要连接的设备
    */
@@ -134,8 +179,6 @@ export function useWebHID() {
       // 检测设备协议
       currentProtocol.value = detectProtocol(device)
       console.log(`[协议检测] 使用协议: ${currentProtocol.value.name}`)
-
-      await device.open()
 
       // 连接后自动延迟 100ms
       await new Promise((resolve) => setTimeout(resolve, 100))
@@ -217,8 +260,42 @@ export function useWebHID() {
         return { success: false, message: '没有可控制的 HID 设备' }
       }
 
-      // 连接第一个可用设备
-      return await initializeDevice(vendorDevices[0])
+      console.log(`[自动连接] 找到 ${vendorDevices.length} 个可控制的设备，开始轮询验证...`)
+
+      // 轮询验证每个设备，找到第一个能正确响应的设备
+      for (const d of vendorDevices) {
+        try {
+          console.log(`[自动连接] 尝试设备: ${d.productName || '未知设备'}`)
+          await d.open()
+
+          // 连接后延迟 100ms
+          await new Promise((resolve) => setTimeout(resolve, 100))
+
+          // 尝试获取设备信息以验证设备
+          const ok = await tryGetDeviceInfo(d)
+
+          if (ok) {
+            console.log(`[自动连接] 验证成功，使用设备: ${d.productName || '未知设备'}`)
+            // 找到可用设备，进行完整初始化
+            return await initializeDevice(d)
+          }
+
+          // 验证失败，关闭设备继续尝试下一个
+          console.log(`[自动连接] 验证失败，关闭设备: ${d.productName || '未知设备'}`)
+          await d.close()
+        } catch (err) {
+          console.warn(`[自动连接] 设备打开失败: ${d.productName || '未知设备'}`, err)
+          try {
+            if (d.opened) {
+              await d.close()
+            }
+          } catch (closeErr) {
+            console.warn('[自动连接] 关闭设备失败', closeErr)
+          }
+        }
+      }
+
+      return { success: false, message: '未找到可用的游戏鼠标设备' }
     } catch (err: any) {
       console.error('[自动连接] 失败:', err)
       return { success: false, message: err.message || '自动连接失败' }
@@ -267,8 +344,42 @@ export function useWebHID() {
         throw new Error('未找到可控制的 HID 接口')
       }
 
-      // 连接选中的设备
-      return await initializeDevice(vendorDevices[0])
+      console.log(`[设备连接] 找到 ${vendorDevices.length} 个可控制的设备，开始轮询验证...`)
+
+      // 轮询验证每个设备，找到第一个能正确响应的设备
+      for (const d of vendorDevices) {
+        try {
+          console.log(`[设备连接] 尝试设备: ${d.productName || '未知设备'}`)
+          await d.open()
+
+          // 连接后延迟 100ms
+          await new Promise((resolve) => setTimeout(resolve, 100))
+
+          // 尝试获取设备信息以验证设备
+          const ok = await tryGetDeviceInfo(d)
+
+          if (ok) {
+            console.log(`[设备连接] 验证成功，使用设备: ${d.productName || '未知设备'}`)
+            // 找到可用设备，进行完整初始化
+            return await initializeDevice(d)
+          }
+
+          // 验证失败，关闭设备继续尝试下一个
+          console.log(`[设备连接] 验证失败，关闭设备: ${d.productName || '未知设备'}`)
+          await d.close()
+        } catch (err) {
+          console.warn(`[设备连接] 设备打开失败: ${d.productName || '未知设备'}`, err)
+          try {
+            if (d.opened) {
+              await d.close()
+            }
+          } catch (closeErr) {
+            console.warn('[设备连接] 关闭设备失败', closeErr)
+          }
+        }
+      }
+
+      return { success: false, message: '未找到可用的游戏鼠标设备' }
     } catch (err: any) {
       console.error('连接失败:', err)
       return { success: false, message: err.message || '无法连接到设备，请重试' }
