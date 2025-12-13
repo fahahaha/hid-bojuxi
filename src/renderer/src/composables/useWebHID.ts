@@ -195,8 +195,7 @@ export function useWebHID() {
       await getCurrentScrollDirection()
 
       // 定时更新电池状态
-      await getBattery()
-      // setInterval(getBattery, 5000)
+      setInterval(getBattery, 5000)
 
       // 监听设备断开
       navigator.hid.addEventListener('disconnect', (event: HIDConnectionEvent) => {
