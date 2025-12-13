@@ -120,41 +120,12 @@ export function useWebHID() {
   }
 
   /**
-   * 连接设备
+   * 初始化设备连接（内部函数）
+   * @param selectedDevice 要连接的设备
    */
-  async function connectDevice(): Promise<{ success: boolean; message: string }> {
+  async function initializeDevice(selectedDevice: HIDDevice): Promise<{ success: boolean; message: string }> {
     try {
-      if (!navigator.hid) {
-        return { success: false, message: '您的浏览器不支持WebHID API，请使用最新版Edge或Chrome' }
-      }
-
-      if (!window.isSecureContext) {
-        return { success: false, message: '请通过localhost或HTTPS访问以使用WebHID功能' }
-      }
-
-      // 先检查是否有已授权的设备
-      const existingDevices = await navigator.hid.getDevices()
-      console.log(`[设备连接] 已授权设备数量: ${existingDevices.length}`)
-
-      // 如果有已授权的设备，先尝试关闭它们
-      for (const existingDevice of existingDevices) {
-        if (existingDevice.opened) {
-          console.log('[设备连接] 发现已打开的设备，正在关闭...')
-          try {
-            await existingDevice.close()
-          } catch (err) {
-            console.warn('[设备连接] 关闭已有设备失败', err)
-          }
-        }
-      }
-
-      const devices = await navigator.hid.requestDevice({ filters: [] })
-
-      if (devices.length === 0) {
-        return { success: false, message: '未选择设备' }
-      }
-
-      device = devices[0]
+      device = selectedDevice
       console.log(`[设备连接] 尝试连接设备: ${device.productName || '未知设备'}`)
       console.log(
         `[设备信息] VID: 0x${device.vendorId.toString(16)}, PID: 0x${device.productId.toString(16)}`
@@ -165,6 +136,9 @@ export function useWebHID() {
       console.log(`[协议检测] 使用协议: ${currentProtocol.value.name}`)
 
       await device.open()
+
+      // 连接后自动延迟 100ms
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
       isConnected.value = true
       deviceInfo.value.status = '已连接'
@@ -193,6 +167,108 @@ export function useWebHID() {
       })
 
       return { success: true, message: `已成功连接设备: ${device.productName || '未知设备'}` }
+    } catch (err: any) {
+      console.error('连接失败:', err)
+      return { success: false, message: err.message || '无法连接到设备，请重试' }
+    }
+  }
+
+  /**
+   * 自动连接已授权的设备（页面加载时调用）
+   */
+  async function autoConnectDevice(): Promise<{ success: boolean; message: string }> {
+    try {
+      if (!navigator.hid) {
+        return { success: false, message: '您的浏览器不支持WebHID API' }
+      }
+
+      if (!window.isSecureContext) {
+        return { success: false, message: '请通过localhost或HTTPS访问' }
+      }
+
+      // 获取已授权的设备
+      const existingDevices = await navigator.hid.getDevices()
+      console.log(`[自动连接] 已授权设备数量: ${existingDevices.length}`)
+
+      if (existingDevices.length === 0) {
+        return { success: false, message: '没有已授权的设备' }
+      }
+
+      // 关闭所有已打开的设备
+      for (const existingDevice of existingDevices) {
+        if (existingDevice.opened) {
+          console.log(`[自动连接] 关闭已打开的设备: ${existingDevice.productName || '未知设备'}`)
+          try {
+            await existingDevice.close()
+          } catch (err) {
+            console.warn('[自动连接] 关闭已有设备失败', err)
+          }
+        }
+      }
+
+      // 筛选可控制的设备
+      const vendorDevices = existingDevices.filter(d =>
+        d.collections.some(c =>
+          c.outputReports.length > 0 || c.featureReports.length > 0
+        )
+      )
+
+      if (vendorDevices.length === 0) {
+        return { success: false, message: '没有可控制的 HID 设备' }
+      }
+
+      // 连接第一个可用设备
+      return await initializeDevice(vendorDevices[0])
+    } catch (err: any) {
+      console.error('[自动连接] 失败:', err)
+      return { success: false, message: err.message || '自动连接失败' }
+    }
+  }
+
+  /**
+   * 手动连接设备（用户点击连接按钮时调用）
+   */
+  async function connectDevice(): Promise<{ success: boolean; message: string }> {
+    try {
+      if (!navigator.hid) {
+        return { success: false, message: '您的浏览器不支持WebHID API，请使用最新版Edge或Chrome' }
+      }
+
+      if (!window.isSecureContext) {
+        return { success: false, message: '请通过localhost或HTTPS访问以使用WebHID功能' }
+      }
+
+      // 先检查是否有已授权的设备，并关闭所有已打开的设备
+      const existingDevices = await navigator.hid.getDevices()
+      console.log(`[设备连接] 已授权设备数量: ${existingDevices.length}`)
+
+      // 关闭所有已打开的设备（无论是否是当前设备）
+      for (const existingDevice of existingDevices) {
+        if (existingDevice.opened) {
+          console.log(`[设备连接] 关闭已打开的设备: ${existingDevice.productName || '未知设备'}`)
+          try {
+            await existingDevice.close()
+          } catch (err) {
+            console.warn('[设备连接] 关闭已有设备失败', err)
+          }
+        }
+      }
+
+      // 请求用户选择设备
+      const devices = await navigator.hid.requestDevice({ filters: [] })
+
+      const vendorDevices = devices.filter(d =>
+        d.collections.some(c =>
+          c.outputReports.length > 0 || c.featureReports.length > 0
+        )
+      )
+
+      if (vendorDevices.length === 0) {
+        throw new Error('未找到可控制的 HID 接口')
+      }
+
+      // 连接选中的设备
+      return await initializeDevice(vendorDevices[0])
     } catch (err: any) {
       console.error('连接失败:', err)
       return { success: false, message: err.message || '无法连接到设备，请重试' }
@@ -545,6 +621,7 @@ export function useWebHID() {
     deviceStatus: computed(() => deviceStatus.value),
     getCurrentProtocol,
     connectDevice,
+    autoConnectDevice,
     setReportRate,
     setDPI,
     setScrollDirection,

@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useWebHID } from './composables/useWebHID'
 import BasicSettings from './components/BasicSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
@@ -129,7 +129,7 @@ import ButtonMapping from './components/ButtonMapping.vue'
 import MacroManagement from './components/MacroManagement.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 
-const { isConnected, deviceStatus, connectDevice } = useWebHID()
+const { isConnected, deviceStatus, connectDevice, autoConnectDevice } = useWebHID()
 
 const activeTab = ref('basic')
 
@@ -179,6 +179,16 @@ function showNotification(type: string, title: string, message: string) {
 function hideNotification() {
   notification.value.show = false
 }
+
+// 页面加载时自动连接已授权的设备
+onMounted(async () => {
+  const result = await autoConnectDevice()
+  if (result.success) {
+    console.log('[自动连接] 成功:', result.message)
+  } else {
+    console.log('[自动连接] 失败:', result.message)
+  }
+})
 </script>
 
 <style scoped>
