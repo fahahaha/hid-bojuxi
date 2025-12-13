@@ -9,16 +9,15 @@
 
     <div class="mapping-layout">
       <!-- 鼠标按键示意图 -->
-      <div class="mouse-diagram">
+      <div class="mouse-diagram mouse-mode">
         <div class="mouse-body">
           <!-- 按键标记 -->
           <button
             v-for="(button, index) in buttons"
             :key="index"
             @click="selectButton(index)"
-            class="button-marker"
-            :class="{ active: selectedButton === index }"
-            :style="button.style"
+            class="mouse-key"
+            :class="['key' + index, { active: selectedButton === index }]"
           >
             <span>{{ index + 1 }}</span>
           </button>
@@ -128,23 +127,19 @@
 import { ref } from 'vue'
 
 const buttons = [
-  { style: 'width: 48px; height: 32px; left: 0px; top: 8px;' },
-  { style: 'width: 48px; height: 32px; left: 56px; top: 8px;' },
-  { style: 'width: 48px; height: 32px; left: 112px; top: 0px;' },
-  { style: 'width: 24px; height: 64px; left: 110px; top: 80px;' },
-  { style: 'width: 24px; height: 64px; left: 130px; top: 80px;' },
-  { style: 'width: 80px; height: 24px; left: 40px; top: 160px;' },
-  { style: 'width: 80px; height: 24px; left: 40px; top: 180px;' }
+  {}, // 左键
+  {}, // 右键
+  {}, // 中键
+  {}, // 后退
+  {} // 前进
 ]
 
 const buttonNames = [
   '左键(按键 1)',
-  '中键(按键 2)',
-  '右键(按键 3)',
-  '侧键前(按键 4)',
-  '侧键后(按键 5)',
-  '滚轮上(按键 6)',
-  '滚轮下(按键 7)'
+  '右键(按键 2)',
+  '中键(按键 3)',
+  '后退(按键 4)',
+  '前进(按键 5)'
 ]
 
 const modifiers = [
@@ -225,50 +220,151 @@ function resetButton() {
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
 
 .mouse-body {
-  position: relative;
   width: 16rem;
   height: 24rem;
-  background-color: rgb(243, 244, 246);
-  border-radius: 9999px;
+  background-image: url('../assets/mouse.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   padding: 1rem;
 }
 
-.mouse-body::before {
-  content: '';
+/* 鼠标按键基础样式 */
+.mouse-mode .mouse-key {
   position: absolute;
-  inset: 1rem;
-  background-color: rgb(229, 231, 235);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.button-marker {
-  position: absolute;
-  border-radius: 0.375rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 32px;
+  width: 80px;
+  -moz-user-select: none;
+  user-select: none;
+  border-radius: 0.25rem;
+  border-width: 2px;
+  --tw-bg-opacity: 1;
+  background-color: rgba(22, 93, 255, 0.2);
+  text-align: center;
+  line-height: 2rem;
+  --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
   cursor: pointer;
   transition: all 0.2s;
-  background-color: rgba(22, 93, 255, 0.2);
   border: none;
   z-index: 1;
 }
 
-.button-marker:hover {
+.mouse-mode .mouse-key:hover {
   background-color: rgba(22, 93, 255, 0.25);
 }
 
-.button-marker.active {
+.mouse-mode .mouse-key.active {
   background-color: rgba(22, 93, 255, 0.3);
 }
 
-.button-marker span {
+.mouse-mode .mouse-key span {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+/* 连接线基础样式 */
+.mouse-mode .mouse-key:before {
+  content: "";
+  position: absolute;
+  top: 0.85rem;
+  height: 1px;
+  border-bottom-width: 1px;
+  --tw-border-opacity: 1;
+  border-color: rgb(2 132 199 / var(--tw-border-opacity));
+  border-bottom-style: solid;
+}
+
+/* 连接线末端小圆圈 */
+.mouse-mode .mouse-key:after {
+  content: "";
+  position: absolute;
+  top: 11px;
+  width: 8px;
+  height: 8px;
+  background-color: rgb(2 132 199);
+  border-radius: 50%;
+  z-index: 2;
+}
+
+/* 按键 1 - 左键 */
+.mouse-mode .key0 {
+  top: 5px;
+  left: 0;
+}
+
+.mouse-mode .key0:before {
+  left: 5rem;
+  width: 86px;
+}
+
+.mouse-mode .key0:after {
+  left: calc(5rem + 86px - 4px);
+}
+
+/* 按键 2 - 右键 */
+.mouse-mode .key1 {
+  top: 5px;
+  right: 0;
+}
+
+.mouse-mode .key1:before {
+  right: 5rem;
+  width: 86px;
+}
+
+.mouse-mode .key1:after {
+  right: calc(5rem + 86px - 4px);
+}
+
+/* 按键 3 - 中键 */
+.mouse-mode .key2 {
+  top: 55px;
+  right: 0;
+}
+
+.mouse-mode .key2:before {
+  right: 5rem;
+  width: 118px;
+}
+
+.mouse-mode .key2:after {
+  right: calc(5rem + 118px - 4px);
+}
+
+/* 按键 4 - 前进 */
+.mouse-mode .key3 {
+  top: 112px;
+  left: 0;
+}
+
+.mouse-mode .key3:before {
+  left: 5rem;
+  width: 29px;
+}
+
+.mouse-mode .key3:after {
+  left: calc(5rem + 29px - 4px);
+}
+
+/* 按键 5 - 后退 */
+.mouse-mode .key4 {
+  top: 180px;
+  left: 0;
+}
+
+.mouse-mode .key4:before {
+  left: 5rem;
+  width: 29px;
+}
+
+.mouse-mode .key4:after {
+  left: calc(5rem + 29px - 4px);
 }
 
 .button-settings {
