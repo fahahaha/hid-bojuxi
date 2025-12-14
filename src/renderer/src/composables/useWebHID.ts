@@ -70,14 +70,30 @@ export function useWebHID() {
       }, timeout)
 
       const handler = (event: HIDInputReportEvent) => {
-        clearTimeout(timeoutId)
-        device?.removeEventListener('inputreport', handler)
-        const data = new Uint8Array(event.data.buffer)
+        // Chrome bug fix: 立即复制数据，避免异步访问时数据被覆盖。在某些 Chrome 版本（尤其是早期支持 WebHID 的版本，如 Chrome 89~105 左右），存在以下行为：
+        //浏览器在事件处理函数执行完毕后，就立即释放或重用该 ArrayBuffer 的内存。
+        // 如果你在 Promise、setTimeout、或其他异步回调中才去读取 event.data.buffer，此时内存可能已被清空或覆盖。
+        // 即使你同步地创建了 new Uint8Array(event.data.buffer)，但如果这个 Uint8Array 的底层数组被释放，后续访问也会出错（虽然多数情况下视图会“持有引用”，但早期实现有缺陷）。
+        const data = new Uint8Array(event.data.byteLength)
+        for (let i = 0; i < event.data.byteLength; i++) {
+          data[i] = event.data.getUint8(i)
+        }
+
+        // Chrome bug workaround: 过滤掉不是以 0xAA 开头的响应
+        // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
+        if (data[0] !== 0xAA) {
+          // 忽略无效响应，继续等待正确的响应
+          return
+        }
+
         console.log(
           `[接收响应] Report ID: ${event.reportId}, 数据: [${Array.from(data)
             .map((d) => '0x' + d.toString(16).padStart(2, '0'))
             .join(', ')}]`
         )
+
+        clearTimeout(timeoutId)
+        device?.removeEventListener('inputreport', handler)
         resolve(data)
       }
 
@@ -142,9 +158,24 @@ export function useWebHID() {
         }, 500)
 
         const handler = (event: HIDInputReportEvent) => {
+          // Chrome bug fix: 立即复制数据，避免异步访问时数据被覆盖。在某些 Chrome 版本（尤其是早期支持 WebHID 的版本，如 Chrome 89~105 左右），存在以下行为：
+          //浏览器在事件处理函数执行完毕后，就立即释放或重用该 ArrayBuffer 的内存。
+          // 如果你在 Promise、setTimeout、或其他异步回调中才去读取 event.data.buffer，此时内存可能已被清空或覆盖。
+          // 即使你同步地创建了 new Uint8Array(event.data.buffer)，但如果这个 Uint8Array 的底层数组被释放，后续访问也会出错（虽然多数情况下视图会“持有引用”，但早期实现有缺陷）。
+          const data = new Uint8Array(event.data.byteLength)
+          for (let i = 0; i < event.data.byteLength; i++) {
+            data[i] = event.data.getUint8(i)
+          }
+
+          // Chrome bug workaround: 过滤掉不是以 0xAA 开头的响应
+          // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
+          if (data[0] !== 0xAA) {
+            // 忽略无效响应，继续等待正确的响应
+            return
+          }
+
           clearTimeout(timeoutId)
           testDevice.removeEventListener('inputreport', handler)
-          const data = new Uint8Array(event.data.buffer)
           resolve(data)
         }
 
