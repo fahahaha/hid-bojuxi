@@ -4,7 +4,7 @@
       <i class="fa fa-keyboard-o icon-primary"></i>鼠标按键自定义
     </h3>
     <p class="section-description">
-      自定义鼠标各按键的功能,可设置为单键、组合键、宏或其他功能
+      自定义鼠标各按键的功能,可设置为鼠标功能、多媒体键或键盘组合键
     </p>
 
     <div class="mapping-layout">
@@ -13,13 +13,14 @@
         <div class="mouse-body">
           <!-- 按键标记 -->
           <button
-            v-for="(button, index) in buttons"
+            v-for="(_, index) in buttonMappings.slice(0, 5)"
             :key="index"
             @click="selectButton(index)"
             class="mouse-key"
-            :class="['key' + index, { active: selectedButton === index }]"
+            :class="['key' + index, { active: selectedButton === index, disabled: index === 0 }]"
+            :disabled="index === 0"
           >
-            <span>{{ index + 1 }}</span>
+            <span class="button-label">{{ getButtonLabel(index) }}</span>
           </button>
         </div>
       </div>
@@ -29,92 +30,133 @@
         <div class="settings-panel">
           <div class="panel-header">
             <h4 class="panel-title">{{ buttonNames[selectedButton] }}</h4>
-            <button @click="resetButton" class="reset-button">
+            <button @click="resetButton" class="reset-button" :disabled="selectedButton === 0">
               <i class="fa fa-refresh"></i>恢复默认
             </button>
           </div>
 
-          <div class="settings-form">
-            <div class="form-group">
-              <label class="form-label">功能类型</label>
-              <select v-model="functionType" class="form-select">
-                <option value="normal">默认功能</option>
-                <option value="single">单键</option>
-                <option value="combination">组合键</option>
-                <option value="macro">宏</option>
-                <option value="media">媒体控制</option>
-                <option value="windows">Windows功能</option>
-              </select>
+          <div v-if="selectedButton === 0" class="disabled-notice">
+            <i class="fa fa-info-circle"></i>
+            左键不允许修改
+          </div>
+
+          <div v-else class="settings-form">
+            <!-- 标签页切换 -->
+            <div class="tab-buttons">
+              <button
+                v-for="tab in tabs"
+                :key="tab.id"
+                @click="activeTab = tab.id"
+                class="tab-button"
+                :class="{ active: activeTab === tab.id }"
+              >
+                <i :class="tab.icon"></i>
+                {{ tab.name }}
+              </button>
             </div>
 
-            <!-- 单键设置 -->
-            <div v-if="functionType === 'single'" class="form-group">
-              <label class="form-label">选择按键</label>
-              <input
-                type="text"
-                v-model="singleKey"
-                class="input-control"
-                placeholder="按下要设置的键"
-              />
-            </div>
-
-            <!-- 组合键设置 -->
-            <div v-if="functionType === 'combination'">
-              <label class="form-label">组合键</label>
-              <div class="modifier-group">
-                <label
-                  v-for="modifier in modifiers"
-                  :key="modifier.value"
-                  class="modifier-checkbox"
+            <!-- 鼠标功能标签页 -->
+            <div v-if="activeTab === 'mouse'" class="tab-content">
+              <div class="button-grid">
+                <button
+                  v-for="btn in mouseButtons"
+                  :key="btn.id"
+                  @click="applyMapping(btn.code)"
+                  class="function-button"
+                  :class="{ active: isCurrentMapping(btn.code) }"
                 >
-                  <input
-                    type="checkbox"
-                    v-model="selectedModifiers"
-                    :value="modifier.value"
-                  />
-                  <span>{{ modifier.label }}</span>
-                </label>
+                  {{ btn.name }}
+                </button>
               </div>
-              <input
-                type="text"
-                v-model="combinationKey"
-                class="input-control"
-                placeholder="按下要设置的键"
-              />
             </div>
 
-            <!-- 宏设置 -->
-            <div v-if="functionType === 'macro'" class="form-group">
-              <label class="form-label">选择宏</label>
-              <select v-model="selectedMacro" class="form-select">
-                <option v-for="i in 5" :key="i" :value="i - 1">宏 {{ i }}</option>
-              </select>
+            <!-- 多媒体标签页 -->
+            <div v-if="activeTab === 'multimedia'" class="tab-content">
+              <div
+                v-for="category in multimediaCategories"
+                :key="category"
+                class="category-section"
+              >
+                <h5 class="category-title">{{ category }}</h5>
+                <div class="button-grid">
+                  <button
+                    v-for="btn in getMultimediaByCategory(category)"
+                    :key="btn.id"
+                    @click="applyMapping(btn.code)"
+                    class="function-button"
+                    :class="{ active: isCurrentMapping(btn.code) }"
+                  >
+                    {{ btn.name }}
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <!-- 媒体控制设置 -->
-            <div v-if="functionType === 'media'" class="form-group">
-              <label class="form-label">媒体功能</label>
-              <select v-model="selectedMedia" class="form-select">
-                <option value="play">播放/暂停</option>
-                <option value="stop">停止</option>
-                <option value="next">下一曲</option>
-                <option value="prev">上一曲</option>
-                <option value="volup">音量+</option>
-                <option value="voldown">音量-</option>
-                <option value="mute">静音</option>
-              </select>
+            <!-- 键盘按键标签页 -->
+            <div v-if="activeTab === 'keyboard'" class="tab-content">
+              <div class="keyboard-settings">
+                <div class="form-group">
+                  <label class="form-label">修饰键（可多选）</label>
+                  <div class="modifier-group">
+                    <label
+                      v-for="modifier in modifierKeys"
+                      :key="modifier.id"
+                      class="modifier-checkbox"
+                    >
+                      <input
+                        type="checkbox"
+                        v-model="selectedModifiers"
+                        :value="modifier.value"
+                      />
+                      <span>{{ modifier.name }}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">选择按键</label>
+                  <select v-model="selectedKey" class="form-select">
+                    <option value="">-- 请选择按键 --</option>
+                    <optgroup label="字母键">
+                      <option v-for="key in alphabetKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup label="数字键">
+                      <option v-for="key in numberKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup label="功能键">
+                      <option v-for="key in functionKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup label="特殊键">
+                      <option v-for="key in specialKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <button
+                  @click="applyKeyboardMapping"
+                  class="apply-button"
+                  :disabled="!selectedKey"
+                >
+                  <i class="fa fa-check"></i>
+                  保存按键
+                </button>
+              </div>
             </div>
 
-            <!-- Windows功能设置 -->
-            <div v-if="functionType === 'windows'" class="form-group">
-              <label class="form-label">Windows功能</label>
-              <select v-model="selectedWindows" class="form-select">
-                <option value="task">任务视图</option>
-                <option value="search">搜索</option>
-                <option value="lock">锁定</option>
-                <option value="menu">开始菜单</option>
-                <option value="desktop">显示桌面</option>
-              </select>
+            <!-- 宏标签页（暂不开放） -->
+            <div v-if="activeTab === 'macro'" class="tab-content">
+              <div class="disabled-notice">
+                <i class="fa fa-info-circle"></i>
+                宏功能暂未开放
+              </div>
             </div>
           </div>
         </div>
@@ -124,53 +166,193 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useWebHID } from '../composables/useWebHID'
+import {
+  mouseButtons,
+  multimediaButtons,
+  modifierKeys,
+  keyboardScancodes,
+  createKeyboardMapping,
+  getButtonDisplayName,
+  defaultButtonMappings,
+  type ButtonMapping
+} from '../config/buttonMappings'
 
-const buttons = [
-  {}, // 左键
-  {}, // 右键
-  {}, // 中键
-  {}, // 后退
-  {} // 前进
-]
+const { isConnected, getButtonMapping, setButtonMapping } = useWebHID()
+
+// 按键映射数据（8个按键，但只显示前5个）
+const buttonMappings = ref<number[][]>([...defaultButtonMappings])
+
+// UI按键索引到设备数组索引的映射
+// 根据实际测试，按键4和按键5在设备中的位置是对调的
+const uiToDeviceIndex = [0, 1, 2, 4, 3]  // UI索引 → 设备索引
 
 const buttonNames = [
   '左键(按键 1)',
   '右键(按键 2)',
   '中键(按键 3)',
-  '后退(按键 4)',
-  '前进(按键 5)'
-]
-
-const modifiers = [
-  { value: 'ctrl', label: 'Ctrl' },
-  { value: 'shift', label: 'Shift' },
-  { value: 'alt', label: 'Alt' },
-  { value: 'win', label: 'Win' }
+  '前进(按键 4)',
+  '后退(按键 5)'
 ]
 
 const selectedButton = ref(0)
-const functionType = ref('normal')
-const singleKey = ref('')
-const selectedModifiers = ref<string[]>([])
-const combinationKey = ref('')
-const selectedMacro = ref(0)
-const selectedMedia = ref('play')
-const selectedWindows = ref('task')
+const activeTab = ref('mouse')
 
+// 标签页配置
+const tabs = [
+  { id: 'mouse', name: '鼠标功能', icon: 'fa fa-mouse-pointer' },
+  { id: 'multimedia', name: '多媒体', icon: 'fa fa-music' },
+  { id: 'keyboard', name: '键盘按键', icon: 'fa fa-keyboard-o' },
+  { id: 'macro', name: '宏', icon: 'fa fa-code' }
+]
+
+// 多媒体分类
+const multimediaCategories = computed(() => {
+  const categories = new Set<string>()
+  multimediaButtons.forEach(btn => {
+    if (btn.category) categories.add(btn.category)
+  })
+  return Array.from(categories)
+})
+
+function getMultimediaByCategory(category: string): ButtonMapping[] {
+  return multimediaButtons.filter(btn => btn.category === category)
+}
+
+// 键盘按键选项
+const selectedModifiers = ref<number[]>([])
+const selectedKey = ref('')
+
+const alphabetKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+const functionKeys = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12']
+const specialKeys = ['Enter', 'Escape', 'Backspace', 'Tab', 'Space', 'Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'Up', 'Down', 'Left', 'Right']
+
+/**
+ * 选择按键
+ */
 function selectButton(index: number) {
+  if (index === 0) return // 左键不允许选择
   selectedButton.value = index
 }
 
-function resetButton() {
-  functionType.value = 'normal'
-  singleKey.value = ''
-  selectedModifiers.value = []
-  combinationKey.value = ''
-  selectedMacro.value = 0
-  selectedMedia.value = 'play'
-  selectedWindows.value = 'task'
+/**
+ * 获取按键显示标签
+ */
+function getButtonLabel(index: number): string {
+  const deviceIndex = uiToDeviceIndex[index]
+  const mapping = buttonMappings.value[deviceIndex]
+  if (!mapping) return `${index + 1}`
+
+  return getButtonDisplayName(mapping)
 }
+
+/**
+ * 检查是否是当前映射
+ */
+function isCurrentMapping(code: number[]): boolean {
+  const deviceIndex = uiToDeviceIndex[selectedButton.value]
+  const current = buttonMappings.value[deviceIndex]
+  if (!current) return false
+  return code.every((byte, i) => byte === current[i])
+}
+
+/**
+ * 应用映射
+ */
+async function applyMapping(code: number[]) {
+  if (selectedButton.value === 0) return // 左键不允许修改
+
+  const deviceIndex = uiToDeviceIndex[selectedButton.value]
+  console.log(`[按键映射] UI按键${selectedButton.value + 1} (设备索引${deviceIndex}) 设置为:`, code)
+  buttonMappings.value[deviceIndex] = [...code]
+  console.log('[按键映射] 完整映射数组:', buttonMappings.value)
+
+  // 发送到设备
+  await saveToDevice()
+}
+
+/**
+ * 应用键盘映射
+ */
+async function applyKeyboardMapping() {
+  if (!selectedKey.value || selectedButton.value === 0) return
+
+  const scancode = keyboardScancodes[selectedKey.value]
+  if (scancode === undefined) {
+    console.error('未知的按键:', selectedKey.value)
+    return
+  }
+
+  // 计算修饰键组合
+  const modifiers = selectedModifiers.value.reduce((acc, val) => acc | val, 0)
+
+  const code = createKeyboardMapping(modifiers, scancode)
+  const deviceIndex = uiToDeviceIndex[selectedButton.value]
+  buttonMappings.value[deviceIndex] = code
+
+  // 发送到设备
+  await saveToDevice()
+
+  // 重置选择
+  selectedModifiers.value = []
+  selectedKey.value = ''
+}
+
+/**
+ * 恢复默认
+ */
+async function resetButton() {
+  if (selectedButton.value === 0) return // 左键不允许修改
+
+  const deviceIndex = uiToDeviceIndex[selectedButton.value]
+  buttonMappings.value[deviceIndex] = [...defaultButtonMappings[deviceIndex]]
+
+  // 发送到设备
+  await saveToDevice()
+}
+
+/**
+ * 保存到设备
+ */
+async function saveToDevice() {
+  if (!isConnected.value) {
+    console.warn('设备未连接')
+    return
+  }
+
+  const result = await setButtonMapping(buttonMappings.value)
+  if (result.success) {
+    console.log('按键映射已保存:', result.message)
+  } else {
+    console.error('保存失败:', result.message)
+  }
+}
+
+/**
+ * 从设备加载按键映射
+ */
+async function loadFromDevice() {
+  if (!isConnected.value) {
+    console.warn('设备未连接，使用默认映射')
+    return
+  }
+
+  const mappings = await getButtonMapping()
+  if (mappings && mappings.length >= 5) {
+    // 只使用前5个按键的映射
+    buttonMappings.value = mappings
+    console.log('已加载按键映射:', mappings)
+  } else {
+    console.warn('无法加载按键映射，使用默认值')
+  }
+}
+
+// 组件挂载时加载按键映射
+onMounted(() => {
+  loadFromDevice()
+})
 </script>
 
 <style scoped>
@@ -231,52 +413,61 @@ function resetButton() {
   background-repeat: no-repeat;
   background-position: center;
   padding: 1rem;
+  position: relative;
 }
 
 /* 鼠标按键基础样式 */
 .mouse-mode .mouse-key {
   position: absolute;
-  height: 32px;
-  width: 80px;
-  -moz-user-select: none;
+  min-height: 32px;
+  min-width: 80px;
+  padding: 0.25rem 0.5rem;
   user-select: none;
   border-radius: 0.25rem;
   border-width: 2px;
-  --tw-bg-opacity: 1;
   background-color: rgba(22, 93, 255, 0.2);
   text-align: center;
-  line-height: 2rem;
-  --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.2s;
   border: none;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.mouse-mode .mouse-key:hover {
+.mouse-mode .mouse-key:hover:not(.disabled) {
   background-color: rgba(22, 93, 255, 0.25);
 }
 
 .mouse-mode .mouse-key.active {
   background-color: rgba(22, 93, 255, 0.3);
+  border: 2px solid rgba(22, 93, 255, 0.6);
 }
 
-.mouse-mode .mouse-key span {
-  font-size: 0.75rem;
+.mouse-mode .mouse-key.disabled {
+  background-color: rgba(128, 128, 128, 0.2);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mouse-mode .mouse-key .button-label {
+  font-size: 0.7rem;
   font-weight: 500;
+  word-break: break-word;
+  line-height: 1.2;
 }
 
 /* 连接线基础样式 */
 .mouse-mode .mouse-key:before {
   content: "";
   position: absolute;
-  top: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
   height: 1px;
   border-bottom-width: 1px;
-  --tw-border-opacity: 1;
-  border-color: rgb(2 132 199 / var(--tw-border-opacity));
+  border-color: rgb(2 132 199);
   border-bottom-style: solid;
 }
 
@@ -284,7 +475,8 @@ function resetButton() {
 .mouse-mode .mouse-key:after {
   content: "";
   position: absolute;
-  top: 11px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 8px;
   height: 8px;
   background-color: rgb(2 132 199);
@@ -295,7 +487,7 @@ function resetButton() {
 /* 按键 1 - 左键 */
 .mouse-mode .key0 {
   top: 5px;
-  left: 0;
+  left: -70px;
 }
 
 .mouse-mode .key0:before {
@@ -310,7 +502,7 @@ function resetButton() {
 /* 按键 2 - 右键 */
 .mouse-mode .key1 {
   top: 5px;
-  right: 0;
+  right: -65px;
 }
 
 .mouse-mode .key1:before {
@@ -325,7 +517,7 @@ function resetButton() {
 /* 按键 3 - 中键 */
 .mouse-mode .key2 {
   top: 55px;
-  right: 0;
+  right: -70px;
 }
 
 .mouse-mode .key2:before {
@@ -340,7 +532,7 @@ function resetButton() {
 /* 按键 4 - 前进 */
 .mouse-mode .key3 {
   top: 112px;
-  left: 0;
+  left: -70px;
 }
 
 .mouse-mode .key3:before {
@@ -355,7 +547,7 @@ function resetButton() {
 /* 按键 5 - 后退 */
 .mouse-mode .key4 {
   top: 180px;
-  left: 0;
+  left: -70px;
 }
 
 .mouse-mode .key4:before {
@@ -398,15 +590,117 @@ function resetButton() {
   transition: color 0.2s;
 }
 
-.reset-button:hover {
+.reset-button:hover:not(:disabled) {
   color: var(--color-primary);
+}
+
+.reset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .reset-button i {
   margin-right: 0.25rem;
 }
 
+.disabled-notice {
+  padding: 1rem;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  color: var(--color-gray-medium);
+  text-align: center;
+}
+
+.disabled-notice i {
+  margin-right: 0.5rem;
+}
+
 .settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 标签页 */
+.tab-buttons {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--color-gray-light);
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--color-gray-medium);
+  font-size: 0.875rem;
+  margin-bottom: -2px;
+}
+
+.tab-button:hover {
+  color: var(--color-primary);
+}
+
+.tab-button.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tab-button i {
+  margin-right: 0.25rem;
+}
+
+.tab-content {
+  min-height: 200px;
+}
+
+/* 按钮网格 */
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+}
+
+.function-button {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.function-button:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(22, 93, 255, 0.05);
+}
+
+.function-button.active {
+  border-color: var(--color-primary);
+  background-color: rgba(22, 93, 255, 0.1);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* 分类 */
+.category-section {
+  margin-bottom: 1.5rem;
+}
+
+.category-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-dark);
+  margin-bottom: 0.75rem;
+}
+
+/* 键盘设置 */
+.keyboard-settings {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -422,6 +716,7 @@ function resetButton() {
   display: block;
   font-size: 0.875rem;
   color: var(--color-gray-dark);
+  font-weight: 500;
 }
 
 .form-select {
@@ -441,23 +736,49 @@ function resetButton() {
 .modifier-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 1rem;
 }
 
 .modifier-checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
   cursor: pointer;
 }
 
 .modifier-checkbox input[type="checkbox"] {
   accent-color: var(--color-primary);
   cursor: pointer;
+  width: 18px;
+  height: 18px;
 }
 
 .modifier-checkbox span {
   font-size: 0.875rem;
+}
+
+.apply-button {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.apply-button:hover:not(:disabled) {
+  background-color: #1557cc;
+}
+
+.apply-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.apply-button i {
+  margin-right: 0.5rem;
 }
 </style>

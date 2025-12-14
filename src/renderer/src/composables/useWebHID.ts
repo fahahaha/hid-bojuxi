@@ -719,6 +719,67 @@ export function useWebHID() {
   }
 
   /**
+   * 获取按键映射
+   */
+  async function getButtonMapping(): Promise<number[][] | null> {
+    if (!device || !currentProtocol.value) return null
+
+    try {
+      const command = currentProtocol.value.commands.getButtonMapping
+      const response = await sendCommandAndWait(command)
+
+      if (!response || response.length < 40) {
+        console.error('获取按键映射失败: 响应数据不足')
+        return null
+      }
+
+      const buttons = currentProtocol.value.parsers.buttonMapping(response)
+
+      // 转换为 number[][] 格式
+      return buttons.map(btn => [
+        btn.code & 0xFF,
+        (btn.code >> 8) & 0xFF,
+        btn.modifier,
+        btn.extra
+      ])
+    } catch (err) {
+      console.error('获取按键映射失败:', err)
+      return null
+    }
+  }
+
+  /**
+   * 设置按键映射
+   */
+  async function setButtonMapping(buttonMappings: number[][]): Promise<{ success: boolean; message: string }> {
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
+
+    try {
+      // 检查协议是否支持按键映射设置
+      if (!currentProtocol.value.commands.setButtonMapping) {
+        return { success: false, message: '当前设备不支持按键映射设置' }
+      }
+
+      const command = currentProtocol.value.commands.setButtonMapping(buttonMappings)
+
+      if (command.length === 0) {
+        return { success: false, message: '按键映射数据格式错误' }
+      }
+
+      const success = await sendReport(command)
+
+      if (!success) return { success: false, message: '发送命令失败' }
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      return { success: true, message: '按键映射已更新' }
+    } catch (err: any) {
+      console.error('设置按键映射失败:', err)
+      return { success: false, message: '无法设置按键映射' }
+    }
+  }
+
+  /**
    * 获取当前设备协议
    */
   function getCurrentProtocol(): DeviceProtocol | null {
@@ -738,6 +799,8 @@ export function useWebHID() {
     setBacklightMode,
     setBacklightBrightness,
     setBacklightFrequency,
-    setBacklightColor
+    setBacklightColor,
+    getButtonMapping,
+    setButtonMapping
   }
 }

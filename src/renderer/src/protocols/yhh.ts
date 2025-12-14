@@ -171,7 +171,42 @@ export const yhhProtocol: DeviceProtocol = {
     setBacklightFrequency: (_frequency: number) => [],
 
     // 设置背光颜色 (暂不支持)
-    setBacklightColor: (_r: number, _g: number, _b: number) => []
+    setBacklightColor: (_r: number, _g: number, _b: number) => [],
+
+    // 设置按键映射
+    // 命令: 0x09
+    // 格式: [0x55, 0x09, 0xA5, 0x22, 0x20, 0x00, 0x00, 0x00,
+    //        按键1(4字节), 按键2(4字节), ..., 按键8(4字节),
+    //        固定尾部...]
+    // 参数: buttonMappings - 8个按键的映射数组，每个按键4字节
+    setButtonMapping: (buttonMappings: number[][]) => {
+      // 确保有8个按键配置
+      if (buttonMappings.length !== 8) {
+        console.error('按键映射必须包含8个按键')
+        return []
+      }
+
+      // 构建命令
+      const command = [
+        0x55, 0x09, 0xA5, 0x22, 0x20, 0x00, 0x00, 0x00
+      ]
+
+      // 添加8个按键的映射数据（每个4字节）
+      for (const mapping of buttonMappings) {
+        if (mapping.length !== 4) {
+          console.error('每个按键映射必须是4字节')
+          return []
+        }
+        command.push(...mapping)
+      }
+
+      // 填充到64字节
+      while (command.length < 64) {
+        command.push(0x00)
+      }
+
+      return command
+    }
   },
 
   parsers: {

@@ -40,6 +40,7 @@ export interface DeviceProtocol {
     setBacklightColor: (r: number, g: number, b: number) => number[]
     /** 设置滚轮方向 */
     setScrollDirection?: (direction: number, currentLevel: number) => number[]
+    setButtonMapping?:(buttonMappings: number[][]) => number[]
   }
 
   /** 响应解析器 */
