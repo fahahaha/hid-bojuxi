@@ -25,6 +25,10 @@ export interface DeviceProtocol {
     getButtonMapping: number[]
     /** 获取 滚轮 命令 */
     getScrollDirection?: number[]
+    /** 获取宏列表命令 */
+    getMacroList?: number[]
+    /** 获取宏数据命令 */
+    getMacroData?: (macroIndex: number) => number[]
 
     /** 设置回报率 */
     setReportRate: (rate: number) => number[]
@@ -40,7 +44,12 @@ export interface DeviceProtocol {
     setBacklightColor: (r: number, g: number, b: number) => number[]
     /** 设置滚轮方向 */
     setScrollDirection?: (direction: number, currentLevel: number) => number[]
-    setButtonMapping?:(buttonMappings: number[][]) => number[]
+    /** 设置按键映射 */
+    setButtonMapping?: (buttonMappings: number[][]) => number[]
+    /** 创建/更新宏 */
+    setMacro?: (macroIndex: number, macroEvents: number[]) => number[]
+    /** 删除宏 */
+    deleteMacro?: (macroIndex: number) => number[]
   }
 
   /** 响应解析器 */
@@ -69,7 +78,19 @@ export interface DeviceProtocol {
       modifier: number
       extra: number
     }>
+    /** 解析滚轮方向 */
     scrollDirection?: (response: Uint8Array) => number
+    /** 解析宏列表 */
+    macroList?: (response: Uint8Array) => Array<{
+      index: number
+      hasData: boolean
+    }>
+    /** 解析宏数据 */
+    macroData?: (response: Uint8Array) => Array<{
+      delay: number
+      eventType: number
+      keyCode: number
+    }>
   }
 
   /** 设备特性配置 (可选) */
@@ -90,5 +111,9 @@ export interface DeviceProtocol {
     hasOnboardMemory?: boolean
     /** 是否支持的滚轮方向 */
     hasScrollDirection?: boolean
+    /** 是否支持宏功能 */
+    hasMacro?: boolean
+    /** 最大宏数量 */
+    maxMacroCount?: number
   }
 }

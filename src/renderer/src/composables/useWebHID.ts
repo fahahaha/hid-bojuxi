@@ -811,6 +811,150 @@ export function useWebHID() {
   }
 
   /**
+   * 获取宏列表
+   */
+  async function getMacroList(): Promise<Array<{ index: number; hasData: boolean }> | null> {
+    if (!device || !currentProtocol.value) return null
+
+    try {
+      // 检查协议是否支持宏功能
+      if (!currentProtocol.value.commands.getMacroList || !currentProtocol.value.parsers.macroList) {
+        console.warn('[宏管理] 当前设备不支持宏功能')
+        return null
+      }
+
+      const command = currentProtocol.value.commands.getMacroList
+      const response = await sendCommandAndWait(command)
+
+      if (!response || response.length < 10) {
+        console.error('[宏管理] 获取宏列表失败: 响应数据不足')
+        return null
+      }
+
+      return currentProtocol.value.parsers.macroList(response)
+    } catch (err) {
+      console.error('[宏管理] 获取宏列表失败:', err)
+      return null
+    }
+  }
+
+  /**
+   * 获取宏数据
+   */
+  async function getMacroData(macroIndex: number): Promise<Array<{ delay: number; eventType: number; keyCode: number }> | null> {
+    if (!device || !currentProtocol.value) return null
+
+    try {
+      // 检查协议是否支持宏功能
+      if (!currentProtocol.value.commands.getMacroData || !currentProtocol.value.parsers.macroData) {
+        console.warn('[宏管理] 当前设备不支持宏功能')
+        return null
+      }
+
+      const command = currentProtocol.value.commands.getMacroData(macroIndex)
+      const response = await sendCommandAndWait(command)
+
+      if (!response || response.length < 16) {
+        console.error('[宏管理] 获取宏数据失败: 响应数据不足')
+        return null
+      }
+
+      return currentProtocol.value.parsers.macroData(response)
+    } catch (err) {
+      console.error('[宏管理] 获取宏数据失败:', err)
+      return null
+    }
+  }
+
+  /**
+   * 设置宏
+   */
+  async function setMacro(macroIndex: number, macroEvents: number[]): Promise<{ success: boolean; message: string }> {
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
+
+    try {
+      // 检查协议是否支持宏功能
+      if (!currentProtocol.value.commands.setMacro) {
+        return { success: false, message: '当前设备不支持宏功能' }
+      }
+
+      // 发送创建宏命令序列
+      // 1. 第一个命令: 初始化
+      const initCommand = [
+        0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00,
+        ...new Array(55).fill(0)
+      ]
+      await sendReport(initCommand)
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
+      // 2. 第二个命令: 准备写入
+      const prepareCommand = [
+        0x55, 0x0D, 0x00, 0x00, 0x08, 0x38,
+        ...new Array(58).fill(0)
+      ]
+      await sendReport(prepareCommand)
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
+      // 3. 第三个命令: 写入宏数据
+      const dataCommand = currentProtocol.value.commands.setMacro(macroIndex, macroEvents)
+      const success = await sendReport(dataCommand)
+
+      if (!success) return { success: false, message: '发送命令失败' }
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      return { success: true, message: `宏 ${macroIndex + 1} 已保存` }
+    } catch (err: any) {
+      console.error('[宏管理] 设置宏失败:', err)
+      return { success: false, message: '无法设置宏' }
+    }
+  }
+
+  /**
+   * 删除宏
+   */
+  async function deleteMacro(macroIndex: number): Promise<{ success: boolean; message: string }> {
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
+
+    try {
+      // 检查协议是否支持宏功能
+      if (!currentProtocol.value.commands.deleteMacro) {
+        return { success: false, message: '当前设备不支持宏功能' }
+      }
+
+      // 发送删除宏命令序列
+      // 1. 第一个命令: 初始化
+      const initCommand = [
+        0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00,
+        ...new Array(55).fill(0)
+      ]
+      await sendReport(initCommand)
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
+      // 2. 第二个命令: 准备删除
+      const prepareCommand = [
+        0x55, 0x0D, 0x00, 0x00, 0x08, 0x38,
+        ...new Array(58).fill(0)
+      ]
+      await sendReport(prepareCommand)
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
+      // 3. 第三个命令: 删除宏
+      const deleteCommand = currentProtocol.value.commands.deleteMacro(macroIndex)
+      const success = await sendReport(deleteCommand)
+
+      if (!success) return { success: false, message: '发送命令失败' }
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      return { success: true, message: `宏 ${macroIndex + 1} 已删除` }
+    } catch (err: any) {
+      console.error('[宏管理] 删除宏失败:', err)
+      return { success: false, message: '无法删除宏' }
+    }
+  }
+
+  /**
    * 获取当前设备协议
    */
   function getCurrentProtocol(): DeviceProtocol | null {
@@ -832,6 +976,10 @@ export function useWebHID() {
     setBacklightFrequency,
     setBacklightColor,
     getButtonMapping,
-    setButtonMapping
+    setButtonMapping,
+    getMacroList,
+    getMacroData,
+    setMacro,
+    deleteMacro
   }
 }

@@ -82,6 +82,24 @@ export const yhhProtocol: DeviceProtocol = {
       ...new Array(56).fill(0)
     ],
 
+    // 获取宏列表
+    // 发送: [0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x40, ...]
+    // 返回: [0xAA, 0x0D, 0x00, 0x78, 0x38, 0x00, 0x00, 0x00, 0x40, ...]
+    getMacroList: [
+      0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x40,
+      ...new Array(55).fill(0)
+    ],
+
+    // 获取宏数据
+    // 发送: [0x55, 0x0D, 0x00, 0x00, 0x30, 0x38, ...]
+    // 返回: [0xAA, 0x0D, 0x00, 0x29, 0x30, 0x38, ..., 宏事件数据]
+    getMacroData: (_macroIndex: number) => {
+      return [
+        0x55, 0x0D, 0x00, 0x00, 0x30, 0x38,
+        ...new Array(58).fill(0)
+      ]
+    },
+
     // 设置回报率 (暂不支持,需要抓包确认)
     setReportRate: (_rate: number) => {
       // 暂不支持,返回空数组
@@ -206,6 +224,41 @@ export const yhhProtocol: DeviceProtocol = {
       }
 
       return command
+    },
+
+    // 设置宏
+    // 命令序列:
+    // 1. [0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00, ...]
+    // 2. [0x55, 0x0D, 0x00, 0x00, 0x08, 0x38, ...]
+    // 3. [0x55, 0x0D, 0x00, 0x00, 0x20/0x30, 0x38, ..., 宏事件数据]
+    setMacro: (_macroIndex: number, macroEvents: number[]) => {
+      // 宏事件数据长度标识
+      const dataLength = macroEvents.length <= 32 ? 0x20 : 0x30
+
+      // 构建宏数据命令
+      const command = [
+        0x55, 0x0D, 0x00, 0x00, dataLength, 0x38, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+      ]
+
+      // 添加宏事件数据
+      command.push(...macroEvents)
+
+      // 填充到64字节
+      while (command.length < 64) {
+        command.push(0x00)
+      }
+
+      return command
+    },
+
+    // 删除宏
+    // 使用与创建宏相同的命令序列,但不包含宏事件数据
+    deleteMacro: (_macroIndex: number) => {
+      return [
+        0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00,
+        ...new Array(55).fill(0)
+      ]
     }
   },
 
@@ -338,6 +391,52 @@ export const yhhProtocol: DeviceProtocol = {
       //和DPI一样，只不过位于第4字节。 150为正向，151为方向
       const value = response[3];
       return value === 150 ? 0 : 1;
+    },
+
+    // 解析宏列表
+    // 返回格式: [0xAA, 0x0D, 0x00, 0x78, 0x38, 0x00, 0x00, 0x00, 0x40, ...]
+    macroList: (_response: Uint8Array) => {
+      const macros: Array<{ index: number; hasData: boolean }> = []
+      // 最多10个宏
+      for (let i = 0; i < 10; i++) {
+        macros.push({
+          index: i,
+          hasData: false // 需要进一步查询每个宏的数据来确定
+        })
+      }
+      return macros
+    },
+
+    // 解析宏数据
+    // 返回格式: [0xAA, 0x0D, 0x00, 0x8E, 0x20, 0x38, ..., 宏事件数据]
+    // 宏事件格式: [延迟低, 延迟高, 事件类型, 按键码] (4字节一组)
+    macroData: (response: Uint8Array) => {
+      const events: Array<{ delay: number; eventType: number; keyCode: number }> = []
+      const dataStart = 16 // 宏事件数据从第16字节开始
+
+      // 解析宏事件 (每个事件4字节)
+      for (let i = dataStart; i < response.length - 3; i += 4) {
+        const delayLow = response[i]
+        const delayHigh = response[i + 1]
+        const eventType = response[i + 2]
+        const keyCode = response[i + 3]
+
+        // 如果遇到全0,表示宏事件结束
+        if (delayLow === 0 && delayHigh === 0 && eventType === 0 && keyCode === 0) {
+          break
+        }
+
+        // 计算延迟 (小端序)
+        const delay = delayLow | (delayHigh << 8)
+
+        events.push({
+          delay,
+          eventType,
+          keyCode
+        })
+      }
+
+      return events
     }
   },
 
@@ -350,6 +449,8 @@ export const yhhProtocol: DeviceProtocol = {
     hasRGB: false, // 暂不支持 RGB 背光
     hasBattery: false, // 有线鼠标，无电池
     hasOnboardMemory: true, // 支持板载内存
-    hasScrollDirection: true // 支持滚轮方向
+    hasScrollDirection: true, // 支持滚轮方向
+    hasMacro: true, // 支持宏功能
+    maxMacroCount: 10 // 最多10个宏
   }
 }

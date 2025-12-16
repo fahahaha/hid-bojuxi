@@ -151,16 +151,70 @@
               </div>
             </div>
 
-            <!-- 宏标签页（暂不开放） -->
+            <!-- 宏标签页 -->
             <div v-if="activeTab === 'macro'" class="tab-content">
-              <div class="disabled-notice">
-                <i class="fa fa-info-circle"></i>
-                宏功能暂未开放
+              <div class="macro-settings">
+                <div class="form-group">
+                  <label class="form-label">选择宏</label>
+                  <select v-model="selectedMacroIndex" class="form-select">
+                    <option value="">-- 请选择宏 --</option>
+                    <option v-for="(macro, index) in availableMacros" :key="index" :value="index">
+                      {{ macro.name }} ({{ macro.events.length }}个事件)
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">循环模式</label>
+                  <div class="radio-group">
+                    <label class="radio-label">
+                      <input type="radio" v-model="macroLoopMode" value="release" />
+                      <span>循环直到按键松开</span>
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" v-model="macroLoopMode" value="anykey" />
+                      <span>循环直到任意键按下</span>
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" v-model="macroLoopMode" value="count" />
+                      <span>循环指定次数</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div v-if="macroLoopMode === 'count'" class="form-group">
+                  <label class="form-label">循环次数 (1-65535)</label>
+                  <input
+                    type="number"
+                    v-model.number="macroLoopCount"
+                    class="form-input"
+                    min="1"
+                    max="65535"
+                    placeholder="输入循环次数"
+                  />
+                </div>
+
+                <button
+                  @click="applyMacroMapping"
+                  class="apply-button"
+                  :disabled="selectedMacroIndex === ''"
+                >
+                  <i class="fa fa-check"></i>
+                  保存到按键
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 重置所有按键按钮 -->
+    <div class="reset-all-container">
+      <button @click="resetAllButtons" class="reset-all-button">
+        <i class="fa fa-refresh"></i>
+        重置所有按键
+      </button>
     </div>
   </div>
 </template>
@@ -168,6 +222,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
+import { useMacroStorage } from '../composables/useMacroStorage'
 import {
   mouseButtons,
   multimediaButtons,
@@ -180,6 +235,7 @@ import {
 } from '../config/buttonMappings'
 
 const { isConnected, getButtonMapping, setButtonMapping } = useWebHID()
+const { macros } = useMacroStorage()
 
 // 按键映射数据（8个按键，但只显示前5个）
 const buttonMappings = ref<number[][]>([...defaultButtonMappings])
@@ -228,6 +284,16 @@ const alphabetKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 const functionKeys = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12']
 const specialKeys = ['Enter', 'Escape', 'Backspace', 'Tab', 'Space', 'Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'Up', 'Down', 'Left', 'Right']
+
+// 宏相关变量
+const selectedMacroIndex = ref<string>('')
+const macroLoopMode = ref<'release' | 'anykey' | 'count'>('release')
+const macroLoopCount = ref(1)
+
+// 可用的宏列表 (只显示有事件的宏)
+const availableMacros = computed(() => {
+  return macros.value.filter(macro => macro.events.length > 0)
+})
 
 /**
  * 选择按键
@@ -311,6 +377,62 @@ async function resetButton() {
 
   // 发送到设备
   await saveToDevice()
+}
+
+/**
+ * 应用宏映射
+ */
+async function applyMacroMapping() {
+  if (selectedButton.value === 0) return // 左键不允许修改
+  if (selectedMacroIndex.value === '') return
+
+  const macroIndex = parseInt(selectedMacroIndex.value)
+
+  // 构建宏映射代码
+  // 格式: [0x70, 宏索引, 循环模式/次数低字节, 循环次数高字节]
+  let code: number[]
+
+  if (macroLoopMode.value === 'release') {
+    // 循环直到按键松开: [0x70, macroIndex, 0x02, 0x00]
+    code = [0x70, macroIndex, 0x02, 0x00]
+  } else if (macroLoopMode.value === 'anykey') {
+    // 循环直到任意键按下: [0x70, macroIndex, 0x03, 0x00]
+    code = [0x70, macroIndex, 0x03, 0x00]
+  } else {
+    // 循环指定次数: [0x70, macroIndex, 次数低字节, 次数高字节]
+    const count = Math.min(65535, Math.max(1, macroLoopCount.value))
+    code = [0x70, macroIndex, count & 0xFF, (count >> 8) & 0xFF]
+  }
+
+  const deviceIndex = uiToDeviceIndex[selectedButton.value]
+  console.log(`[宏映射] UI按键${selectedButton.value + 1} (设备索引${deviceIndex}) 设置为宏${macroIndex + 1}:`, code)
+  buttonMappings.value[deviceIndex] = code
+
+  // 发送到设备
+  await saveToDevice()
+
+  // 重置选择
+  selectedMacroIndex.value = ''
+  macroLoopMode.value = 'release'
+  macroLoopCount.value = 1
+}
+
+/**
+ * 重置所有按键
+ */
+async function resetAllButtons() {
+  if (!confirm('确定要重置所有按键为默认设置吗?')) {
+    return
+  }
+
+  // 重置所有按键映射
+  buttonMappings.value = [...defaultButtonMappings]
+
+  // 发送到设备
+  await saveToDevice()
+
+  console.log('[按键映射] 已重置所有按键')
+  alert('所有按键已重置为默认设置')
 }
 
 /**
@@ -779,6 +901,75 @@ onMounted(() => {
 }
 
 .apply-button i {
+  margin-right: 0.5rem;
+}
+
+/* 宏设置 */
+.macro-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.5rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+}
+
+/* 重置所有按键按钮 */
+.reset-all-container {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.reset-all-button {
+  padding: 0.75rem 2rem;
+  background-color: white;
+  color: var(--color-danger);
+  border: 2px solid var(--color-danger);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.reset-all-button:hover {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.reset-all-button i {
   margin-right: 0.5rem;
 }
 </style>
