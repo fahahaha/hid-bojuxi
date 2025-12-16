@@ -3,14 +3,14 @@
     <!-- 背光模式 -->
     <div class="mode-card" :class="{ disabled: !supportsRGB }">
       <h3 class="card-title">
-        <i class="fa fa-lightbulb-o icon-warning"></i>背光模式
-        <span v-if="!supportsRGB" class="unsupported-badge"> (不支持) </span>
+        <i class="fa fa-lightbulb-o icon-warning"></i>{{ t('backlightSettings.mode.title') }}
+        <span v-if="!supportsRGB" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
       </h3>
-      <p class="card-description">选择鼠标的LED背光效果模式</p>
+      <p class="card-description">{{ t('backlightSettings.mode.description') }}</p>
 
       <div v-if="!supportsRGB" class="empty-state">
         <i class="fa fa-exclamation-circle"></i>
-        <p>当前设备不支持背光功能</p>
+        <p>{{ t('backlightSettings.mode.notSupported') }}</p>
       </div>
 
       <div v-else class="mode-list">
@@ -30,20 +30,20 @@
     <!-- 背光颜色和亮度 -->
     <div class="color-card" :class="{ disabled: !supportsRGB }">
       <h3 class="card-title">
-        <i class="fa fa-paint-brush icon-primary"></i>背光颜色与亮度
-        <span v-if="!supportsRGB" class="unsupported-badge"> (不支持) </span>
+        <i class="fa fa-paint-brush icon-primary"></i>{{ t('backlightSettings.color.title') }}
+        <span v-if="!supportsRGB" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
       </h3>
-      <p class="card-description">自定义鼠标背光的颜色和亮度</p>
+      <p class="card-description">{{ t('backlightSettings.color.description') }}</p>
 
       <div v-if="!supportsRGB" class="empty-state large">
         <i class="fa fa-exclamation-circle"></i>
-        <p>当前设备不支持背光颜色和亮度设置</p>
+        <p>{{ t('backlightSettings.color.notSupported') }}</p>
       </div>
 
       <div v-else class="color-settings">
         <!-- 颜色选择 -->
         <div class="color-section">
-          <label class="section-label">背光颜色</label>
+          <label class="section-label">{{ t('backlightSettings.color.colorLabel') }}</label>
           <div class="color-presets">
             <button
               v-for="color in presetColors"
@@ -61,7 +61,7 @@
               v-model="selectedColor"
               @change="handleSetColor(selectedColor)"
               class="input-control color-text"
-              placeholder="十六进制颜色值"
+              :placeholder="t('backlightSettings.color.colorPlaceholder')"
             />
             <input
               type="color"
@@ -76,7 +76,7 @@
         <div class="brightness-section">
           <div class="slider-group">
             <div class="slider-header">
-              <label class="section-label">亮度</label>
+              <label class="section-label">{{ t('backlightSettings.color.brightness') }}</label>
               <span class="slider-value">{{ brightness }}%</span>
             </div>
             <input
@@ -92,7 +92,7 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <label class="section-label">呼吸频率</label>
+              <label class="section-label">{{ t('backlightSettings.color.frequency') }}</label>
               <span class="slider-value">{{ frequencyLabels[frequency - 1] }}</span>
             </div>
             <input
@@ -112,7 +112,7 @@
 
         <div class="action-buttons">
           <button @click="resetBacklight" class="btn-secondary">
-            <i class="fa fa-refresh"></i>重置
+            <i class="fa fa-refresh"></i>{{ t('common.reset') }}
           </button>
         </div>
       </div>
@@ -123,6 +123,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
+import { useI18n } from '../composables/useI18n'
 
 const {
   setBacklightMode,
@@ -132,6 +133,7 @@ const {
   getCurrentProtocol,
   isConnected
 } = useWebHID()
+const { t, ta } = useI18n()
 
 // 获取设备特性
 const deviceFeatures = computed(() => {
@@ -144,21 +146,21 @@ const supportsRGB = computed(() => {
   return isConnected.value && deviceFeatures.value?.hasRGB !== false
 })
 
-const backlightModes = [
-  { value: 0, label: '常灭', iconClass: 'mode-off' },
-  { value: 1, label: '常亮', iconClass: 'mode-on' },
-  { value: 2, label: '呼吸', iconClass: 'mode-breathing' },
-  { value: 3, label: 'APM模式', iconClass: 'mode-apm' },
+const backlightModes = computed(() => [
+  { value: 0, label: t('backlightSettings.mode.off'), iconClass: 'mode-off' },
+  { value: 1, label: t('backlightSettings.mode.on'), iconClass: 'mode-on' },
+  { value: 2, label: t('backlightSettings.mode.breathing'), iconClass: 'mode-breathing' },
+  { value: 3, label: t('backlightSettings.mode.apm'), iconClass: 'mode-apm' },
   {
     value: 4,
-    label: '全光谱',
+    label: t('backlightSettings.mode.spectrum'),
     iconClass: 'mode-spectrum'
   }
-]
+])
 
 const presetColors = ['#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF', '#AF52DE']
 
-const frequencyLabels = ['极慢', '慢', '中等', '快', '极快']
+const frequencyLabels = computed(() => ta('backlightSettings.color.frequencyLabels'))
 
 const selectedMode = ref(2)
 const selectedColor = ref('#165DFF')

@@ -7,17 +7,42 @@
           <div class="logo-icon">
             <i class="fa fa-mouse-pointer"></i>
           </div>
-          <h1 class="app-title">通用游戏鼠标驱动</h1>
-          <span class="app-subtitle">支持多种游戏鼠标</span>
+          <h1 class="app-title">{{ t('header.title') }}</h1>
+          <span class="app-subtitle">{{ t('header.subtitle') }}</span>
         </div>
 
         <div class="header-right">
+          <div class="language-selector">
+            <button class="btn-language" @click="toggleLanguageDropdown">
+              <i class="fa fa-language"></i>
+              <span>{{ locale === 'zh-CN' ? '中文' : 'English' }}</span>
+              <i class="fa fa-chevron-down" :class="{ 'rotate-180': showLanguageDropdown }"></i>
+            </button>
+            <div v-if="showLanguageDropdown" class="language-dropdown">
+              <button
+                @click="selectLanguage('zh-CN')"
+                class="language-option"
+                :class="{ active: locale === 'zh-CN' }"
+              >
+                <i class="fa fa-check" v-if="locale === 'zh-CN'"></i>
+                <span>中文</span>
+              </button>
+              <button
+                @click="selectLanguage('en-US')"
+                class="language-option"
+                :class="{ active: locale === 'en-US' }"
+              >
+                <i class="fa fa-check" v-if="locale === 'en-US'"></i>
+                <span>English</span>
+              </button>
+            </div>
+          </div>
           <div class="connection-status">
             <span class="status-indicator" :class="{ connected: isConnected }"></span>
-            <span>{{ isConnected ? '已连接设备' : '未连接设备' }}</span>
+            <span>{{ isConnected ? t('common.connected') : t('common.disconnected') }}</span>
           </div>
           <button @click="handleConnect" class="btn-primary btn-sm">
-            <i class="fa fa-plug"></i> 连接设备
+            <i class="fa fa-plug"></i> {{ t('common.connect') }}
           </button>
         </div>
       </div>
@@ -32,7 +57,7 @@
               <i class="fa fa-battery-three-quarters"></i>
             </div>
             <div class="status-info">
-              <p class="status-label">电池状态</p>
+              <p class="status-label">{{ t('deviceStatus.battery') }}</p>
               <p class="status-value">{{ deviceStatus.battery }}</p>
             </div>
           </div>
@@ -42,7 +67,7 @@
               <i class="fa fa-refresh"></i>
             </div>
             <div class="status-info">
-              <p class="status-label">当前回报率</p>
+              <p class="status-label">{{ t('deviceStatus.reportRate') }}</p>
               <p class="status-value">{{ deviceStatus.reportRate }}</p>
             </div>
           </div>
@@ -52,7 +77,7 @@
               <i class="fa fa-tachometer"></i>
             </div>
             <div class="status-info">
-              <p class="status-label">当前DPI</p>
+              <p class="status-label">{{ t('deviceStatus.dpi') }}</p>
               <p class="status-value">{{ deviceStatus.dpi }}</p>
             </div>
           </div>
@@ -62,7 +87,7 @@
               <i class="fa fa-lightbulb-o"></i>
             </div>
             <div class="status-info">
-              <p class="status-label">背光模式</p>
+              <p class="status-label">{{ t('deviceStatus.backlight') }}</p>
               <p class="status-value">{{ deviceStatus.backlight }}</p>
             </div>
           </div>
@@ -96,8 +121,8 @@
     <!-- 页脚 -->
     <footer class="app-footer">
       <div class="footer-content">
-        <p>通用游戏鼠标驱动程序 v1.0.1</p>
-        <p class="copyright">© 2026 博巨矽科技有限公司 版权所有</p>
+        <p>{{ t('footer.version') }}</p>
+        <p class="copyright">{{ t('footer.copyright') }}</p>
       </div>
     </footer>
 
@@ -124,23 +149,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useWebHID } from './composables/useWebHID'
+import { useI18n } from './composables/useI18n'
 import BasicSettings from './components/BasicSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 
 const { isConnected, deviceStatus, connectDevice, autoConnectDevice } = useWebHID()
+const { locale, setLocale, t } = useI18n()
 
 const activeTab = ref('basic')
+const showLanguageDropdown = ref(false)
 
-const tabs = [
-  { id: 'basic', label: '基础设置', icon: 'fa fa-sliders' },
-  { id: 'backlight', label: '背光设置', icon: 'fa fa-lightbulb-o' },
-  { id: 'buttons', label: '改键设置', icon: 'fa fa-keyboard-o' },
-  { id: 'device', label: '设备信息', icon: 'fa fa-info-circle' }
-]
+const tabs = computed(() => [
+  { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
+  { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb-o' },
+  { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-keyboard-o' },
+  { id: 'device', label: t('tabs.device'), icon: 'fa fa-info-circle' }
+])
 
 const notification = ref({
   show: false,
@@ -167,9 +195,18 @@ async function handleConnect() {
   const result = await connectDevice()
   showNotification(
     result.success ? 'success' : 'error',
-    result.success ? '连接成功' : '连接失败',
+    result.success ? t('notification.connectSuccess') : t('notification.connectFailed'),
     result.message
   )
+}
+
+function toggleLanguageDropdown() {
+  showLanguageDropdown.value = !showLanguageDropdown.value
+}
+
+function selectLanguage(lang: 'zh-CN' | 'en-US') {
+  setLocale(lang)
+  showLanguageDropdown.value = false
 }
 
 function showNotification(type: string, title: string, message: string) {
@@ -181,6 +218,14 @@ function hideNotification() {
   notification.value.show = false
 }
 
+// 点击外部关闭下拉菜单
+function handleClickOutside(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  if (!target.closest('.language-selector')) {
+    showLanguageDropdown.value = false
+  }
+}
+
 // 页面加载时自动连接已授权的设备
 onMounted(async () => {
   const result = await autoConnectDevice()
@@ -189,6 +234,14 @@ onMounted(async () => {
   } else {
     console.log('[自动连接] 失败:', result.message)
   }
+
+  // 添加全局点击事件监听
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  // 移除全局点击事件监听
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -284,6 +337,87 @@ onMounted(async () => {
 
 .btn-sm i {
   margin-right: 0.25rem;
+}
+
+.language-selector {
+  position: relative;
+}
+
+.btn-language {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: white;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-dark);
+}
+
+.btn-language:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background-color: rgba(22, 93, 255, 0.05);
+}
+
+.btn-language i.fa-language {
+  font-size: 1rem;
+}
+
+.btn-language i.fa-chevron-down {
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+
+.btn-language i.fa-chevron-down.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.language-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-width: 120px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  color: var(--color-gray-dark);
+  text-align: left;
+}
+
+.language-option:hover {
+  background-color: rgba(22, 93, 255, 0.05);
+  color: var(--color-primary);
+}
+
+.language-option.active {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.language-option i.fa-check {
+  font-size: 0.875rem;
+  width: 1rem;
 }
 
 /* 主内容区 */

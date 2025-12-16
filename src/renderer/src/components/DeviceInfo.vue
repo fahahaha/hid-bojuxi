@@ -2,40 +2,40 @@
   <div class="device-info-container">
     <!-- 设备信息 -->
     <div class="info-card card-hover">
-      <h3 class="card-title"><i class="fa fa-info-circle icon-primary"></i>设备信息</h3>
+      <h3 class="card-title"><i class="fa fa-info-circle icon-primary"></i>{{ t('deviceInfo.title') }}</h3>
 
       <div class="info-list">
         <div class="info-item">
-          <span class="info-label">设备名称</span>
+          <span class="info-label">{{ t('deviceInfo.name') }}</span>
           <span class="info-value">{{ deviceInfo.name }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">设备型号</span>
+          <span class="info-label">{{ t('deviceInfo.model') }}</span>
           <span class="info-value">{{ deviceInfo.model }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">固件版本</span>
+          <span class="info-label">{{ t('deviceInfo.firmwareVersion') }}</span>
           <span class="info-value">{{ deviceInfo.firmwareVersion }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">连接方式</span>
+          <span class="info-label">{{ t('deviceInfo.connectionType') }}</span>
           <span class="info-value">{{ deviceInfo.connectionType }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">VID/PID</span>
+          <span class="info-label">{{ t('deviceInfo.vidPid') }}</span>
           <span class="info-value">{{ deviceInfo.vidPid }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">设备协议</span>
+          <span class="info-label">{{ t('deviceInfo.protocol') }}</span>
           <span class="info-value">{{ deviceInfo.protocol }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">设备状态</span>
+          <span class="info-label">{{ t('deviceInfo.status') }}</span>
           <span
             class="info-value"
             :class="deviceInfo.status === '已连接' ? 'status-connected' : 'status-disconnected'"
           >
-            {{ deviceInfo.status }}
+            {{ deviceInfo.status === '已连接' ? t('deviceInfo.statusConnected') : t('deviceInfo.statusDisconnected') }}
           </span>
         </div>
       </div>
@@ -44,14 +44,14 @@
     <!-- 电池和维护 -->
     <div class="battery-card card-hover">
       <h3 class="card-title">
-        <i class="fa fa-battery-three-quarters icon-warning"></i>电池与维护
+        <i class="fa fa-battery-three-quarters icon-warning"></i>{{ t('deviceInfo.battery.title') }}
       </h3>
 
       <div class="battery-section">
         <!-- 电池信息 -->
         <div class="battery-info">
           <div class="battery-header">
-            <span class="battery-label">电池电量</span>
+            <span class="battery-label">{{ t('deviceInfo.battery.level') }}</span>
             <span class="battery-percent">{{ batteryPercent }}</span>
           </div>
           <div class="battery-bar">
@@ -75,10 +75,10 @@
         <!-- 设备维护 -->
         <div class="maintenance-actions">
           <button @click="checkUpdate" class="btn-primary action-btn">
-            <i class="fa fa-download"></i>检查固件更新
+            <i class="fa fa-download"></i>{{ t('deviceInfo.battery.checkUpdate') }}
           </button>
           <button @click="restoreDefaults" class="btn-secondary action-btn">
-            <i class="fa fa-refresh"></i>恢复出厂设置
+            <i class="fa fa-refresh"></i>{{ t('deviceInfo.battery.restoreDefaults') }}
           </button>
         </div>
       </div>
@@ -89,8 +89,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
+import { useI18n } from '../composables/useI18n'
 
 const { deviceInfo, deviceStatus } = useWebHID()
+const { t } = useI18n()
 
 const batteryPercent = computed(() => deviceStatus.value.battery)
 
@@ -103,20 +105,20 @@ const batteryColorClass = computed(() => {
 
 const chargeStatus = computed(() => {
   if (!deviceInfo.value || deviceInfo.value.status !== '已连接') {
-    return '未连接设备'
+    return t('deviceInfo.battery.notConnected')
   }
-  return '未充电'
+  return t('deviceInfo.battery.notCharging')
 })
 
 function checkUpdate() {
-  alert('正在检查固件更新...\n\n当前固件已是最新版本,无需更新')
+  alert(t('deviceInfo.battery.checkingUpdate'))
 }
 
 function restoreDefaults() {
-  if (confirm('确定要恢复出厂设置吗?这将清除所有自定义设置并恢复默认值。')) {
-    alert('正在恢复出厂设置...')
+  if (confirm(t('deviceInfo.battery.restoreConfirm'))) {
+    alert(t('deviceInfo.battery.restoring'))
     setTimeout(() => {
-      alert('已成功恢复出厂设置')
+      alert(t('deviceInfo.battery.restoreSuccess'))
     }, 2000)
   }
 }

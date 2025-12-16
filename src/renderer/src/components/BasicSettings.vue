@@ -3,14 +3,14 @@
     <!-- 回报率设置 -->
     <div class="settings-card" :class="{ disabled: !supportsReportRate }">
       <h3 class="card-title">
-        <i class="fa fa-refresh icon-secondary"></i>回报率设置
-        <span v-if="!supportsReportRate" class="unsupported-badge"> (不支持) </span>
+        <i class="fa fa-refresh icon-secondary"></i>{{ t('basicSettings.reportRate.title') }}
+        <span v-if="!supportsReportRate" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
       </h3>
-      <p class="card-description">调整鼠标的回报率,更高的回报率提供更流畅的光标移动</p>
+      <p class="card-description">{{ t('basicSettings.reportRate.description') }}</p>
 
       <div v-if="!supportsReportRate" class="empty-state">
         <i class="fa fa-exclamation-circle"></i>
-        <p>当前设备不支持回报率设置功能</p>
+        <p>{{ t('basicSettings.reportRate.notSupported') }}</p>
       </div>
 
       <div v-else class="rate-buttons">
@@ -29,26 +29,26 @@
     <!-- DPI设置 -->
     <div class="settings-card" :class="{ disabled: !supportsDPI }">
       <h3 class="card-title">
-        <i class="fa fa-tachometer icon-accent"></i>DPI 设置
-        <span v-if="!supportsDPI" class="unsupported-badge"> (不支持) </span>
+        <i class="fa fa-tachometer icon-accent"></i>{{ t('basicSettings.dpi.title') }}
+        <span v-if="!supportsDPI" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
       </h3>
       <p class="card-description">
-        调整鼠标的灵敏度,DPI 值越高,光标移动速度越快
+        {{ t('basicSettings.dpi.description') }}
         <span v-if="supportedDPI.length > 0" class="dpi-count">
-          (支持 {{ supportedDPI.length }} 档)
+          {{ t('basicSettings.dpi.supportedCount', { count: String(supportedDPI.length) }) }}
         </span>
       </p>
 
       <div v-if="!supportsDPI" class="empty-state">
         <i class="fa fa-exclamation-circle"></i>
-        <p>当前设备不支持 DPI 设置功能</p>
+        <p>{{ t('basicSettings.dpi.notSupported') }}</p>
       </div>
 
       <div v-else class="dpi-settings">
         <!-- DPI 档位选择 -->
         <div class="dpi-selector">
           <div class="selector-header">
-            <label class="selector-label">DPI 档位</label>
+            <label class="selector-label">{{ t('basicSettings.dpi.level') }}</label>
             <span class="selector-value">{{ selectedDPI }} DPI</span>
           </div>
 
@@ -64,7 +64,7 @@
           <div class="status-row">
             <div class="status-left">
               <i class="fa fa-info-circle icon-primary"></i>
-              <span>当前 DPI</span>
+              <span>{{ t('basicSettings.dpi.current') }}</span>
             </div>
             <span class="status-dpi">{{ deviceStatus.dpi }} DPI</span>
           </div>
@@ -75,14 +75,14 @@
     <!-- 滚轮方向设置 -->
     <div class="settings-card" :class="{ disabled: !supportedScrollDirection }">
       <h3 class="card-title">
-        <i class="fa fa-arrows-v icon-primary"></i>滚轮方向设置
-        <span v-if="!supportedScrollDirection" class="unsupported-badge"> (不支持) </span>
+        <i class="fa fa-arrows-v icon-primary"></i>{{ t('basicSettings.scrollDirection.title') }}
+        <span v-if="!supportedScrollDirection" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
       </h3>
-      <p class="card-description">设置鼠标滚轮的滚动方向</p>
+      <p class="card-description">{{ t('basicSettings.scrollDirection.description') }}</p>
 
       <div v-if="!supportedScrollDirection" class="empty-state">
         <i class="fa fa-exclamation-circle"></i>
-        <p>当前设备不支持滚轮方向设置功能</p>
+        <p>{{ t('basicSettings.scrollDirection.notSupported') }}</p>
       </div>
 
       <div v-else class="scroll-direction-settings">
@@ -93,7 +93,7 @@
             @change="handleSetNormalScroll"
             class="checkbox-input"
           />
-          <span class="checkbox-text">正向</span>
+          <span class="checkbox-text">{{ t('basicSettings.scrollDirection.normal') }}</span>
         </label>
         <label class="checkbox-label" :class="{ active: isReverseScroll }">
           <input
@@ -102,10 +102,10 @@
             @change="handleSetReverseScroll"
             class="checkbox-input"
           />
-          <span class="checkbox-text">反向</span>
+          <span class="checkbox-text">{{ t('basicSettings.scrollDirection.reverse') }}</span>
         </label>
         <p class="scroll-hint">
-          {{ isReverseScroll ? '滚轮向下滚动时页面向上移动' : '滚轮向下滚动时页面向下移动' }}
+          {{ isReverseScroll ? t('basicSettings.scrollDirection.reverseHint') : t('basicSettings.scrollDirection.normalHint') }}
         </p>
       </div>
     </div>
@@ -115,9 +115,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
+import { useI18n } from '../composables/useI18n'
 
 const { setReportRate, setDPI, setScrollDirection, getCurrentProtocol, isConnected, deviceStatus } =
   useWebHID()
+const { t } = useI18n()
 
 // 获取设备特性
 const deviceFeatures = computed(() => {
@@ -138,7 +140,7 @@ const supportedDPI = computed(() => {
 // DPI 选项列表(用于下拉选择)
 const dpiOptions = computed(() => {
   return supportedDPI.value.map((dpi, index) => ({
-    label: `档位 ${index + 1} - ${dpi} DPI`,
+    label: t('basicSettings.dpi.levelOption', { level: String(index + 1), value: String(dpi) }),
     value: dpi,
     level: index + 1
   }))

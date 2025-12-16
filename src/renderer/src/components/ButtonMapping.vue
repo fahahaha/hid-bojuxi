@@ -1,7 +1,7 @@
 <template>
   <div class="button-mapping-container">
-    <h3 class="section-title"><i class="fa fa-keyboard-o icon-primary"></i>鼠标按键自定义</h3>
-    <p class="section-description">自定义鼠标各按键的功能,可设置为鼠标功能、多媒体键或键盘组合键</p>
+    <h3 class="section-title"><i class="fa fa-keyboard-o icon-primary"></i>{{ t('buttonMapping.title') }}</h3>
+    <p class="section-description">{{ t('buttonMapping.description') }}</p>
 
     <div class="mapping-layout">
       <!-- 鼠标按键示意图 -->
@@ -27,13 +27,13 @@
           <div class="panel-header">
             <h4 class="panel-title">{{ buttonNames[selectedButton] }}</h4>
             <button @click="resetButton" class="reset-button" :disabled="selectedButton === 0">
-              <i class="fa fa-refresh"></i>恢复默认
+              <i class="fa fa-refresh"></i>{{ t('buttonMapping.restoreDefault') }}
             </button>
           </div>
 
           <div v-if="selectedButton === 0" class="disabled-notice">
             <i class="fa fa-info-circle"></i>
-            左键不允许修改
+            {{ t('buttonMapping.leftKeyDisabled') }}
           </div>
 
           <div v-else class="settings-form">
@@ -92,7 +92,7 @@
             <div v-if="activeTab === 'keyboard'" class="tab-content">
               <div class="keyboard-settings">
                 <div class="form-group">
-                  <label class="form-label">修饰键（可多选）</label>
+                  <label class="form-label">{{ t('buttonMapping.keyboard.modifiers') }}</label>
                   <div class="modifier-group">
                     <label
                       v-for="modifier in modifierKeys"
@@ -106,25 +106,25 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">选择按键</label>
+                  <label class="form-label">{{ t('buttonMapping.keyboard.selectKey') }}</label>
                   <select v-model="selectedKey" class="form-select">
-                    <option value="">-- 请选择按键 --</option>
-                    <optgroup label="字母键">
+                    <option value="">{{ t('buttonMapping.keyboard.selectKeyPlaceholder') }}</option>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
                       <option v-for="key in alphabetKeys" :key="key" :value="key">
                         {{ key }}
                       </option>
                     </optgroup>
-                    <optgroup label="数字键">
+                    <optgroup :label="t('buttonMapping.keyboard.groups.number')">
                       <option v-for="key in numberKeys" :key="key" :value="key">
                         {{ key }}
                       </option>
                     </optgroup>
-                    <optgroup label="功能键">
+                    <optgroup :label="t('buttonMapping.keyboard.groups.function')">
                       <option v-for="key in functionKeys" :key="key" :value="key">
                         {{ key }}
                       </option>
                     </optgroup>
-                    <optgroup label="特殊键">
+                    <optgroup :label="t('buttonMapping.keyboard.groups.special')">
                       <option v-for="key in specialKeys" :key="key" :value="key">
                         {{ key }}
                       </option>
@@ -134,7 +134,7 @@
 
                 <button @click="applyKeyboardMapping" class="apply-button" :disabled="!selectedKey">
                   <i class="fa fa-check"></i>
-                  保存按键
+                  {{ t('buttonMapping.keyboard.saveKey') }}
                 </button>
               </div>
             </div>
@@ -144,13 +144,13 @@
               <div class="macro-management-container">
                 <!-- 左侧：宏列表和管理 -->
                 <div class="macro-list-section">
-                  <h5 class="section-subtitle">宏列表</h5>
-                  <p class="section-hint">管理您的宏，最多可保存10组宏</p>
+                  <h5 class="section-subtitle">{{ t('buttonMapping.macro.list') }}</h5>
+                  <p class="section-hint">{{ t('buttonMapping.macro.listHint') }}</p>
 
                   <div class="macro-list">
                     <div v-if="macros.length === 0" class="empty-macros">
                       <i class="fa fa-info-circle"></i>
-                      暂无宏，点击"新建宏"开始创建
+                      {{ t('buttonMapping.macro.empty') }}
                     </div>
                     <button
                       v-else
@@ -162,7 +162,7 @@
                       :disabled="isRecording"
                     >
                       <span class="macro-item-name">{{ macro.name }}</span>
-                      <span class="macro-item-count">{{ macro.events.length }}个事件</span>
+                      <span class="macro-item-count">{{ t('buttonMapping.macro.eventCount', { count: String(macro.events.length) }) }}</span>
                     </button>
                   </div>
 
@@ -173,7 +173,7 @@
                       :disabled="macros.length >= MAX_MACRO_COUNT || isRecording"
                     >
                       <i class="fa fa-plus"></i>
-                      新建宏 ({{ macros.length }}/{{ MAX_MACRO_COUNT }})
+                      {{ t('buttonMapping.macro.newMacro') }} ({{ macros.length }}/{{ MAX_MACRO_COUNT }})
                     </button>
                     <button
                       @click="deleteSelectedMacro"
@@ -181,7 +181,7 @@
                       :disabled="selectedMacroForEdit === null || isRecording"
                     >
                       <i class="fa fa-trash"></i>
-                      删除选中宏
+                      {{ t('buttonMapping.macro.deleteMacro') }}
                     </button>
                   </div>
                 </div>
@@ -192,7 +192,7 @@
                   <div class="macro-record-area">
                     <h5 class="section-subtitle">
                       <i class="fa fa-circle-o-notch"></i>
-                      宏录制
+                      {{ t('buttonMapping.macro.record') }}
                     </h5>
 
                     <button
@@ -202,22 +202,22 @@
                       class="record-control-btn"
                     >
                       <i :class="isRecording ? 'fa fa-stop' : 'fa fa-circle'"></i>
-                      {{ isRecording ? '结束录制' : '开始录制' }}
+                      {{ isRecording ? t('buttonMapping.macro.stopRecord') : t('buttonMapping.macro.startRecord') }}
                     </button>
 
                     <div v-if="isRecording" class="recording-status">
                       <i class="fa fa-circle recording-pulse"></i>
-                      <span>正在录制... 请执行您的操作，完成后点击"结束录制"</span>
+                      <span>{{ t('buttonMapping.macro.recording') }}</span>
                     </div>
 
                     <div v-if="!isConnected" class="macro-notice">
                       <i class="fa fa-info-circle"></i>
-                      请先连接设备
+                      {{ t('buttonMapping.macro.connectFirst') }}
                     </div>
 
                     <div v-if="isConnected && selectedMacroForEdit === null" class="macro-notice">
                       <i class="fa fa-info-circle"></i>
-                      请先选择或创建一个宏
+                      {{ t('buttonMapping.macro.selectFirst') }}
                     </div>
                   </div>
 
@@ -225,7 +225,7 @@
                   <div class="macro-events-area">
                     <div class="events-header">
                       <h5 class="section-subtitle">
-                        宏事件列表
+                        {{ t('buttonMapping.macro.eventList') }}
                         <span v-if="currentEditingMacro.name" class="macro-name-badge">
                           {{ currentEditingMacro.name }}
                         </span>
@@ -235,26 +235,26 @@
                           @click="removeSelectedMacroEvent"
                           class="event-action-btn"
                           :disabled="selectedMacroEventIndex === null || isRecording"
-                          title="删除选中事件"
+                          :title="t('buttonMapping.macro.deleteSelected')"
                         >
                           <i class="fa fa-trash"></i>
-                          删除选中
+                          {{ t('buttonMapping.macro.deleteSelected') }}
                         </button>
                         <button
                           @click="clearAllMacroEvents"
                           class="event-action-btn"
                           :disabled="currentEditingMacro.events.length === 0 || isRecording"
-                          title="清空所有事件"
+                          :title="t('buttonMapping.macro.clearAll')"
                         >
                           <i class="fa fa-trash-o"></i>
-                          清空全部
+                          {{ t('buttonMapping.macro.clearAll') }}
                         </button>
                       </div>
                     </div>
 
                     <div class="events-list">
                       <div v-if="currentEditingMacro.events.length === 0" class="empty-events">
-                        录制宏事件后将显示在这里
+                        {{ t('buttonMapping.macro.emptyEvents') }}
                       </div>
                       <div
                         v-else
@@ -268,11 +268,11 @@
                           <span class="event-number">{{ index + 1 }}</span>
                           <span class="event-text">
                             <strong>{{ event.key }}</strong> -
-                            {{ event.type === 'keydown' ? '按下' : '抬起' }}
+                            {{ event.type === 'keydown' ? t('buttonMapping.macro.keyDown') : t('buttonMapping.macro.keyUp') }}
                           </span>
                         </div>
                         <div class="event-meta">
-                          <span class="event-delay">延迟 {{ event.delay }}ms</span>
+                          <span class="event-delay">{{ t('buttonMapping.macro.delay', { ms: String(event.delay) }) }}</span>
                         </div>
                       </div>
                     </div>
@@ -287,7 +287,7 @@
                     "
                   >
                     <i class="fa fa-save"></i>
-                    保存宏到设备
+                    {{ t('buttonMapping.macro.saveToDevice') }}
                   </button>
 
                   <!-- 分隔线 -->
@@ -297,50 +297,50 @@
                   <div class="macro-binding-area">
                     <h5 class="section-subtitle">
                       <i class="fa fa-link"></i>
-                      将宏绑定到当前按键
+                      {{ t('buttonMapping.macro.binding.title') }}
                     </h5>
 
                     <div class="form-group">
-                      <label class="form-label">选择要绑定的宏</label>
+                      <label class="form-label">{{ t('buttonMapping.macro.binding.selectMacro') }}</label>
                       <select v-model="selectedMacroIndex" class="form-select">
-                        <option value="">-- 请选择宏 --</option>
+                        <option value="">{{ t('buttonMapping.macro.binding.selectMacroPlaceholder') }}</option>
                         <option
                           v-for="(macro, index) in availableMacros"
                           :key="index"
                           :value="index"
                         >
-                          {{ macro.name }} ({{ macro.events.length }}个事件)
+                          {{ macro.name }} ({{ t('buttonMapping.macro.eventCount', { count: String(macro.events.length) }) }})
                         </option>
                       </select>
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label">循环模式</label>
+                      <label class="form-label">{{ t('buttonMapping.macro.binding.loopMode') }}</label>
                       <div class="radio-group">
                         <label class="radio-label">
                           <input type="radio" v-model="macroLoopMode" value="release" />
-                          <span>循环直到按键松开</span>
+                          <span>{{ t('buttonMapping.macro.binding.loopRelease') }}</span>
                         </label>
                         <label class="radio-label">
                           <input type="radio" v-model="macroLoopMode" value="anykey" />
-                          <span>循环直到任意键按下</span>
+                          <span>{{ t('buttonMapping.macro.binding.loopAnykey') }}</span>
                         </label>
                         <label class="radio-label">
                           <input type="radio" v-model="macroLoopMode" value="count" />
-                          <span>循环指定次数</span>
+                          <span>{{ t('buttonMapping.macro.binding.loopCount') }}</span>
                         </label>
                       </div>
                     </div>
 
                     <div v-if="macroLoopMode === 'count'" class="form-group">
-                      <label class="form-label">循环次数 (1-65535)</label>
+                      <label class="form-label">{{ t('buttonMapping.macro.binding.loopCountLabel') }}</label>
                       <input
                         type="number"
                         v-model.number="macroLoopCount"
                         class="form-input"
                         min="1"
                         max="65535"
-                        placeholder="输入循环次数"
+                        :placeholder="t('buttonMapping.macro.binding.loopCountPlaceholder')"
                       />
                     </div>
 
@@ -350,7 +350,7 @@
                       :disabled="selectedMacroIndex === ''"
                     >
                       <i class="fa fa-check"></i>
-                      绑定到按键 {{ selectedButton + 1 }}
+                      {{ t('buttonMapping.macro.binding.bindToButton', { button: String(selectedButton + 1) }) }}
                     </button>
                   </div>
                 </div>
@@ -365,7 +365,7 @@
     <div class="reset-all-container">
       <button @click="resetAllButtons" class="reset-all-button">
         <i class="fa fa-refresh"></i>
-        重置所有按键
+        {{ t('buttonMapping.resetAll') }}
       </button>
     </div>
   </div>
@@ -374,6 +374,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
+import { useI18n } from '../composables/useI18n'
 import { useMacroStorage, type MacroEvent, type Macro } from '../composables/useMacroStorage'
 import {
   mouseButtons,
@@ -404,6 +405,7 @@ const {
   getScancodeFromKeyName,
   MAX_MACRO_COUNT
 } = useMacroStorage()
+const { t, ta } = useI18n()
 
 // 按键映射数据（8个按键，但只显示前5个）
 const buttonMappings = ref<number[][]>([...defaultButtonMappings])
@@ -412,18 +414,18 @@ const buttonMappings = ref<number[][]>([...defaultButtonMappings])
 // 根据实际测试，按键4和按键5在设备中的位置是对调的
 const uiToDeviceIndex = [0, 1, 2, 4, 3] // UI索引 → 设备索引
 
-const buttonNames = ['左键(按键 1)', '右键(按键 2)', '中键(按键 3)', '前进(按键 4)', '后退(按键 5)']
+const buttonNames = computed(() => ta('buttonMapping.buttonNames'))
 
 const selectedButton = ref(0)
 const activeTab = ref('mouse')
 
 // 标签页配置
-const tabs = [
-  { id: 'mouse', name: '鼠标功能', icon: 'fa fa-mouse-pointer' },
-  { id: 'multimedia', name: '多媒体', icon: 'fa fa-music' },
-  { id: 'keyboard', name: '键盘按键', icon: 'fa fa-keyboard-o' },
-  { id: 'macro', name: '宏', icon: 'fa fa-code' }
-]
+const tabs = computed(() => [
+  { id: 'mouse', name: t('buttonMapping.tabs.mouse'), icon: 'fa fa-mouse-pointer' },
+  { id: 'multimedia', name: t('buttonMapping.tabs.multimedia'), icon: 'fa fa-music' },
+  { id: 'keyboard', name: t('buttonMapping.tabs.keyboard'), icon: 'fa fa-keyboard-o' },
+  { id: 'macro', name: t('buttonMapping.tabs.macro'), icon: 'fa fa-code' }
+])
 
 // 多媒体分类
 const multimediaCategories = computed(() => {
@@ -616,7 +618,7 @@ async function applyMacroMapping() {
  * 重置所有按键
  */
 async function resetAllButtons() {
-  if (!confirm('确定要重置所有按键为默认设置吗?')) {
+  if (!confirm(t('buttonMapping.resetAllConfirm'))) {
     return
   }
 
@@ -627,7 +629,7 @@ async function resetAllButtons() {
   await saveToDevice()
 
   console.log('[按键映射] 已重置所有按键')
-  alert('所有按键已重置为默认设置')
+  alert(t('buttonMapping.resetAllSuccess'))
 }
 
 /**
@@ -684,7 +686,7 @@ function selectMacroForEdit(index: number) {
  */
 function createNewMacro() {
   if (macros.value.length >= MAX_MACRO_COUNT) {
-    alert(`最多只能创建 ${MAX_MACRO_COUNT} 个宏`)
+    alert(t('buttonMapping.macro.maxReached', { max: String(MAX_MACRO_COUNT) }))
     return
   }
 
@@ -704,7 +706,7 @@ function createNewMacro() {
     currentEditingMacro.value = { ...newMacroData }
     console.log('[宏管理] 已创建新宏:', newMacroName)
   } else {
-    alert('创建宏失败')
+    alert(t('buttonMapping.macro.saveError', { message: 'Failed to add macro' }))
   }
 }
 
@@ -713,11 +715,11 @@ function createNewMacro() {
  */
 async function deleteSelectedMacro() {
   if (selectedMacroForEdit.value === null) {
-    alert('请先选择一个宏')
+    alert(t('buttonMapping.macro.selectMacro'))
     return
   }
 
-  if (!confirm(`确定要删除${currentEditingMacro.value.name}吗？此操作不可撤销。`)) {
+  if (!confirm(t('buttonMapping.macro.deleteConfirm', { name: currentEditingMacro.value.name }))) {
     return
   }
 
@@ -725,7 +727,7 @@ async function deleteSelectedMacro() {
   if (isConnected.value && currentEditingMacro.value.events.length > 0) {
     const result = await deleteDeviceMacro(selectedMacroForEdit.value)
     if (!result.success) {
-      alert(`从设备删除失败: ${result.message}`)
+      alert(t('buttonMapping.macro.saveError', { message: result.message }))
       // 继续删除本地存储
     }
   }
@@ -747,7 +749,7 @@ async function deleteSelectedMacro() {
     }
     console.log('[宏管理] 宏已删除')
   } else {
-    alert('删除宏失败')
+    alert(t('buttonMapping.macro.saveError', { message: 'Failed to delete macro' }))
   }
 }
 
@@ -793,7 +795,7 @@ function removeSelectedMacroEvent() {
  * 清空所有宏事件
  */
 function clearAllMacroEvents() {
-  if (!confirm('确定要清空所有事件吗？')) return
+  if (!confirm(t('buttonMapping.macro.clearAllConfirm'))) return
   currentEditingMacro.value.events = []
   recordedEvents.value = []
   selectedMacroEventIndex.value = null
@@ -805,17 +807,17 @@ function clearAllMacroEvents() {
  */
 async function saveMacroToDevice() {
   if (currentEditingMacro.value.events.length === 0) {
-    alert('宏事件不能为空')
+    alert(t('buttonMapping.macro.eventEmpty'))
     return
   }
 
   if (!currentEditingMacro.value.name.trim()) {
-    alert('宏名称不能为空')
+    alert(t('buttonMapping.macro.nameEmpty'))
     return
   }
 
   if (selectedMacroForEdit.value === null) {
-    alert('请先选择一个宏')
+    alert(t('buttonMapping.macro.selectMacro'))
     return
   }
 
@@ -826,16 +828,16 @@ async function saveMacroToDevice() {
   if (isConnected.value) {
     const result = await setDeviceMacro(selectedMacroForEdit.value, encodedEvents)
     if (!result.success) {
-      alert(`保存到设备失败: ${result.message}`)
+      alert(t('buttonMapping.macro.saveError', { message: result.message }))
       return
     }
   }
 
   // 保存到本地存储
   if (updateMacro(selectedMacroForEdit.value, currentEditingMacro.value)) {
-    alert(`${currentEditingMacro.value.name} 已保存`)
+    alert(t('buttonMapping.macro.saveSuccess', { name: currentEditingMacro.value.name }))
   } else {
-    alert('保存到本地存储失败')
+    alert(t('buttonMapping.macro.saveError', { message: 'Failed to save to local storage' }))
   }
 }
 
