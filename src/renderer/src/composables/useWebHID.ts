@@ -81,7 +81,7 @@ export function useWebHID() {
 
         // Chrome bug workaround: 过滤掉不是以 0xAA 开头的响应
         // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
-        if (data[0] !== 0xAA) {
+        if (data[0] !== 0xaa) {
           // 忽略无效响应，继续等待正确的响应
           return
         }
@@ -169,7 +169,7 @@ export function useWebHID() {
 
           // Chrome bug workaround: 过滤掉不是以 0xAA 开头的响应
           // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
-          if (data[0] !== 0xAA) {
+          if (data[0] !== 0xaa) {
             // 忽略无效响应，继续等待正确的响应
             return
           }
@@ -199,7 +199,9 @@ export function useWebHID() {
    * 初始化设备连接（内部函数）
    * @param selectedDevice 要连接的设备
    */
-  async function initializeDevice(selectedDevice: HIDDevice): Promise<{ success: boolean; message: string }> {
+  async function initializeDevice(
+    selectedDevice: HIDDevice
+  ): Promise<{ success: boolean; message: string }> {
     try {
       device = selectedDevice
       console.log(`[设备连接] 尝试连接设备: ${device.productName || '未知设备'}`)
@@ -280,10 +282,8 @@ export function useWebHID() {
       }
 
       // 筛选可控制的设备
-      const vendorDevices = existingDevices.filter(d =>
-        d.collections.some(c =>
-          c.outputReports.length > 0 || c.featureReports.length > 0
-        )
+      const vendorDevices = existingDevices.filter((d) =>
+        d.collections.some((c) => c.outputReports.length > 0 || c.featureReports.length > 0)
       )
 
       if (vendorDevices.length === 0) {
@@ -364,10 +364,8 @@ export function useWebHID() {
       // 请求用户选择设备
       const devices = await navigator.hid.requestDevice({ filters: [] })
 
-      const vendorDevices = devices.filter(d =>
-        d.collections.some(c =>
-          c.outputReports.length > 0 || c.featureReports.length > 0
-        )
+      const vendorDevices = devices.filter((d) =>
+        d.collections.some((c) => c.outputReports.length > 0 || c.featureReports.length > 0)
       )
 
       if (vendorDevices.length === 0) {
@@ -536,7 +534,13 @@ export function useWebHID() {
    * 和DPI一样，获取当前滚轮方向
    */
   async function getCurrentScrollDirection(): Promise<void> {
-    if (!device || !currentProtocol.value || !currentProtocol.value.commands.getScrollDirection || !currentProtocol.value.parsers.scrollDirection) return
+    if (
+      !device ||
+      !currentProtocol.value ||
+      !currentProtocol.value.commands.getScrollDirection ||
+      !currentProtocol.value.parsers.scrollDirection
+    )
+      return
 
     try {
       const command = currentProtocol.value.commands.getScrollDirection
@@ -612,7 +616,7 @@ export function useWebHID() {
 
     try {
       const scrollDirection = deviceStatus.value.scrollDirection
-      const command = currentProtocol.value.commands.setDPI(level, value,scrollDirection)
+      const command = currentProtocol.value.commands.setDPI(level, value, scrollDirection)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -739,7 +743,7 @@ export function useWebHID() {
       if (!success) return { success: false, message: '发送命令失败' }
 
       await new Promise((resolve) => setTimeout(resolve, 100))
-      await getCurrentScrollDirection();
+      await getCurrentScrollDirection()
 
       const directionText = direction === 0 ? '正向' : '反向'
       return { success: true, message: `滚轮方向已设置为 ${directionText}` }
@@ -767,9 +771,9 @@ export function useWebHID() {
       const buttons = currentProtocol.value.parsers.buttonMapping(response)
 
       // 转换为 number[][] 格式
-      return buttons.map(btn => [
-        btn.code & 0xFF,
-        (btn.code >> 8) & 0xFF,
+      return buttons.map((btn) => [
+        btn.code & 0xff,
+        (btn.code >> 8) & 0xff,
         btn.modifier,
         btn.extra
       ])
@@ -782,7 +786,9 @@ export function useWebHID() {
   /**
    * 设置按键映射
    */
-  async function setButtonMapping(buttonMappings: number[][]): Promise<{ success: boolean; message: string }> {
+  async function setButtonMapping(
+    buttonMappings: number[][]
+  ): Promise<{ success: boolean; message: string }> {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
@@ -818,7 +824,10 @@ export function useWebHID() {
 
     try {
       // 检查协议是否支持宏功能
-      if (!currentProtocol.value.commands.getMacroList || !currentProtocol.value.parsers.macroList) {
+      if (
+        !currentProtocol.value.commands.getMacroList ||
+        !currentProtocol.value.parsers.macroList
+      ) {
         console.warn('[宏管理] 当前设备不支持宏功能')
         return null
       }
@@ -841,12 +850,17 @@ export function useWebHID() {
   /**
    * 获取宏数据
    */
-  async function getMacroData(macroIndex: number): Promise<Array<{ delay: number; eventType: number; keyCode: number }> | null> {
+  async function getMacroData(
+    macroIndex: number
+  ): Promise<Array<{ delay: number; eventType: number; keyCode: number }> | null> {
     if (!device || !currentProtocol.value) return null
 
     try {
       // 检查协议是否支持宏功能
-      if (!currentProtocol.value.commands.getMacroData || !currentProtocol.value.parsers.macroData) {
+      if (
+        !currentProtocol.value.commands.getMacroData ||
+        !currentProtocol.value.parsers.macroData
+      ) {
         console.warn('[宏管理] 当前设备不支持宏功能')
         return null
       }
@@ -869,7 +883,10 @@ export function useWebHID() {
   /**
    * 设置宏
    */
-  async function setMacro(macroIndex: number, macroEvents: number[]): Promise<{ success: boolean; message: string }> {
+  async function setMacro(
+    macroIndex: number,
+    macroEvents: number[]
+  ): Promise<{ success: boolean; message: string }> {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
@@ -881,17 +898,22 @@ export function useWebHID() {
       // 发送创建宏命令序列
       // 1. 第一个命令: 初始化
       const initCommand = [
-        0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00,
+        0x55,
+        0x0d,
+        0x00,
+        0x00,
+        0x38,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
         ...new Array(55).fill(0)
       ]
       await sendReport(initCommand)
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       // 2. 第二个命令: 准备写入
-      const prepareCommand = [
-        0x55, 0x0D, 0x00, 0x00, 0x08, 0x38,
-        ...new Array(58).fill(0)
-      ]
+      const prepareCommand = [0x55, 0x0d, 0x00, 0x00, 0x08, 0x38, ...new Array(58).fill(0)]
       await sendReport(prepareCommand)
       await new Promise((resolve) => setTimeout(resolve, 50))
 
@@ -925,17 +947,22 @@ export function useWebHID() {
       // 发送删除宏命令序列
       // 1. 第一个命令: 初始化
       const initCommand = [
-        0x55, 0x0D, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00,
+        0x55,
+        0x0d,
+        0x00,
+        0x00,
+        0x38,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
         ...new Array(55).fill(0)
       ]
       await sendReport(initCommand)
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       // 2. 第二个命令: 准备删除
-      const prepareCommand = [
-        0x55, 0x0D, 0x00, 0x00, 0x08, 0x38,
-        ...new Array(58).fill(0)
-      ]
+      const prepareCommand = [0x55, 0x0d, 0x00, 0x00, 0x08, 0x38, ...new Array(58).fill(0)]
       await sendReport(prepareCommand)
       await new Promise((resolve) => setTimeout(resolve, 50))
 

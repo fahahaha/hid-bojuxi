@@ -29,7 +29,7 @@ function createWindow(): void {
   // @ts-ignore
   mainWindow.webContents.session.setPermissionCheckHandler(
     (_webContents, permission, requestingOrigin, details) => {
-      console.log("setPermissionCheckHandler:",permission,requestingOrigin,details)
+      console.log('setPermissionCheckHandler:', permission, requestingOrigin, details)
       return true
     }
   )
@@ -37,7 +37,7 @@ function createWindow(): void {
   // 设置权限请求处理器
   mainWindow.webContents.session.setPermissionRequestHandler(
     (_webContents, permission, callback, details) => {
-      console.log("setPermissionRequestHandler:",_webContents,permission,callback,details)
+      console.log('setPermissionRequestHandler:', _webContents, permission, callback, details)
       callback(true)
     }
   )

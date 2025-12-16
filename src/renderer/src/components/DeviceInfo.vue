@@ -2,9 +2,7 @@
   <div class="device-info-container">
     <!-- 设备信息 -->
     <div class="info-card card-hover">
-      <h3 class="card-title">
-        <i class="fa fa-info-circle icon-primary"></i>设备信息
-      </h3>
+      <h3 class="card-title"><i class="fa fa-info-circle icon-primary"></i>设备信息</h3>
 
       <div class="info-list">
         <div class="info-item">
@@ -33,7 +31,10 @@
         </div>
         <div class="info-item">
           <span class="info-label">设备状态</span>
-          <span class="info-value" :class="deviceInfo.status === '已连接' ? 'status-connected' : 'status-disconnected'">
+          <span
+            class="info-value"
+            :class="deviceInfo.status === '已连接' ? 'status-connected' : 'status-disconnected'"
+          >
             {{ deviceInfo.status }}
           </span>
         </div>
@@ -54,7 +55,11 @@
             <span class="battery-percent">{{ batteryPercent }}</span>
           </div>
           <div class="battery-bar">
-            <div class="battery-fill" :class="batteryColorClass" :style="{ width: batteryPercent }"></div>
+            <div
+              class="battery-fill"
+              :class="batteryColorClass"
+              :style="{ width: batteryPercent }"
+            ></div>
           </div>
           <div class="battery-markers">
             <span>0%</span>

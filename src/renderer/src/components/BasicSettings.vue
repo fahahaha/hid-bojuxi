@@ -4,13 +4,9 @@
     <div class="settings-card" :class="{ disabled: !supportsReportRate }">
       <h3 class="card-title">
         <i class="fa fa-refresh icon-secondary"></i>回报率设置
-        <span v-if="!supportsReportRate" class="unsupported-badge">
-          (不支持)
-        </span>
+        <span v-if="!supportsReportRate" class="unsupported-badge"> (不支持) </span>
       </h3>
-      <p class="card-description">
-        调整鼠标的回报率,更高的回报率提供更流畅的光标移动
-      </p>
+      <p class="card-description">调整鼠标的回报率,更高的回报率提供更流畅的光标移动</p>
 
       <div v-if="!supportsReportRate" class="empty-state">
         <i class="fa fa-exclamation-circle"></i>
@@ -34,9 +30,7 @@
     <div class="settings-card" :class="{ disabled: !supportsDPI }">
       <h3 class="card-title">
         <i class="fa fa-tachometer icon-accent"></i>DPI 设置
-        <span v-if="!supportsDPI" class="unsupported-badge">
-          (不支持)
-        </span>
+        <span v-if="!supportsDPI" class="unsupported-badge"> (不支持) </span>
       </h3>
       <p class="card-description">
         调整鼠标的灵敏度,DPI 值越高,光标移动速度越快
@@ -58,16 +52,8 @@
             <span class="selector-value">{{ selectedDPI }} DPI</span>
           </div>
 
-          <select
-            v-model.number="selectedDPI"
-            @change="handleSetDPI"
-            class="dpi-select"
-          >
-            <option
-              v-for="option in dpiOptions"
-              :key="option.value"
-              :value="option.value"
-            >
+          <select v-model.number="selectedDPI" @change="handleSetDPI" class="dpi-select">
+            <option v-for="option in dpiOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </option>
           </select>
@@ -90,13 +76,9 @@
     <div class="settings-card" :class="{ disabled: !supportedScrollDirection }">
       <h3 class="card-title">
         <i class="fa fa-arrows-v icon-primary"></i>滚轮方向设置
-        <span v-if="!supportedScrollDirection" class="unsupported-badge">
-          (不支持)
-        </span>
+        <span v-if="!supportedScrollDirection" class="unsupported-badge"> (不支持) </span>
       </h3>
-      <p class="card-description">
-        设置鼠标滚轮的滚动方向
-      </p>
+      <p class="card-description">设置鼠标滚轮的滚动方向</p>
 
       <div v-if="!supportedScrollDirection" class="empty-state">
         <i class="fa fa-exclamation-circle"></i>
@@ -134,7 +116,8 @@
 import { ref, computed, watch } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 
-const { setReportRate, setDPI, setScrollDirection, getCurrentProtocol, isConnected, deviceStatus } = useWebHID()
+const { setReportRate, setDPI, setScrollDirection, getCurrentProtocol, isConnected, deviceStatus } =
+  useWebHID()
 
 // 获取设备特性
 const deviceFeatures = computed(() => {
@@ -173,7 +156,7 @@ const supportsDPI = computed(() => {
 
 // 是否支持滚轮方向设置
 const supportedScrollDirection = computed(() => {
-  return isConnected.value && (deviceFeatures.value?.hasScrollDirection !== false)
+  return isConnected.value && deviceFeatures.value?.hasScrollDirection !== false
 })
 
 const selectedReportRate = ref(1000)
@@ -181,11 +164,15 @@ const selectedDPI = ref(2000)
 const isReverseScroll = ref(false)
 
 // 监听设备状态变化,回显当前 DPI
-watch(() => deviceStatus.value.dpi, (newDPI) => {
-  if (newDPI && newDPI !== '--') {
-    selectedDPI.value = parseInt(newDPI)
-  }
-}, { immediate: true })
+watch(
+  () => deviceStatus.value.dpi,
+  (newDPI) => {
+    if (newDPI && newDPI !== '--') {
+      selectedDPI.value = parseInt(newDPI)
+    }
+  },
+  { immediate: true }
+)
 
 // 监听设备连接状态,初始化选中值
 watch(isConnected, (connected) => {
@@ -195,9 +182,13 @@ watch(isConnected, (connected) => {
 })
 
 // 监听设备状态变化,回显当前 滚轮方向
-watch(() => deviceStatus.value.scrollDirection, (newScroll) => {
-  isReverseScroll.value = Number(newScroll) == 0 ? false : true
-}, { immediate: true })
+watch(
+  () => deviceStatus.value.scrollDirection,
+  (newScroll) => {
+    isReverseScroll.value = Number(newScroll) == 0 ? false : true
+  },
+  { immediate: true }
+)
 
 // 监听设备连接状态,初始化选中值,回显当前 滚轮方向
 watch(isConnected, (connected) => {

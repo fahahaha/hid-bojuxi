@@ -35,11 +35,11 @@ body {
 
 /* 工具类 */
 .tab-active {
-  border-bottom-width: 2px!important;
-  border-bottom-style: solid!important;
-  border-color: var(--color-primary)!important;
-  color: var(--color-primary)!important;
-  font-weight: 500!important;
+  border-bottom-width: 2px !important;
+  border-bottom-style: solid !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+  font-weight: 500 !important;
 }
 
 .card-hover {
@@ -126,7 +126,7 @@ body {
 
 .setting-active {
   background-color: var(--color-primary) !important;
-  color: white!important;
+  color: white !important;
   border-color: var(--color-primary) !important;
 }
 

@@ -89,7 +89,6 @@
         <BasicSettings v-if="activeTab === 'basic'" />
         <BacklightSettings v-if="activeTab === 'backlight'" />
         <ButtonMapping v-if="activeTab === 'buttons'" />
-        <MacroManagement v-if="activeTab === 'macro'" />
         <DeviceInfo v-if="activeTab === 'device'" />
       </div>
     </main>
@@ -103,7 +102,11 @@
     </footer>
 
     <!-- 通知提示框 -->
-    <div v-if="notification.show" class="notification" :class="[notificationClass, { show: notification.show }]">
+    <div
+      v-if="notification.show"
+      class="notification"
+      :class="[notificationClass, { show: notification.show }]"
+    >
       <div class="notification-content">
         <div class="notification-icon">
           <i :class="notificationIcon"></i>
@@ -126,7 +129,6 @@ import { useWebHID } from './composables/useWebHID'
 import BasicSettings from './components/BasicSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
-import MacroManagement from './components/MacroManagement.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 
 const { isConnected, deviceStatus, connectDevice, autoConnectDevice } = useWebHID()
@@ -137,7 +139,6 @@ const tabs = [
   { id: 'basic', label: '基础设置', icon: 'fa fa-sliders' },
   { id: 'backlight', label: '背光设置', icon: 'fa fa-lightbulb-o' },
   { id: 'buttons', label: '改键设置', icon: 'fa fa-keyboard-o' },
-  { id: 'macro', label: '宏管理', icon: 'fa fa-list-ol' },
   { id: 'device', label: '设备信息', icon: 'fa fa-info-circle' }
 ]
 
@@ -445,7 +446,9 @@ onMounted(async () => {
   right: 1.25rem;
   padding: 1rem;
   border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   transform: translateY(5rem);
   transition: all 0.3s;
   opacity: 0;

@@ -4,9 +4,7 @@
     <div class="mode-card" :class="{ disabled: !supportsRGB }">
       <h3 class="card-title">
         <i class="fa fa-lightbulb-o icon-warning"></i>背光模式
-        <span v-if="!supportsRGB" class="unsupported-badge">
-          (不支持)
-        </span>
+        <span v-if="!supportsRGB" class="unsupported-badge"> (不支持) </span>
       </h3>
       <p class="card-description">选择鼠标的LED背光效果模式</p>
 
@@ -33,9 +31,7 @@
     <div class="color-card" :class="{ disabled: !supportsRGB }">
       <h3 class="card-title">
         <i class="fa fa-paint-brush icon-primary"></i>背光颜色与亮度
-        <span v-if="!supportsRGB" class="unsupported-badge">
-          (不支持)
-        </span>
+        <span v-if="!supportsRGB" class="unsupported-badge"> (不支持) </span>
       </h3>
       <p class="card-description">自定义鼠标背光的颜色和亮度</p>
 
@@ -128,8 +124,14 @@
 import { ref, computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 
-const { setBacklightMode, setBacklightBrightness, setBacklightFrequency, setBacklightColor, getCurrentProtocol, isConnected } =
-  useWebHID()
+const {
+  setBacklightMode,
+  setBacklightBrightness,
+  setBacklightFrequency,
+  setBacklightColor,
+  getCurrentProtocol,
+  isConnected
+} = useWebHID()
 
 // 获取设备特性
 const deviceFeatures = computed(() => {
@@ -139,7 +141,7 @@ const deviceFeatures = computed(() => {
 
 // 是否支持 RGB 背光
 const supportsRGB = computed(() => {
-  return isConnected.value && (deviceFeatures.value?.hasRGB !== false)
+  return isConnected.value && deviceFeatures.value?.hasRGB !== false
 })
 
 const backlightModes = [
@@ -348,7 +350,8 @@ function resetBacklight() {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

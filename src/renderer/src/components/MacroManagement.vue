@@ -2,9 +2,7 @@
   <div class="macro-management">
     <!-- 宏列表 -->
     <div class="macro-list-card card-hover">
-      <h3 class="card-title">
-        <i class="fa fa-list-ol icon-primary"></i>宏列表
-      </h3>
+      <h3 class="card-title"><i class="fa fa-list-ol icon-primary"></i>宏列表</h3>
       <p class="card-description">管理您的宏,最多可保存10组宏</p>
 
       <div class="macro-buttons">
@@ -27,10 +25,18 @@
       </div>
 
       <div class="macro-actions">
-        <button @click="newMacro" class="btn-secondary action-btn" :disabled="macros.length >= MAX_MACRO_COUNT || isRecording">
+        <button
+          @click="newMacro"
+          class="btn-secondary action-btn"
+          :disabled="macros.length >= MAX_MACRO_COUNT || isRecording"
+        >
           <i class="fa fa-plus"></i>新建宏 ({{ macros.length }}/{{ MAX_MACRO_COUNT }})
         </button>
-        <button @click="deleteMacro" class="btn-secondary action-btn delete-btn" :disabled="selectedMacroIndex === null || isRecording">
+        <button
+          @click="deleteMacro"
+          class="btn-secondary action-btn delete-btn"
+          :disabled="selectedMacroIndex === null || isRecording"
+        >
           <i class="fa fa-trash"></i>删除选中宏
         </button>
       </div>
@@ -40,13 +46,16 @@
     <div class="macro-settings">
       <!-- 录制控制 -->
       <div class="record-card card-hover">
-        <h3 class="card-title">
-          <i class="fa fa-circle-o-notch icon-accent"></i>宏录制
-        </h3>
+        <h3 class="card-title"><i class="fa fa-circle-o-notch icon-accent"></i>宏录制</h3>
 
         <div class="record-controls">
-          <button @click="toggleRecord" :disabled="!isConnected || selectedMacroIndex === null" :class="isRecording ? 'btn-secondary' : 'btn-primary'">
-            <i :class="isRecording ? 'fa fa-stop' : 'fa fa-circle'"></i>{{ isRecording ? '结束录制' : '开始录制' }}
+          <button
+            @click="toggleRecord"
+            :disabled="!isConnected || selectedMacroIndex === null"
+            :class="isRecording ? 'btn-secondary' : 'btn-primary'"
+          >
+            <i :class="isRecording ? 'fa fa-stop' : 'fa fa-circle'"></i
+            >{{ isRecording ? '结束录制' : '开始录制' }}
           </button>
         </div>
 
@@ -69,10 +78,12 @@
       <!-- 宏设置 -->
       <div class="settings-card card-hover">
         <div class="settings-header">
-          <h3 class="card-title">
-            <i class="fa fa-cog icon-primary"></i>宏设置
-          </h3>
-          <button @click="saveMacro" class="btn-primary" :disabled="!isConnected || currentMacro.events.length === 0 || isRecording">
+          <h3 class="card-title"><i class="fa fa-cog icon-primary"></i>宏设置</h3>
+          <button
+            @click="saveMacro"
+            class="btn-primary"
+            :disabled="!isConnected || currentMacro.events.length === 0 || isRecording"
+          >
             <i class="fa fa-save"></i>保存宏
           </button>
         </div>
@@ -89,10 +100,20 @@
             <div class="form-label-with-actions">
               <label class="form-label">宏事件列表</label>
               <div class="event-actions">
-                <button @click="removeSelectedEvent" class="btn-text" :disabled="selectedEventIndex === null || isRecording" title="删除选中事件">
+                <button
+                  @click="removeSelectedEvent"
+                  class="btn-text"
+                  :disabled="selectedEventIndex === null || isRecording"
+                  title="删除选中事件"
+                >
                   <i class="fa fa-trash"></i>删除选中
                 </button>
-                <button @click="clearAllEvents" class="btn-text" :disabled="currentMacro.events.length === 0 || isRecording" title="清空所有事件">
+                <button
+                  @click="clearAllEvents"
+                  class="btn-text"
+                  :disabled="currentMacro.events.length === 0 || isRecording"
+                  title="清空所有事件"
+                >
                   <i class="fa fa-trash-o"></i>清空全部
                 </button>
               </div>
@@ -112,7 +133,8 @@
                 <div class="action-info">
                   <span class="action-number">{{ index + 1 }}</span>
                   <span class="action-text">
-                    <strong>{{ event.key }}</strong> - {{ event.type === 'keydown' ? '按下' : '抬起' }}
+                    <strong>{{ event.key }}</strong> -
+                    {{ event.type === 'keydown' ? '按下' : '抬起' }}
                   </span>
                 </div>
                 <div class="action-meta">
@@ -597,7 +619,8 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

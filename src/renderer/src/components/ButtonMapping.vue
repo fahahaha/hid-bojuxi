@@ -1,11 +1,7 @@
 <template>
   <div class="button-mapping-container">
-    <h3 class="section-title">
-      <i class="fa fa-keyboard-o icon-primary"></i>鼠标按键自定义
-    </h3>
-    <p class="section-description">
-      自定义鼠标各按键的功能,可设置为鼠标功能、多媒体键或键盘组合键
-    </p>
+    <h3 class="section-title"><i class="fa fa-keyboard-o icon-primary"></i>鼠标按键自定义</h3>
+    <p class="section-description">自定义鼠标各按键的功能,可设置为鼠标功能、多媒体键或键盘组合键</p>
 
     <div class="mapping-layout">
       <!-- 鼠标按键示意图 -->
@@ -103,11 +99,7 @@
                       :key="modifier.id"
                       class="modifier-checkbox"
                     >
-                      <input
-                        type="checkbox"
-                        v-model="selectedModifiers"
-                        :value="modifier.value"
-                      />
+                      <input type="checkbox" v-model="selectedModifiers" :value="modifier.value" />
                       <span>{{ modifier.name }}</span>
                     </label>
                   </div>
@@ -140,11 +132,7 @@
                   </select>
                 </div>
 
-                <button
-                  @click="applyKeyboardMapping"
-                  class="apply-button"
-                  :disabled="!selectedKey"
-                >
+                <button @click="applyKeyboardMapping" class="apply-button" :disabled="!selectedKey">
                   <i class="fa fa-check"></i>
                   保存按键
                 </button>
@@ -153,55 +141,219 @@
 
             <!-- 宏标签页 -->
             <div v-if="activeTab === 'macro'" class="tab-content">
-              <div class="macro-settings">
-                <div class="form-group">
-                  <label class="form-label">选择宏</label>
-                  <select v-model="selectedMacroIndex" class="form-select">
-                    <option value="">-- 请选择宏 --</option>
-                    <option v-for="(macro, index) in availableMacros" :key="index" :value="index">
-                      {{ macro.name }} ({{ macro.events.length }}个事件)
-                    </option>
-                  </select>
-                </div>
+              <div class="macro-management-container">
+                <!-- 左侧：宏列表和管理 -->
+                <div class="macro-list-section">
+                  <h5 class="section-subtitle">宏列表</h5>
+                  <p class="section-hint">管理您的宏，最多可保存10组宏</p>
 
-                <div class="form-group">
-                  <label class="form-label">循环模式</label>
-                  <div class="radio-group">
-                    <label class="radio-label">
-                      <input type="radio" v-model="macroLoopMode" value="release" />
-                      <span>循环直到按键松开</span>
-                    </label>
-                    <label class="radio-label">
-                      <input type="radio" v-model="macroLoopMode" value="anykey" />
-                      <span>循环直到任意键按下</span>
-                    </label>
-                    <label class="radio-label">
-                      <input type="radio" v-model="macroLoopMode" value="count" />
-                      <span>循环指定次数</span>
-                    </label>
+                  <div class="macro-list">
+                    <div v-if="macros.length === 0" class="empty-macros">
+                      <i class="fa fa-info-circle"></i>
+                      暂无宏，点击"新建宏"开始创建
+                    </div>
+                    <button
+                      v-else
+                      v-for="(macro, index) in macros"
+                      :key="index"
+                      @click="selectMacroForEdit(index)"
+                      class="macro-list-item"
+                      :class="{ active: selectedMacroForEdit === index }"
+                      :disabled="isRecording"
+                    >
+                      <span class="macro-item-name">{{ macro.name }}</span>
+                      <span class="macro-item-count">{{ macro.events.length }}个事件</span>
+                    </button>
+                  </div>
+
+                  <div class="macro-list-actions">
+                    <button
+                      @click="createNewMacro"
+                      class="macro-action-btn"
+                      :disabled="macros.length >= MAX_MACRO_COUNT || isRecording"
+                    >
+                      <i class="fa fa-plus"></i>
+                      新建宏 ({{ macros.length }}/{{ MAX_MACRO_COUNT }})
+                    </button>
+                    <button
+                      @click="deleteSelectedMacro"
+                      class="macro-action-btn delete-macro-btn"
+                      :disabled="selectedMacroForEdit === null || isRecording"
+                    >
+                      <i class="fa fa-trash"></i>
+                      删除选中宏
+                    </button>
                   </div>
                 </div>
 
-                <div v-if="macroLoopMode === 'count'" class="form-group">
-                  <label class="form-label">循环次数 (1-65535)</label>
-                  <input
-                    type="number"
-                    v-model.number="macroLoopCount"
-                    class="form-input"
-                    min="1"
-                    max="65535"
-                    placeholder="输入循环次数"
-                  />
-                </div>
+                <!-- 右侧：宏编辑和录制 -->
+                <div class="macro-edit-section">
+                  <!-- 宏录制控制 -->
+                  <div class="macro-record-area">
+                    <h5 class="section-subtitle">
+                      <i class="fa fa-circle-o-notch"></i>
+                      宏录制
+                    </h5>
 
-                <button
-                  @click="applyMacroMapping"
-                  class="apply-button"
-                  :disabled="selectedMacroIndex === ''"
-                >
-                  <i class="fa fa-check"></i>
-                  保存到按键
-                </button>
+                    <button
+                      @click="toggleMacroRecord"
+                      :disabled="!isConnected || selectedMacroForEdit === null"
+                      :class="isRecording ? 'stop-record-btn' : 'start-record-btn'"
+                      class="record-control-btn"
+                    >
+                      <i :class="isRecording ? 'fa fa-stop' : 'fa fa-circle'"></i>
+                      {{ isRecording ? '结束录制' : '开始录制' }}
+                    </button>
+
+                    <div v-if="isRecording" class="recording-status">
+                      <i class="fa fa-circle recording-pulse"></i>
+                      <span>正在录制... 请执行您的操作，完成后点击"结束录制"</span>
+                    </div>
+
+                    <div v-if="!isConnected" class="macro-notice">
+                      <i class="fa fa-info-circle"></i>
+                      请先连接设备
+                    </div>
+
+                    <div v-if="isConnected && selectedMacroForEdit === null" class="macro-notice">
+                      <i class="fa fa-info-circle"></i>
+                      请先选择或创建一个宏
+                    </div>
+                  </div>
+
+                  <!-- 宏事件列表 -->
+                  <div class="macro-events-area">
+                    <div class="events-header">
+                      <h5 class="section-subtitle">
+                        宏事件列表
+                        <span v-if="currentEditingMacro.name" class="macro-name-badge">
+                          {{ currentEditingMacro.name }}
+                        </span>
+                      </h5>
+                      <div class="events-actions">
+                        <button
+                          @click="removeSelectedMacroEvent"
+                          class="event-action-btn"
+                          :disabled="selectedMacroEventIndex === null || isRecording"
+                          title="删除选中事件"
+                        >
+                          <i class="fa fa-trash"></i>
+                          删除选中
+                        </button>
+                        <button
+                          @click="clearAllMacroEvents"
+                          class="event-action-btn"
+                          :disabled="currentEditingMacro.events.length === 0 || isRecording"
+                          title="清空所有事件"
+                        >
+                          <i class="fa fa-trash-o"></i>
+                          清空全部
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="events-list">
+                      <div v-if="currentEditingMacro.events.length === 0" class="empty-events">
+                        录制宏事件后将显示在这里
+                      </div>
+                      <div
+                        v-else
+                        v-for="(event, index) in currentEditingMacro.events"
+                        :key="index"
+                        @click="selectMacroEvent(index)"
+                        class="event-item"
+                        :class="{ selected: selectedMacroEventIndex === index }"
+                      >
+                        <div class="event-info">
+                          <span class="event-number">{{ index + 1 }}</span>
+                          <span class="event-text">
+                            <strong>{{ event.key }}</strong> -
+                            {{ event.type === 'keydown' ? '按下' : '抬起' }}
+                          </span>
+                        </div>
+                        <div class="event-meta">
+                          <span class="event-delay">延迟 {{ event.delay }}ms</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 保存宏按钮 -->
+                  <button
+                    @click="saveMacroToDevice"
+                    class="save-macro-btn"
+                    :disabled="
+                      !isConnected || currentEditingMacro.events.length === 0 || isRecording
+                    "
+                  >
+                    <i class="fa fa-save"></i>
+                    保存宏到设备
+                  </button>
+
+                  <!-- 分隔线 -->
+                  <div class="macro-divider"></div>
+
+                  <!-- 将宏绑定到按键 -->
+                  <div class="macro-binding-area">
+                    <h5 class="section-subtitle">
+                      <i class="fa fa-link"></i>
+                      将宏绑定到当前按键
+                    </h5>
+
+                    <div class="form-group">
+                      <label class="form-label">选择要绑定的宏</label>
+                      <select v-model="selectedMacroIndex" class="form-select">
+                        <option value="">-- 请选择宏 --</option>
+                        <option
+                          v-for="(macro, index) in availableMacros"
+                          :key="index"
+                          :value="index"
+                        >
+                          {{ macro.name }} ({{ macro.events.length }}个事件)
+                        </option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">循环模式</label>
+                      <div class="radio-group">
+                        <label class="radio-label">
+                          <input type="radio" v-model="macroLoopMode" value="release" />
+                          <span>循环直到按键松开</span>
+                        </label>
+                        <label class="radio-label">
+                          <input type="radio" v-model="macroLoopMode" value="anykey" />
+                          <span>循环直到任意键按下</span>
+                        </label>
+                        <label class="radio-label">
+                          <input type="radio" v-model="macroLoopMode" value="count" />
+                          <span>循环指定次数</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div v-if="macroLoopMode === 'count'" class="form-group">
+                      <label class="form-label">循环次数 (1-65535)</label>
+                      <input
+                        type="number"
+                        v-model.number="macroLoopCount"
+                        class="form-input"
+                        min="1"
+                        max="65535"
+                        placeholder="输入循环次数"
+                      />
+                    </div>
+
+                    <button
+                      @click="applyMacroMapping"
+                      class="apply-button"
+                      :disabled="selectedMacroIndex === ''"
+                    >
+                      <i class="fa fa-check"></i>
+                      绑定到按键 {{ selectedButton + 1 }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -220,9 +372,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
-import { useMacroStorage } from '../composables/useMacroStorage'
+import { useMacroStorage, type MacroEvent, type Macro } from '../composables/useMacroStorage'
 import {
   mouseButtons,
   multimediaButtons,
@@ -234,23 +386,33 @@ import {
   type ButtonMapping
 } from '../config/buttonMappings'
 
-const { isConnected, getButtonMapping, setButtonMapping } = useWebHID()
-const { macros } = useMacroStorage()
+const {
+  isConnected,
+  getButtonMapping,
+  setButtonMapping,
+  setMacro: setDeviceMacro,
+  deleteMacro: deleteDeviceMacro
+} = useWebHID()
+const {
+  macros,
+  getMacro,
+  addMacro,
+  updateMacro,
+  deleteMacro: deleteStoredMacro,
+  getNextMacroName,
+  encodeMacroEvents,
+  getScancodeFromKeyName,
+  MAX_MACRO_COUNT
+} = useMacroStorage()
 
 // 按键映射数据（8个按键，但只显示前5个）
 const buttonMappings = ref<number[][]>([...defaultButtonMappings])
 
 // UI按键索引到设备数组索引的映射
 // 根据实际测试，按键4和按键5在设备中的位置是对调的
-const uiToDeviceIndex = [0, 1, 2, 4, 3]  // UI索引 → 设备索引
+const uiToDeviceIndex = [0, 1, 2, 4, 3] // UI索引 → 设备索引
 
-const buttonNames = [
-  '左键(按键 1)',
-  '右键(按键 2)',
-  '中键(按键 3)',
-  '前进(按键 4)',
-  '后退(按键 5)'
-]
+const buttonNames = ['左键(按键 1)', '右键(按键 2)', '中键(按键 3)', '前进(按键 4)', '后退(按键 5)']
 
 const selectedButton = ref(0)
 const activeTab = ref('mouse')
@@ -266,14 +428,14 @@ const tabs = [
 // 多媒体分类
 const multimediaCategories = computed(() => {
   const categories = new Set<string>()
-  multimediaButtons.forEach(btn => {
+  multimediaButtons.forEach((btn) => {
     if (btn.category) categories.add(btn.category)
   })
   return Array.from(categories)
 })
 
 function getMultimediaByCategory(category: string): ButtonMapping[] {
-  return multimediaButtons.filter(btn => btn.category === category)
+  return multimediaButtons.filter((btn) => btn.category === category)
 }
 
 // 键盘按键选项
@@ -283,16 +445,46 @@ const selectedKey = ref('')
 const alphabetKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 const functionKeys = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12']
-const specialKeys = ['Enter', 'Escape', 'Backspace', 'Tab', 'Space', 'Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'Up', 'Down', 'Left', 'Right']
+const specialKeys = [
+  'Enter',
+  'Escape',
+  'Backspace',
+  'Tab',
+  'Space',
+  'Insert',
+  'Delete',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+  'Up',
+  'Down',
+  'Left',
+  'Right'
+]
 
-// 宏相关变量
+// 宏相关变量 - 用于绑定到按键
 const selectedMacroIndex = ref<string>('')
 const macroLoopMode = ref<'release' | 'anykey' | 'count'>('release')
 const macroLoopCount = ref(1)
 
+// 宏管理相关变量 - 用于编辑宏
+const selectedMacroForEdit = ref<number | null>(null)
+const currentEditingMacro = ref<Macro>({
+  name: '',
+  events: [],
+  loopMode: 'once',
+  loopCount: 1
+})
+const isRecording = ref(false)
+const lastActionTime = ref(0)
+const recordedEvents = ref<MacroEvent[]>([])
+const pressedKeys = ref<Map<string, { eventIndex: number; startTime: number }>>(new Map())
+const selectedMacroEventIndex = ref<number | null>(null)
+
 // 可用的宏列表 (只显示有事件的宏)
 const availableMacros = computed(() => {
-  return macros.value.filter(macro => macro.events.length > 0)
+  return macros.value.filter((macro) => macro.events.length > 0)
 })
 
 /**
@@ -401,11 +593,14 @@ async function applyMacroMapping() {
   } else {
     // 循环指定次数: [0x70, macroIndex, 次数低字节, 次数高字节]
     const count = Math.min(65535, Math.max(1, macroLoopCount.value))
-    code = [0x70, macroIndex, count & 0xFF, (count >> 8) & 0xFF]
+    code = [0x70, macroIndex, count & 0xff, (count >> 8) & 0xff]
   }
 
   const deviceIndex = uiToDeviceIndex[selectedButton.value]
-  console.log(`[宏映射] UI按键${selectedButton.value + 1} (设备索引${deviceIndex}) 设置为宏${macroIndex + 1}:`, code)
+  console.log(
+    `[宏映射] UI按键${selectedButton.value + 1} (设备索引${deviceIndex}) 设置为宏${macroIndex + 1}:`,
+    code
+  )
   buttonMappings.value[deviceIndex] = code
 
   // 发送到设备
@@ -471,9 +666,286 @@ async function loadFromDevice() {
   }
 }
 
-// 组件挂载时加载按键映射
+// ==================== 宏管理功能 ====================
+
+/**
+ * 选择宏进行编辑
+ */
+function selectMacroForEdit(index: number) {
+  selectedMacroForEdit.value = index
+  const macro = getMacro(index)
+  if (macro) {
+    currentEditingMacro.value = { ...macro }
+  }
+}
+
+/**
+ * 新建宏
+ */
+function createNewMacro() {
+  if (macros.value.length >= MAX_MACRO_COUNT) {
+    alert(`最多只能创建 ${MAX_MACRO_COUNT} 个宏`)
+    return
+  }
+
+  // 创建新宏
+  const newMacroName = getNextMacroName()
+  const newMacroData: Macro = {
+    name: newMacroName,
+    events: [],
+    loopMode: 'once',
+    loopCount: 1
+  }
+
+  // 添加到列表
+  if (addMacro(newMacroData)) {
+    // 选中新创建的宏
+    selectedMacroForEdit.value = macros.value.length - 1
+    currentEditingMacro.value = { ...newMacroData }
+    console.log('[宏管理] 已创建新宏:', newMacroName)
+  } else {
+    alert('创建宏失败')
+  }
+}
+
+/**
+ * 删除选中的宏
+ */
+async function deleteSelectedMacro() {
+  if (selectedMacroForEdit.value === null) {
+    alert('请先选择一个宏')
+    return
+  }
+
+  if (!confirm(`确定要删除${currentEditingMacro.value.name}吗？此操作不可撤销。`)) {
+    return
+  }
+
+  // 从设备删除宏
+  if (isConnected.value && currentEditingMacro.value.events.length > 0) {
+    const result = await deleteDeviceMacro(selectedMacroForEdit.value)
+    if (!result.success) {
+      alert(`从设备删除失败: ${result.message}`)
+      // 继续删除本地存储
+    }
+  }
+
+  // 从本地存储删除宏
+  if (deleteStoredMacro(selectedMacroForEdit.value)) {
+    // 重置选择
+    if (macros.value.length > 0) {
+      selectedMacroForEdit.value = 0
+      currentEditingMacro.value = { ...macros.value[0] }
+    } else {
+      selectedMacroForEdit.value = null
+      currentEditingMacro.value = {
+        name: '',
+        events: [],
+        loopMode: 'once',
+        loopCount: 1
+      }
+    }
+    console.log('[宏管理] 宏已删除')
+  } else {
+    alert('删除宏失败')
+  }
+}
+
+/**
+ * 切换录制状态
+ */
+function toggleMacroRecord() {
+  if (isRecording.value) {
+    // 结束录制
+    isRecording.value = false
+    console.log('[宏录制] 结束录制，共录制', recordedEvents.value.length, '个事件')
+  } else {
+    // 开始录制
+    isRecording.value = true
+    recordedEvents.value = [...currentEditingMacro.value.events] // 从当前事件继续追加
+    pressedKeys.value.clear() // 清空按键状态
+    selectedMacroEventIndex.value = null // 清空事件选择
+    lastActionTime.value = Date.now()
+    console.log('[宏录制] 开始录制，当前已有', currentEditingMacro.value.events.length, '个事件')
+  }
+}
+
+/**
+ * 选择宏事件
+ */
+function selectMacroEvent(index: number) {
+  if (isRecording.value) return // 录制时不允许选择
+  selectedMacroEventIndex.value = selectedMacroEventIndex.value === index ? null : index
+}
+
+/**
+ * 删除选中的宏事件
+ */
+function removeSelectedMacroEvent() {
+  if (selectedMacroEventIndex.value === null) return
+  currentEditingMacro.value.events.splice(selectedMacroEventIndex.value, 1)
+  recordedEvents.value.splice(selectedMacroEventIndex.value, 1)
+  selectedMacroEventIndex.value = null
+  console.log('[宏管理] 已删除选中事件')
+}
+
+/**
+ * 清空所有宏事件
+ */
+function clearAllMacroEvents() {
+  if (!confirm('确定要清空所有事件吗？')) return
+  currentEditingMacro.value.events = []
+  recordedEvents.value = []
+  selectedMacroEventIndex.value = null
+  console.log('[宏管理] 已清空所有事件')
+}
+
+/**
+ * 保存宏到设备
+ */
+async function saveMacroToDevice() {
+  if (currentEditingMacro.value.events.length === 0) {
+    alert('宏事件不能为空')
+    return
+  }
+
+  if (!currentEditingMacro.value.name.trim()) {
+    alert('宏名称不能为空')
+    return
+  }
+
+  if (selectedMacroForEdit.value === null) {
+    alert('请先选择一个宏')
+    return
+  }
+
+  // 编码宏事件为设备协议格式
+  const encodedEvents = encodeMacroEvents(currentEditingMacro.value.events)
+
+  // 发送到设备
+  if (isConnected.value) {
+    const result = await setDeviceMacro(selectedMacroForEdit.value, encodedEvents)
+    if (!result.success) {
+      alert(`保存到设备失败: ${result.message}`)
+      return
+    }
+  }
+
+  // 保存到本地存储
+  if (updateMacro(selectedMacroForEdit.value, currentEditingMacro.value)) {
+    alert(`${currentEditingMacro.value.name} 已保存`)
+  } else {
+    alert('保存到本地存储失败')
+  }
+}
+
+/**
+ * 处理键盘按下事件
+ */
+function handleKeyDown(e: KeyboardEvent) {
+  if (!isRecording.value) return
+
+  // 阻止默认行为
+  e.preventDefault()
+
+  // 如果按键已经按下（重复触发），忽略
+  if (pressedKeys.value.has(e.key)) {
+    return
+  }
+
+  const now = Date.now()
+
+  // 获取按键扫描码
+  const scancode = getScancodeFromKeyName(e.key)
+
+  if (scancode === 0x00) {
+    console.warn('[宏录制] 未知按键:', e.key)
+    return
+  }
+
+  // 按下事件的 delay 初始为 0，会在抬起时更新为持续时间
+  const event: MacroEvent = {
+    type: 'keydown',
+    key: e.key.length === 1 ? e.key.toUpperCase() : e.key,
+    scancode,
+    delay: 0
+  }
+
+  // 记录事件索引和开始时间
+  const eventIndex = recordedEvents.value.length
+  pressedKeys.value.set(e.key, { eventIndex, startTime: now })
+
+  recordedEvents.value.push(event)
+  currentEditingMacro.value.events.push(event) // 实时更新到当前宏事件列表
+  console.log('[宏录制] 按键按下:', event)
+}
+
+/**
+ * 处理键盘抬起事件
+ */
+function handleKeyUp(e: KeyboardEvent) {
+  if (!isRecording.value) return
+
+  // 阻止默认行为
+  e.preventDefault()
+
+  // 检查按键是否在按下状态
+  const pressedKey = pressedKeys.value.get(e.key)
+  if (!pressedKey) {
+    console.warn('[宏录制] 按键未按下就抬起:', e.key)
+    return
+  }
+
+  const now = Date.now()
+  const holdDuration = now - pressedKey.startTime // 按键持续时间
+
+  // 获取按键扫描码
+  const scancode = getScancodeFromKeyName(e.key)
+
+  if (scancode === 0x00) {
+    console.warn('[宏录制] 未知按键:', e.key)
+    return
+  }
+
+  // 更新按下事件的延迟时间为持续时间
+  if (recordedEvents.value[pressedKey.eventIndex]) {
+    recordedEvents.value[pressedKey.eventIndex].delay = holdDuration
+    if (currentEditingMacro.value.events[pressedKey.eventIndex]) {
+      currentEditingMacro.value.events[pressedKey.eventIndex].delay = holdDuration
+    }
+  }
+
+  // 添加抬起事件，延迟为0（紧接着按下事件）
+  const event: MacroEvent = {
+    type: 'keyup',
+    key: e.key.length === 1 ? e.key.toUpperCase() : e.key,
+    scancode,
+    delay: 0
+  }
+
+  recordedEvents.value.push(event)
+  currentEditingMacro.value.events.push(event) // 实时更新到当前宏事件列表
+
+  // 更新最后操作时间
+  lastActionTime.value = now
+
+  // 从按下状态中移除
+  pressedKeys.value.delete(e.key)
+
+  console.log('[宏录制] 按键抬起:', event, '持续时间:', holdDuration, 'ms')
+}
+
+// 组件挂载时加载按键映射并注册键盘事件监听
 onMounted(() => {
   loadFromDevice()
+  document.addEventListener('keydown', handleKeyDown)
+  document.addEventListener('keyup', handleKeyUp)
+})
+
+// 组件卸载时移除键盘事件监听
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+  document.removeEventListener('keyup', handleKeyUp)
 })
 </script>
 
@@ -549,7 +1021,9 @@ onMounted(() => {
   border-width: 2px;
   background-color: rgba(22, 93, 255, 0.2);
   text-align: center;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.2s;
   border: none;
@@ -583,7 +1057,7 @@ onMounted(() => {
 
 /* 连接线基础样式 */
 .mouse-mode .mouse-key:before {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -595,7 +1069,7 @@ onMounted(() => {
 
 /* 连接线末端小圆圈 */
 .mouse-mode .mouse-key:after {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -868,7 +1342,7 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.modifier-checkbox input[type="checkbox"] {
+.modifier-checkbox input[type='checkbox'] {
   accent-color: var(--color-primary);
   cursor: pointer;
   width: 18px;
@@ -925,7 +1399,7 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
-.radio-label input[type="radio"] {
+.radio-label input[type='radio'] {
   accent-color: var(--color-primary);
   cursor: pointer;
   width: 18px;
@@ -971,5 +1445,411 @@ onMounted(() => {
 
 .reset-all-button i {
   margin-right: 0.5rem;
+}
+
+/* ==================== 宏管理样式 ==================== */
+
+.macro-management-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  min-height: 400px;
+}
+
+@media (min-width: 1024px) {
+  .macro-management-container {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+/* 宏列表区域 */
+.macro-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-dark);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-hint {
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+  margin: 0;
+}
+
+.macro-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 150px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+}
+
+.empty-macros {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-gray-medium);
+  font-size: 0.875rem;
+  gap: 0.5rem;
+}
+
+.empty-macros i {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+.macro-list-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-gray-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  background-color: white;
+  cursor: pointer;
+}
+
+.macro-list-item:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background-color: rgba(22, 93, 255, 0.05);
+}
+
+.macro-list-item.active {
+  border-color: var(--color-primary);
+  background-color: rgba(22, 93, 255, 0.1);
+}
+
+.macro-list-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.macro-item-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.macro-item-count {
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+}
+
+.macro-list-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.macro-action-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.macro-action-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.macro-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-macro-btn {
+  color: var(--color-danger);
+  border-color: rgba(245, 63, 63, 0.3);
+}
+
+.delete-macro-btn:hover:not(:disabled) {
+  background-color: rgba(245, 63, 63, 0.05);
+  border-color: var(--color-danger);
+}
+
+/* 宏编辑区域 */
+.macro-edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.macro-record-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.record-control-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.start-record-btn {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.start-record-btn:hover:not(:disabled) {
+  background-color: #1557cc;
+}
+
+.stop-record-btn {
+  background-color: white;
+  color: var(--color-gray-dark);
+  border: 1px solid var(--color-gray-light);
+}
+
+.stop-record-btn:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.record-control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.recording-status {
+  padding: 0.75rem;
+  background-color: rgba(114, 46, 209, 0.1);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-accent);
+}
+
+.recording-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.macro-notice {
+  padding: 0.75rem;
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
+  color: var(--color-gray-medium);
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.macro-notice i {
+  margin-right: 0.5rem;
+}
+
+/* 宏事件列表 */
+.macro-events-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.events-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.macro-name-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(22, 93, 255, 0.1);
+  color: var(--color-primary);
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.events-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.event-action-btn {
+  background: none;
+  border: none;
+  color: var(--color-gray-medium);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.event-action-btn:hover:not(:disabled) {
+  color: var(--color-primary);
+}
+
+.event-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.events-list {
+  border: 1px solid var(--color-gray-light);
+  border-radius: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: white;
+}
+
+.empty-events {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-gray-medium);
+  font-size: 0.875rem;
+}
+
+.event-item {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-gray-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-item:hover {
+  background-color: #f9fafb;
+}
+
+.event-item.selected {
+  background-color: rgba(22, 93, 255, 0.1);
+  border-left: 3px solid var(--color-primary);
+}
+
+.event-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.event-number {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.event-text {
+  font-size: 0.875rem;
+}
+
+.event-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.event-delay {
+  font-size: 0.75rem;
+  color: var(--color-gray-medium);
+}
+
+.save-macro-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.save-macro-btn:hover:not(:disabled) {
+  background-color: #1557cc;
+}
+
+.save-macro-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.macro-divider {
+  height: 1px;
+  background-color: var(--color-gray-light);
+  margin: 0.5rem 0;
+}
+
+/* 宏绑定区域 */
+.macro-binding-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-gray-light);
 }
 </style>

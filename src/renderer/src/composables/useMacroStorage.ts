@@ -139,11 +139,11 @@ export function useMacroStorage() {
    */
   function getNextMacroName(): string {
     const existingNumbers = macros.value
-      .map(m => {
+      .map((m) => {
         const match = m.name.match(/^宏\s*(\d+)$/)
         return match ? parseInt(match[1]) : 0
       })
-      .filter(n => n > 0)
+      .filter((n) => n > 0)
 
     if (existingNumbers.length === 0) {
       return '宏 1'
@@ -166,10 +166,10 @@ export function useMacroStorage() {
       const keyCode = event.scancode
 
       encoded.push(
-        delay & 0xFF,           // 延迟低字节
-        (delay >> 8) & 0xFF,    // 延迟高字节
-        eventType,              // 事件类型
-        keyCode                 // 按键码
+        delay & 0xff, // 延迟低字节
+        (delay >> 8) & 0xff, // 延迟高字节
+        eventType, // 事件类型
+        keyCode // 按键码
       )
     }
 
@@ -179,7 +179,9 @@ export function useMacroStorage() {
   /**
    * 将设备协议格式解码为宏事件
    */
-  function decodeMacroEvents(data: Array<{ delay: number; eventType: number; keyCode: number }>): MacroEvent[] {
+  function decodeMacroEvents(
+    data: Array<{ delay: number; eventType: number; keyCode: number }>
+  ): MacroEvent[] {
     const events: MacroEvent[] = []
 
     for (const item of data) {
@@ -203,16 +205,55 @@ export function useMacroStorage() {
   function getKeyNameFromScancode(scancode: number): string {
     // USB HID 键盘扫描码映射
     const scancodeMap: Record<number, string> = {
-      0x04: 'A', 0x05: 'B', 0x06: 'C', 0x07: 'D', 0x08: 'E', 0x09: 'F',
-      0x0A: 'G', 0x0B: 'H', 0x0C: 'I', 0x0D: 'J', 0x0E: 'K', 0x0F: 'L',
-      0x10: 'M', 0x11: 'N', 0x12: 'O', 0x13: 'P', 0x14: 'Q', 0x15: 'R',
-      0x16: 'S', 0x17: 'T', 0x18: 'U', 0x19: 'V', 0x1A: 'W', 0x1B: 'X',
-      0x1C: 'Y', 0x1D: 'Z',
-      0x1E: '1', 0x1F: '2', 0x20: '3', 0x21: '4', 0x22: '5',
-      0x23: '6', 0x24: '7', 0x25: '8', 0x26: '9', 0x27: '0',
-      0x28: 'Enter', 0x29: 'Escape', 0x2A: 'Backspace', 0x2B: 'Tab', 0x2C: 'Space',
-      0xE0: 'LeftCtrl', 0xE1: 'LeftShift', 0xE2: 'LeftAlt', 0xE3: 'LeftMeta',
-      0xE4: 'RightCtrl', 0xE5: 'RightShift', 0xE6: 'RightAlt', 0xE7: 'RightMeta'
+      0x04: 'A',
+      0x05: 'B',
+      0x06: 'C',
+      0x07: 'D',
+      0x08: 'E',
+      0x09: 'F',
+      0x0a: 'G',
+      0x0b: 'H',
+      0x0c: 'I',
+      0x0d: 'J',
+      0x0e: 'K',
+      0x0f: 'L',
+      0x10: 'M',
+      0x11: 'N',
+      0x12: 'O',
+      0x13: 'P',
+      0x14: 'Q',
+      0x15: 'R',
+      0x16: 'S',
+      0x17: 'T',
+      0x18: 'U',
+      0x19: 'V',
+      0x1a: 'W',
+      0x1b: 'X',
+      0x1c: 'Y',
+      0x1d: 'Z',
+      0x1e: '1',
+      0x1f: '2',
+      0x20: '3',
+      0x21: '4',
+      0x22: '5',
+      0x23: '6',
+      0x24: '7',
+      0x25: '8',
+      0x26: '9',
+      0x27: '0',
+      0x28: 'Enter',
+      0x29: 'Escape',
+      0x2a: 'Backspace',
+      0x2b: 'Tab',
+      0x2c: 'Space',
+      0xe0: 'LeftCtrl',
+      0xe1: 'LeftShift',
+      0xe2: 'LeftAlt',
+      0xe3: 'LeftMeta',
+      0xe4: 'RightCtrl',
+      0xe5: 'RightShift',
+      0xe6: 'RightAlt',
+      0xe7: 'RightMeta'
     }
 
     return scancodeMap[scancode] || `Key(0x${scancode.toString(16)})`
@@ -223,24 +264,64 @@ export function useMacroStorage() {
    */
   function getScancodeFromKeyName(keyName: string): number {
     const keyMap: Record<string, number> = {
-      'a': 0x04, 'b': 0x05, 'c': 0x06, 'd': 0x07, 'e': 0x08, 'f': 0x09,
-      'g': 0x0A, 'h': 0x0B, 'i': 0x0C, 'j': 0x0D, 'k': 0x0E, 'l': 0x0F,
-      'm': 0x10, 'n': 0x11, 'o': 0x12, 'p': 0x13, 'q': 0x14, 'r': 0x15,
-      's': 0x16, 't': 0x17, 'u': 0x18, 'v': 0x19, 'w': 0x1A, 'x': 0x1B,
-      'y': 0x1C, 'z': 0x1D,
-      '1': 0x1E, '2': 0x1F, '3': 0x20, '4': 0x21, '5': 0x22,
-      '6': 0x23, '7': 0x24, '8': 0x25, '9': 0x26, '0': 0x27,
-      'Enter': 0x28, 'Escape': 0x29, 'Backspace': 0x2A, 'Tab': 0x2B, ' ': 0x2C,
-      'Control': 0xE0, 'Shift': 0xE1, 'Alt': 0xE2, 'Meta': 0xE3
+      a: 0x04,
+      b: 0x05,
+      c: 0x06,
+      d: 0x07,
+      e: 0x08,
+      f: 0x09,
+      g: 0x0a,
+      h: 0x0b,
+      i: 0x0c,
+      j: 0x0d,
+      k: 0x0e,
+      l: 0x0f,
+      m: 0x10,
+      n: 0x11,
+      o: 0x12,
+      p: 0x13,
+      q: 0x14,
+      r: 0x15,
+      s: 0x16,
+      t: 0x17,
+      u: 0x18,
+      v: 0x19,
+      w: 0x1a,
+      x: 0x1b,
+      y: 0x1c,
+      z: 0x1d,
+      '1': 0x1e,
+      '2': 0x1f,
+      '3': 0x20,
+      '4': 0x21,
+      '5': 0x22,
+      '6': 0x23,
+      '7': 0x24,
+      '8': 0x25,
+      '9': 0x26,
+      '0': 0x27,
+      Enter: 0x28,
+      Escape: 0x29,
+      Backspace: 0x2a,
+      Tab: 0x2b,
+      ' ': 0x2c,
+      Control: 0xe0,
+      Shift: 0xe1,
+      Alt: 0xe2,
+      Meta: 0xe3
     }
 
     return keyMap[keyName.toLowerCase()] || 0x00
   }
 
   // 监听宏列表变化,自动保存
-  watch(macros, () => {
-    saveMacros()
-  }, { deep: true })
+  watch(
+    macros,
+    () => {
+      saveMacros()
+    },
+    { deep: true }
+  )
 
   // 初始化时加载宏列表
   loadMacros()

@@ -7,10 +7,10 @@
  * 按键类型
  */
 export enum ButtonType {
-  MOUSE = 'mouse',        // 鼠标功能
+  MOUSE = 'mouse', // 鼠标功能
   MULTIMEDIA = 'multimedia', // 多媒体
-  KEYBOARD = 'keyboard',  // 键盘按键
-  MACRO = 'macro'         // 宏（暂不支持）
+  KEYBOARD = 'keyboard', // 键盘按键
+  MACRO = 'macro' // 宏（暂不支持）
 }
 
 /**
@@ -20,7 +20,7 @@ export interface ButtonMapping {
   id: string
   name: string
   type: ButtonType
-  code: number[]  // 4字节编码
+  code: number[] // 4字节编码
   category?: string // 分类（用于UI分组）
 }
 
@@ -28,39 +28,201 @@ export interface ButtonMapping {
  * 鼠标功能按键
  */
 export const mouseButtons: ButtonMapping[] = [
-  { id: 'left', name: '左键', type: ButtonType.MOUSE, code: [0x20, 0x01, 0x00, 0x00], category: '基础功能' },
-  { id: 'right', name: '右键', type: ButtonType.MOUSE, code: [0x20, 0x02, 0x00, 0x00], category: '基础功能' },
-  { id: 'middle', name: '中键', type: ButtonType.MOUSE, code: [0x20, 0x04, 0x00, 0x00], category: '基础功能' },
-  { id: 'back', name: '后退', type: ButtonType.MOUSE, code: [0x20, 0x08, 0x00, 0x00], category: '基础功能' },
-  { id: 'forward', name: '前进', type: ButtonType.MOUSE, code: [0x20, 0x10, 0x00, 0x00], category: '基础功能' },
-  { id: 'scroll_up', name: '滚轮+', type: ButtonType.MOUSE, code: [0x21, 0x38, 0x01, 0x00], category: '滚轮' },
-  { id: 'scroll_down', name: '滚轮-', type: ButtonType.MOUSE, code: [0x21, 0x38, 0xff, 0x00], category: '滚轮' },
-  { id: 'dpi', name: 'DPI切换', type: ButtonType.MOUSE, code: [0x21, 0x55, 0x00, 0x00], category: '特殊功能' },
-  { id: 'disabled', name: '禁用', type: ButtonType.MOUSE, code: [0x20, 0x00, 0x00, 0x00], category: '特殊功能' }
+  {
+    id: 'left',
+    name: '左键',
+    type: ButtonType.MOUSE,
+    code: [0x20, 0x01, 0x00, 0x00],
+    category: '基础功能'
+  },
+  {
+    id: 'right',
+    name: '右键',
+    type: ButtonType.MOUSE,
+    code: [0x20, 0x02, 0x00, 0x00],
+    category: '基础功能'
+  },
+  {
+    id: 'middle',
+    name: '中键',
+    type: ButtonType.MOUSE,
+    code: [0x20, 0x04, 0x00, 0x00],
+    category: '基础功能'
+  },
+  {
+    id: 'back',
+    name: '后退',
+    type: ButtonType.MOUSE,
+    code: [0x20, 0x08, 0x00, 0x00],
+    category: '基础功能'
+  },
+  {
+    id: 'forward',
+    name: '前进',
+    type: ButtonType.MOUSE,
+    code: [0x20, 0x10, 0x00, 0x00],
+    category: '基础功能'
+  },
+  {
+    id: 'scroll_up',
+    name: '滚轮+',
+    type: ButtonType.MOUSE,
+    code: [0x21, 0x38, 0x01, 0x00],
+    category: '滚轮'
+  },
+  {
+    id: 'scroll_down',
+    name: '滚轮-',
+    type: ButtonType.MOUSE,
+    code: [0x21, 0x38, 0xff, 0x00],
+    category: '滚轮'
+  },
+  {
+    id: 'dpi',
+    name: 'DPI切换',
+    type: ButtonType.MOUSE,
+    code: [0x21, 0x55, 0x00, 0x00],
+    category: '特殊功能'
+  },
+  {
+    id: 'disabled',
+    name: '禁用',
+    type: ButtonType.MOUSE,
+    code: [0x20, 0x00, 0x00, 0x00],
+    category: '特殊功能'
+  }
 ]
 
 /**
  * 多媒体按键
  */
 export const multimediaButtons: ButtonMapping[] = [
-  { id: 'vol_up', name: '音量+', type: ButtonType.MULTIMEDIA, code: [0x30, 0xe9, 0x00, 0x00], category: '音量控制' },
-  { id: 'vol_down', name: '音量-', type: ButtonType.MULTIMEDIA, code: [0x30, 0xea, 0x00, 0x00], category: '音量控制' },
-  { id: 'mute', name: '静音', type: ButtonType.MULTIMEDIA, code: [0x30, 0xe2, 0x00, 0x00], category: '音量控制' },
-  { id: 'play_pause', name: '播放/暂停', type: ButtonType.MULTIMEDIA, code: [0x30, 0xcd, 0x00, 0x00], category: '播放控制' },
-  { id: 'stop', name: '停止', type: ButtonType.MULTIMEDIA, code: [0x30, 0xb7, 0x00, 0x00], category: '播放控制' },
-  { id: 'prev', name: '上一首', type: ButtonType.MULTIMEDIA, code: [0x30, 0xb6, 0x00, 0x00], category: '播放控制' },
-  { id: 'next', name: '下一首', type: ButtonType.MULTIMEDIA, code: [0x30, 0xb5, 0x00, 0x00], category: '播放控制' },
-  { id: 'media', name: '多媒体', type: ButtonType.MULTIMEDIA, code: [0x30, 0x83, 0x01, 0x00], category: '系统功能' },
-  { id: 'home', name: '主页', type: ButtonType.MULTIMEDIA, code: [0x30, 0x23, 0x02, 0x00], category: '浏览器' },
-  { id: 'refresh', name: '网页-刷新', type: ButtonType.MULTIMEDIA, code: [0x30, 0x27, 0x02, 0x00], category: '浏览器' },
-  { id: 'web_stop', name: '网页-停止', type: ButtonType.MULTIMEDIA, code: [0x30, 0x26, 0x02, 0x00], category: '浏览器' },
-  { id: 'web_forward', name: '网页-前进', type: ButtonType.MULTIMEDIA, code: [0x30, 0x25, 0x02, 0x00], category: '浏览器' },
-  { id: 'web_back', name: '网页-后退', type: ButtonType.MULTIMEDIA, code: [0x30, 0x24, 0x02, 0x00], category: '浏览器' },
-  { id: 'favorites', name: '网页-收藏夹', type: ButtonType.MULTIMEDIA, code: [0x30, 0x2a, 0x02, 0x00], category: '浏览器' },
-  { id: 'search', name: '网页-搜索', type: ButtonType.MULTIMEDIA, code: [0x30, 0x21, 0x02, 0x00], category: '浏览器' },
-  { id: 'calculator', name: '计算器', type: ButtonType.MULTIMEDIA, code: [0x30, 0x92, 0x01, 0x00], category: '系统功能' },
-  { id: 'my_computer', name: '我的电脑', type: ButtonType.MULTIMEDIA, code: [0x30, 0x94, 0x01, 0x00], category: '系统功能' },
-  { id: 'mail', name: '邮件', type: ButtonType.MULTIMEDIA, code: [0x30, 0x8a, 0x01, 0x00], category: '系统功能' }
+  {
+    id: 'vol_up',
+    name: '音量+',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0xe9, 0x00, 0x00],
+    category: '音量控制'
+  },
+  {
+    id: 'vol_down',
+    name: '音量-',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0xea, 0x00, 0x00],
+    category: '音量控制'
+  },
+  {
+    id: 'mute',
+    name: '静音',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0xe2, 0x00, 0x00],
+    category: '音量控制'
+  },
+  {
+    id: 'play_pause',
+    name: '播放/暂停',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0xcd, 0x00, 0x00],
+    category: '播放控制'
+  },
+  {
+    id: 'stop',
+    name: '停止',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0xb7, 0x00, 0x00],
+    category: '播放控制'
+  },
+  {
+    id: 'prev',
+    name: '上一首',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0xb6, 0x00, 0x00],
+    category: '播放控制'
+  },
+  {
+    id: 'next',
+    name: '下一首',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0xb5, 0x00, 0x00],
+    category: '播放控制'
+  },
+  {
+    id: 'media',
+    name: '多媒体',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x83, 0x01, 0x00],
+    category: '系统功能'
+  },
+  {
+    id: 'home',
+    name: '主页',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x23, 0x02, 0x00],
+    category: '浏览器'
+  },
+  {
+    id: 'refresh',
+    name: '网页-刷新',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x27, 0x02, 0x00],
+    category: '浏览器'
+  },
+  {
+    id: 'web_stop',
+    name: '网页-停止',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x26, 0x02, 0x00],
+    category: '浏览器'
+  },
+  {
+    id: 'web_forward',
+    name: '网页-前进',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x25, 0x02, 0x00],
+    category: '浏览器'
+  },
+  {
+    id: 'web_back',
+    name: '网页-后退',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x24, 0x02, 0x00],
+    category: '浏览器'
+  },
+  {
+    id: 'favorites',
+    name: '网页-收藏夹',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x2a, 0x02, 0x00],
+    category: '浏览器'
+  },
+  {
+    id: 'search',
+    name: '网页-搜索',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x21, 0x02, 0x00],
+    category: '浏览器'
+  },
+  {
+    id: 'calculator',
+    name: '计算器',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x92, 0x01, 0x00],
+    category: '系统功能'
+  },
+  {
+    id: 'my_computer',
+    name: '我的电脑',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x94, 0x01, 0x00],
+    category: '系统功能'
+  },
+  {
+    id: 'mail',
+    name: '邮件',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x30, 0x8a, 0x01, 0x00],
+    category: '系统功能'
+  }
 ]
 
 /**
@@ -90,38 +252,108 @@ export const modifierKeys = [
  */
 export const keyboardScancodes: Record<string, number> = {
   // 字母键 A-Z
-  'A': 0x04, 'B': 0x05, 'C': 0x06, 'D': 0x07, 'E': 0x08, 'F': 0x09,
-  'G': 0x0A, 'H': 0x0B, 'I': 0x0C, 'J': 0x0D, 'K': 0x0E, 'L': 0x0F,
-  'M': 0x10, 'N': 0x11, 'O': 0x12, 'P': 0x13, 'Q': 0x14, 'R': 0x15,
-  'S': 0x16, 'T': 0x17, 'U': 0x18, 'V': 0x19, 'W': 0x1A, 'X': 0x1B,
-  'Y': 0x1C, 'Z': 0x1D,
+  A: 0x04,
+  B: 0x05,
+  C: 0x06,
+  D: 0x07,
+  E: 0x08,
+  F: 0x09,
+  G: 0x0a,
+  H: 0x0b,
+  I: 0x0c,
+  J: 0x0d,
+  K: 0x0e,
+  L: 0x0f,
+  M: 0x10,
+  N: 0x11,
+  O: 0x12,
+  P: 0x13,
+  Q: 0x14,
+  R: 0x15,
+  S: 0x16,
+  T: 0x17,
+  U: 0x18,
+  V: 0x19,
+  W: 0x1a,
+  X: 0x1b,
+  Y: 0x1c,
+  Z: 0x1d,
 
   // 数字键 1-9, 0
-  '1': 0x1E, '2': 0x1F, '3': 0x20, '4': 0x21, '5': 0x22,
-  '6': 0x23, '7': 0x24, '8': 0x25, '9': 0x26, '0': 0x27,
+  '1': 0x1e,
+  '2': 0x1f,
+  '3': 0x20,
+  '4': 0x21,
+  '5': 0x22,
+  '6': 0x23,
+  '7': 0x24,
+  '8': 0x25,
+  '9': 0x26,
+  '0': 0x27,
 
   // 功能键 F1-F12
-  'F1': 0x3A, 'F2': 0x3B, 'F3': 0x3C, 'F4': 0x3D, 'F5': 0x3E, 'F6': 0x3F,
-  'F7': 0x40, 'F8': 0x41, 'F9': 0x42, 'F10': 0x43, 'F11': 0x44, 'F12': 0x45,
+  F1: 0x3a,
+  F2: 0x3b,
+  F3: 0x3c,
+  F4: 0x3d,
+  F5: 0x3e,
+  F6: 0x3f,
+  F7: 0x40,
+  F8: 0x41,
+  F9: 0x42,
+  F10: 0x43,
+  F11: 0x44,
+  F12: 0x45,
 
   // 特殊键
-  'Enter': 0x28, 'Escape': 0x29, 'Backspace': 0x2A, 'Tab': 0x2B,
-  'Space': 0x2C, 'Minus': 0x2D, 'Equal': 0x2E, 'LeftBracket': 0x2F,
-  'RightBracket': 0x30, 'Backslash': 0x31, 'Semicolon': 0x33, 'Quote': 0x34,
-  'Grave': 0x35, 'Comma': 0x36, 'Period': 0x37, 'Slash': 0x38,
-  'CapsLock': 0x39,
+  Enter: 0x28,
+  Escape: 0x29,
+  Backspace: 0x2a,
+  Tab: 0x2b,
+  Space: 0x2c,
+  Minus: 0x2d,
+  Equal: 0x2e,
+  LeftBracket: 0x2f,
+  RightBracket: 0x30,
+  Backslash: 0x31,
+  Semicolon: 0x33,
+  Quote: 0x34,
+  Grave: 0x35,
+  Comma: 0x36,
+  Period: 0x37,
+  Slash: 0x38,
+  CapsLock: 0x39,
 
   // 导航键
-  'Insert': 0x49, 'Home': 0x4A, 'PageUp': 0x4B, 'Delete': 0x4C,
-  'End': 0x4D, 'PageDown': 0x4E, 'Right': 0x4F, 'Left': 0x50,
-  'Down': 0x51, 'Up': 0x52,
+  Insert: 0x49,
+  Home: 0x4a,
+  PageUp: 0x4b,
+  Delete: 0x4c,
+  End: 0x4d,
+  PageDown: 0x4e,
+  Right: 0x4f,
+  Left: 0x50,
+  Down: 0x51,
+  Up: 0x52,
 
   // 小键盘
-  'NumLock': 0x53, 'NumpadDivide': 0x54, 'NumpadMultiply': 0x55, 'NumpadMinus': 0x56,
-  'NumpadPlus': 0x57, 'NumpadEnter': 0x58,
-  'Numpad1': 0x59, 'Numpad2': 0x5A, 'Numpad3': 0x5B, 'Numpad4': 0x5C,
-  'Numpad5': 0x5D, 'Numpad6': 0x5E, 'Numpad7': 0x5F, 'Numpad8': 0x60,
-  'Numpad9': 0x61, 'Numpad0': 0x62, 'NumpadDecimal': 0x63
+  NumLock: 0x53,
+  NumpadDivide: 0x54,
+  NumpadMultiply: 0x55,
+  NumpadMinus: 0x56,
+  NumpadPlus: 0x57,
+  NumpadEnter: 0x58,
+  Numpad1: 0x59,
+  Numpad2: 0x5a,
+  Numpad3: 0x5b,
+  Numpad4: 0x5c,
+  Numpad5: 0x5d,
+  Numpad6: 0x5e,
+  Numpad7: 0x5f,
+  Numpad8: 0x60,
+  Numpad9: 0x61,
+  Numpad0: 0x62,
+  NumpadDecimal: 0x63
 }
 
 /**
@@ -176,13 +408,11 @@ export function parseKeyboardMapping(code: number[]): {
  */
 export function getButtonDisplayName(code: number[]): string {
   // 检查是否是鼠标功能
-  const mouseButton = mouseButtons.find(btn =>
-    btn.code.every((byte, i) => byte === code[i])
-  )
+  const mouseButton = mouseButtons.find((btn) => btn.code.every((byte, i) => byte === code[i]))
   if (mouseButton) return mouseButton.name
 
   // 检查是否是多媒体按键
-  const multimediaButton = multimediaButtons.find(btn =>
+  const multimediaButton = multimediaButtons.find((btn) =>
     btn.code.every((byte, i) => byte === code[i])
   )
   if (multimediaButton) return multimediaButton.name
@@ -201,7 +431,7 @@ export function getButtonDisplayName(code: number[]): string {
   }
 
   // 未知按键，显示索引
-  return `未知(${code.map(b => b.toString(16).padStart(2, '0')).join(' ')})`
+  return `未知(${code.map((b) => b.toString(16).padStart(2, '0')).join(' ')})`
 }
 
 /**
@@ -222,5 +452,5 @@ export const defaultButtonMappings: number[][] = [
   [0x20, 0x10, 0x00, 0x00], // 索引4: 前进（物理按键4）
   [0x21, 0x55, 0x00, 0x00], // 索引5: DPI切换
   [0x21, 0x38, 0x01, 0x00], // 索引6: 滚轮+
-  [0x21, 0x38, 0xff, 0x00]  // 索引7: 滚轮-
+  [0x21, 0x38, 0xff, 0x00] // 索引7: 滚轮-
 ]
