@@ -242,9 +242,9 @@ function resetBacklight() {
 
 .mode-card,
 .color-card {
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   padding: 1.25rem;
 }
 
@@ -259,6 +259,7 @@ function resetBacklight() {
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
+  color: var(--text-primary);
 }
 
 .card-title i {
@@ -281,7 +282,7 @@ function resetBacklight() {
 }
 
 .card-description {
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
@@ -289,7 +290,7 @@ function resetBacklight() {
 .empty-state {
   text-align: center;
   padding: 2rem 0;
-  color: #86909c;
+  color: var(--text-tertiary);
 }
 
 .empty-state.large {
@@ -318,11 +319,12 @@ function resetBacklight() {
   text-align: left;
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   display: flex;
   align-items: center;
   transition: all 0.2s;
-  background-color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -391,7 +393,7 @@ function resetBacklight() {
 .section-label {
   display: block;
   font-size: 0.875rem;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
 
@@ -459,12 +461,13 @@ function resetBacklight() {
 .slider-value {
   font-size: 0.875rem;
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .range-slider {
   width: 100%;
   height: 0.5rem;
-  background-color: rgb(243, 244, 246);
+  background-color: var(--bg-tertiary);
   border-radius: 0.5rem;
   appearance: none;
   cursor: pointer;
@@ -494,7 +497,7 @@ function resetBacklight() {
   justify-content: space-between;
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
 }
 
 .action-buttons {

@@ -953,9 +953,9 @@ onUnmounted(() => {
 
 <style scoped>
 .button-mapping-container {
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
 }
@@ -966,6 +966,7 @@ onUnmounted(() => {
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
+  color: var(--text-primary);
 }
 
 .section-title i {
@@ -977,7 +978,7 @@ onUnmounted(() => {
 }
 
 .section-description {
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
 }
@@ -1055,6 +1056,7 @@ onUnmounted(() => {
   font-weight: 500;
   word-break: break-word;
   line-height: 1.2;
+  color: var(--text-primary);
 }
 
 /* 连接线基础样式 */
@@ -1162,9 +1164,10 @@ onUnmounted(() => {
 }
 
 .settings-panel {
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.75rem;
   padding: 1.25rem;
+  background-color: var(--bg-primary);
 }
 
 .panel-header {
@@ -1177,11 +1180,12 @@ onUnmounted(() => {
 .panel-title {
   font-weight: 500;
   margin: 0;
+  color: var(--text-primary);
 }
 
 .reset-button {
   font-size: 0.875rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   background: none;
   border: none;
   cursor: pointer;
@@ -1203,9 +1207,9 @@ onUnmounted(() => {
 
 .disabled-notice {
   padding: 1rem;
-  background-color: #f3f4f6;
+  background-color: var(--bg-tertiary);
   border-radius: 0.5rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   text-align: center;
 }
 
@@ -1223,7 +1227,7 @@ onUnmounted(() => {
 .tab-buttons {
   display: flex;
   gap: 0.5rem;
-  border-bottom: 2px solid var(--color-gray-light);
+  border-bottom: 2px solid var(--border-primary);
   margin-bottom: 1rem;
 }
 
@@ -1234,7 +1238,7 @@ onUnmounted(() => {
   border-bottom: 2px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
   margin-bottom: -2px;
 }
@@ -1265,9 +1269,10 @@ onUnmounted(() => {
 
 .function-button {
   padding: 0.75rem 1rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
@@ -1275,12 +1280,12 @@ onUnmounted(() => {
 
 .function-button:hover {
   border-color: var(--color-primary);
-  background-color: rgba(22, 93, 255, 0.05);
+  background-color: var(--bg-hover);
 }
 
 .function-button.active {
   border-color: var(--color-primary);
-  background-color: rgba(22, 93, 255, 0.1);
+  background-color: var(--bg-active);
   color: var(--color-primary);
   font-weight: 500;
 }
@@ -1293,7 +1298,7 @@ onUnmounted(() => {
 .category-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
   margin-bottom: 0.75rem;
 }
 
@@ -1313,18 +1318,20 @@ onUnmounted(() => {
 .form-label {
   display: block;
   font-size: 0.875rem;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .form-select {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
   outline: none;
   transition: all 0.2s;
   cursor: pointer;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .form-select:focus {
@@ -1353,6 +1360,7 @@ onUnmounted(() => {
 
 .modifier-checkbox span {
   font-size: 0.875rem;
+  color: var(--text-primary);
 }
 
 .apply-button {
@@ -1399,6 +1407,7 @@ onUnmounted(() => {
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
+  color: var(--text-primary);
 }
 
 .radio-label input[type='radio'] {
@@ -1411,10 +1420,12 @@ onUnmounted(() => {
 .form-input {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
   outline: none;
   transition: all 0.2s;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .form-input:focus {
@@ -1430,7 +1441,7 @@ onUnmounted(() => {
 
 .reset-all-button {
   padding: 0.75rem 2rem;
-  background-color: white;
+  background-color: var(--bg-primary);
   color: var(--color-danger);
   border: 2px solid var(--color-danger);
   border-radius: 0.5rem;
@@ -1442,7 +1453,7 @@ onUnmounted(() => {
 
 .reset-all-button:hover {
   background-color: var(--color-danger);
-  color: white;
+  color: var(--bg-primary);
 }
 
 .reset-all-button i {
@@ -1474,7 +1485,7 @@ onUnmounted(() => {
 .section-subtitle {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
   margin: 0;
   display: flex;
   align-items: center;
@@ -1483,7 +1494,7 @@ onUnmounted(() => {
 
 .section-hint {
   font-size: 0.75rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   margin: 0;
 }
 
@@ -1495,9 +1506,9 @@ onUnmounted(() => {
   max-height: 300px;
   overflow-y: auto;
   padding: 0.5rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
-  background-color: #f9fafb;
+  background-color: var(--bg-tertiary);
 }
 
 .empty-macros {
@@ -1507,7 +1518,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 2rem 1rem;
   text-align: center;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
   gap: 0.5rem;
 }
@@ -1522,23 +1533,24 @@ onUnmounted(() => {
   text-align: left;
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
   transition: all 0.2s;
-  background-color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
 .macro-list-item:hover:not(:disabled) {
   border-color: var(--color-primary);
-  background-color: rgba(22, 93, 255, 0.05);
+  background-color: var(--bg-hover);
 }
 
 .macro-list-item.active {
   border-color: var(--color-primary);
-  background-color: rgba(22, 93, 255, 0.1);
+  background-color: var(--bg-active);
 }
 
 .macro-list-item:disabled {
@@ -1549,11 +1561,12 @@ onUnmounted(() => {
 .macro-item-name {
   font-weight: 500;
   font-size: 0.875rem;
+  color: var(--text-primary);
 }
 
 .macro-item-count {
   font-size: 0.75rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
 }
 
 .macro-list-actions {
@@ -1565,9 +1578,10 @@ onUnmounted(() => {
 .macro-action-btn {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
@@ -1635,9 +1649,9 @@ onUnmounted(() => {
 }
 
 .stop-record-btn {
-  background-color: white;
-  color: var(--color-gray-dark);
-  border: 1px solid var(--color-gray-light);
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
 }
 
 .stop-record-btn:hover:not(:disabled) {
@@ -1677,9 +1691,9 @@ onUnmounted(() => {
 
 .macro-notice {
   padding: 0.75rem;
-  background-color: #f3f4f6;
+  background-color: var(--bg-tertiary);
   border-radius: 0.375rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   text-align: center;
   font-size: 0.875rem;
 }
@@ -1706,7 +1720,7 @@ onUnmounted(() => {
 .macro-name-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background-color: rgba(22, 93, 255, 0.1);
+  background-color: var(--bg-active);
   color: var(--color-primary);
   border-radius: 1rem;
   font-size: 0.75rem;
@@ -1722,7 +1736,7 @@ onUnmounted(() => {
 .event-action-btn {
   background: none;
   border: none;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.75rem;
   cursor: pointer;
   padding: 0.25rem 0.5rem;
@@ -1742,23 +1756,23 @@ onUnmounted(() => {
 }
 
 .events-list {
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
   max-height: 250px;
   overflow-y: auto;
-  background-color: white;
+  background-color: var(--bg-primary);
 }
 
 .empty-events {
   padding: 2rem 1rem;
   text-align: center;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
 }
 
 .event-item {
   padding: 0.75rem;
-  border-bottom: 1px solid var(--color-gray-light);
+  border-bottom: 1px solid var(--border-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1771,11 +1785,11 @@ onUnmounted(() => {
 }
 
 .event-item:hover {
-  background-color: #f9fafb;
+  background-color: var(--bg-tertiary);
 }
 
 .event-item.selected {
-  background-color: rgba(22, 93, 255, 0.1);
+  background-color: var(--bg-active);
   border-left: 3px solid var(--color-primary);
 }
 
@@ -1790,7 +1804,8 @@ onUnmounted(() => {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
-  background-color: #e5e7eb;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1800,6 +1815,7 @@ onUnmounted(() => {
 
 .event-text {
   font-size: 0.875rem;
+  color: var(--text-primary);
 }
 
 .event-meta {
@@ -1810,7 +1826,7 @@ onUnmounted(() => {
 
 .event-delay {
   font-size: 0.75rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
 }
 
 .save-macro-btn {
@@ -1840,7 +1856,7 @@ onUnmounted(() => {
 
 .macro-divider {
   height: 1px;
-  background-color: var(--color-gray-light);
+  background-color: var(--border-primary);
   margin: 0.5rem 0;
 }
 
@@ -1850,8 +1866,8 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  background-color: #f9fafb;
+  background-color: var(--bg-tertiary);
   border-radius: 0.5rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
 }
 </style>

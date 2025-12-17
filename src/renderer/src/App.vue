@@ -12,6 +12,9 @@
         </div>
 
         <div class="header-right">
+          <button class="btn-theme" @click="toggleTheme" :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'">
+            <i class="fa" :class="theme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon'"></i>
+          </button>
           <div class="language-selector">
             <button class="btn-language" @click="toggleLanguageDropdown">
               <i class="fa fa-language"></i>
@@ -84,7 +87,7 @@
 
           <div class="status-item">
             <div class="status-icon backlight-icon">
-              <i class="fa fa-lightbulb-o"></i>
+              <i class="fa-regular fa-lightbulb"></i>
             </div>
             <div class="status-info">
               <p class="status-label">{{ t('deviceStatus.backlight') }}</p>
@@ -152,6 +155,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useWebHID } from './composables/useWebHID'
 import { useI18n } from './composables/useI18n'
+import { useTheme } from './composables/useTheme'
 import BasicSettings from './components/BasicSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
@@ -159,6 +163,7 @@ import DeviceInfo from './components/DeviceInfo.vue'
 
 const { isConnected, deviceStatus, connectDevice, autoConnectDevice } = useWebHID()
 const { locale, setLocale, t } = useI18n()
+const { theme, toggleTheme } = useTheme()
 
 const activeTab = ref('basic')
 const showLanguageDropdown = ref(false)
@@ -248,13 +253,13 @@ onUnmounted(() => {
 <style scoped>
 .app-container {
   min-height: 100vh;
-  background-color: rgb(249, 250, 251);
+  background-color: var(--bg-secondary);
 }
 
 /* 顶部导航栏 */
 .app-header {
-  background-color: white;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -291,12 +296,12 @@ onUnmounted(() => {
 .app-title {
   font-size: 1.25rem;
   font-weight: bold;
-  color: var(--color-dark);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .app-subtitle {
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
   display: none;
 }
@@ -318,6 +323,7 @@ onUnmounted(() => {
   align-items: center;
   font-size: 0.875rem;
   gap: 0.5rem;
+  color: var(--text-secondary);
 }
 
 .status-indicator {
@@ -339,6 +345,41 @@ onUnmounted(() => {
   margin-right: 0.25rem;
 }
 
+.btn-theme {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  position: relative;
+}
+
+.btn-theme:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background-color: var(--bg-hover);
+  transform: scale(1.05);
+}
+
+.btn-theme:active {
+  transform: scale(0.95);
+}
+
+.btn-theme i {
+  transition: transform 0.3s ease;
+}
+
+.btn-theme:hover i {
+  transform: rotate(20deg);
+}
+
 .language-selector {
   position: relative;
 }
@@ -348,20 +389,20 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background-color: white;
-  border: 1px solid var(--color-gray-light);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
 }
 
 .btn-language:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
-  background-color: rgba(22, 93, 255, 0.05);
+  background-color: var(--bg-hover);
 }
 
 .btn-language i.fa-language {
@@ -381,10 +422,10 @@ onUnmounted(() => {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
-  background-color: white;
-  border: 1px solid var(--color-gray-light);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 0.375rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
   min-width: 120px;
   z-index: 100;
   overflow: hidden;
@@ -401,12 +442,12 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
   text-align: left;
 }
 
 .language-option:hover {
-  background-color: rgba(22, 93, 255, 0.05);
+  background-color: var(--bg-hover);
   color: var(--color-primary);
 }
 
@@ -428,9 +469,9 @@ onUnmounted(() => {
 }
 
 .device-status-card {
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
   transition: all 0.3s;
@@ -470,22 +511,22 @@ onUnmounted(() => {
 }
 
 .battery-icon {
-  background-color: rgba(22, 93, 255, 0.1);
+  background-color: var(--icon-bg-battery);
   color: var(--color-primary);
 }
 
 .report-rate-icon {
-  background-color: rgba(54, 207, 201, 0.1);
+  background-color: var(--icon-bg-report);
   color: var(--color-secondary);
 }
 
 .dpi-icon {
-  background-color: rgba(114, 46, 209, 0.1);
+  background-color: var(--icon-bg-dpi);
   color: var(--color-accent);
 }
 
 .backlight-icon {
-  background-color: rgba(255, 125, 0, 0.1);
+  background-color: var(--icon-bg-backlight);
   color: var(--color-warning);
 }
 
@@ -494,7 +535,7 @@ onUnmounted(() => {
 }
 
 .status-label {
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
   margin: 0;
 }
@@ -502,11 +543,12 @@ onUnmounted(() => {
 .status-value {
   font-weight: 500;
   margin: 0;
+  color: var(--text-primary);
 }
 
 /* 标签页导航 */
 .tabs-container {
-  border-bottom: 1px solid var(--color-gray-light);
+  border-bottom: 1px solid var(--border-primary);
   margin-bottom: 1.5rem;
 }
 
@@ -530,7 +572,7 @@ onUnmounted(() => {
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -550,8 +592,8 @@ onUnmounted(() => {
 
 /* 页脚 */
 .app-footer {
-  background-color: white;
-  border-top: 1px solid var(--color-gray-light);
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-primary);
   margin-top: 2.5rem;
   padding: 1.5rem 0;
 }
@@ -561,7 +603,7 @@ onUnmounted(() => {
   margin: 0 auto;
   padding: 0 1rem;
   text-align: center;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
 }
 
@@ -615,14 +657,14 @@ onUnmounted(() => {
 
 .notification-message {
   font-size: 0.875rem;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
   margin: 0.25rem 0 0 0;
   white-space: pre-line;
 }
 
 .notification-close {
   margin-left: auto;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   background: none;
   border: none;
   cursor: pointer;
@@ -631,13 +673,13 @@ onUnmounted(() => {
 }
 
 .notification-close:hover {
-  color: var(--color-dark);
+  color: var(--text-primary);
 }
 
 /* 通知类型样式 */
 .notification.success {
-  background-color: rgba(0, 180, 42, 0.1);
-  border: 1px solid rgba(0, 180, 42, 0.3);
+  background-color: var(--notify-success-bg);
+  border: 1px solid var(--notify-success-border);
 }
 
 .notification.success .notification-icon {
@@ -645,8 +687,8 @@ onUnmounted(() => {
 }
 
 .notification.error {
-  background-color: rgba(245, 63, 63, 0.1);
-  border: 1px solid rgba(245, 63, 63, 0.3);
+  background-color: var(--notify-error-bg);
+  border: 1px solid var(--notify-error-border);
 }
 
 .notification.error .notification-icon {
@@ -654,8 +696,8 @@ onUnmounted(() => {
 }
 
 .notification.warning {
-  background-color: rgba(255, 125, 0, 0.1);
-  border: 1px solid rgba(255, 125, 0, 0.3);
+  background-color: var(--notify-warning-bg);
+  border: 1px solid var(--notify-warning-border);
 }
 
 .notification.warning .notification-icon {
@@ -663,8 +705,8 @@ onUnmounted(() => {
 }
 
 .notification.info {
-  background-color: rgba(22, 93, 255, 0.1);
-  border: 1px solid rgba(22, 93, 255, 0.3);
+  background-color: var(--notify-info-bg);
+  border: 1px solid var(--notify-info-border);
 }
 
 .notification.info .notification-icon {

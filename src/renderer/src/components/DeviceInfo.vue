@@ -139,9 +139,9 @@ function restoreDefaults() {
 
 .info-card,
 .battery-card {
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   padding: 1.25rem;
 }
 
@@ -151,6 +151,7 @@ function restoreDefaults() {
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
+  color: var(--text-primary);
 }
 
 .card-title i {
@@ -175,7 +176,7 @@ function restoreDefaults() {
   display: flex;
   justify-content: space-between;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgb(243, 244, 246);
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .info-item:last-child {
@@ -184,11 +185,12 @@ function restoreDefaults() {
 }
 
 .info-label {
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
 }
 
 .info-value {
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .status-connected {
@@ -218,16 +220,17 @@ function restoreDefaults() {
 }
 
 .battery-label {
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
 }
 
 .battery-percent {
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .battery-bar {
   height: 0.75rem;
-  background-color: rgb(243, 244, 246);
+  background-color: var(--bg-tertiary);
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -255,7 +258,7 @@ function restoreDefaults() {
   justify-content: space-between;
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
 }
 
 .battery-status {
@@ -264,10 +267,11 @@ function restoreDefaults() {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  color: var(--text-secondary);
 }
 
 .battery-status i {
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
 }
 
 .maintenance-actions {

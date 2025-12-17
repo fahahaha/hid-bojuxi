@@ -283,9 +283,9 @@ async function handleSetReverseScroll() {
 }
 
 .settings-card {
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   padding: 1.25rem;
 }
 
@@ -299,6 +299,7 @@ async function handleSetReverseScroll() {
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
+  color: var(--text-primary);
 }
 
 .card-title i {
@@ -325,20 +326,20 @@ async function handleSetReverseScroll() {
 }
 
 .card-description {
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
 
 .dpi-count {
   font-size: 0.75rem;
-  color: #86909c;
+  color: var(--text-tertiary);
 }
 
 .empty-state {
   text-align: center;
   padding: 1rem 0;
-  color: #86909c;
+  color: var(--text-tertiary);
 }
 
 .empty-state i {
@@ -361,9 +362,10 @@ async function handleSetReverseScroll() {
 .rate-button {
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   transition: all 0.2s;
-  background-color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -390,7 +392,7 @@ async function handleSetReverseScroll() {
 
 .selector-label {
   font-size: 0.875rem;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
 }
 
 .selector-value {
@@ -402,11 +404,13 @@ async function handleSetReverseScroll() {
 .dpi-select {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--color-gray-light);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
   outline: none;
   transition: all 0.2s;
   cursor: pointer;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .dpi-select:focus {
@@ -418,7 +422,7 @@ async function handleSetReverseScroll() {
 }
 
 .current-status {
-  background-color: rgb(249, 250, 251);
+  background-color: var(--bg-tertiary);
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -437,7 +441,7 @@ async function handleSetReverseScroll() {
 
 .status-left span {
   font-size: 0.875rem;
-  color: var(--color-gray-dark);
+  color: var(--text-secondary);
 }
 
 .status-dpi {
@@ -460,19 +464,19 @@ async function handleSetReverseScroll() {
   cursor: pointer;
   padding: 0.75rem;
   border-radius: 0.5rem;
-  border: 2px solid var(--color-gray-light);
+  border: 2px solid var(--border-primary);
   transition: all 0.2s;
-  background-color: white;
+  background-color: var(--bg-primary);
 }
 
 .checkbox-label:hover {
   border-color: var(--color-primary);
-  background-color: rgb(249, 250, 251);
+  background-color: var(--bg-tertiary);
 }
 
 .checkbox-label.active {
   border-color: var(--color-primary);
-  background-color: rgba(22, 93, 255, 0.05);
+  background-color: var(--bg-hover);
 }
 
 .checkbox-input {
@@ -485,7 +489,7 @@ async function handleSetReverseScroll() {
 .checkbox-text {
   font-size: 1rem;
   font-weight: 500;
-  color: var(--color-dark);
+  color: var(--text-primary);
 }
 
 .checkbox-label.active .checkbox-text {
@@ -495,7 +499,7 @@ async function handleSetReverseScroll() {
 
 .scroll-hint {
   font-size: 0.875rem;
-  color: var(--color-gray-medium);
+  color: var(--text-tertiary);
   margin: 0;
   padding-left: 0.5rem;
 }

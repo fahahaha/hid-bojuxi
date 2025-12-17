@@ -1,4 +1,7 @@
-/* CSS 变量定义 */
+/* 引入主题变量 */
+@import './theme.css';
+
+/* 旧的 CSS 变量定义（保留用于向后兼容） */
 :root {
   --color-primary: #165dff;
   --color-secondary: #36cfc9;
@@ -20,9 +23,9 @@
 }
 
 body {
-  background-color: rgb(249, 250, 251);
+  background-color: var(--bg-secondary);
   font-family: var(--font-family-sans);
-  color: var(--color-dark);
+  color: var(--text-primary);
   min-height: 100vh;
   margin: 0;
   padding: 0;
