@@ -407,6 +407,24 @@ export function parseKeyboardMapping(code: number[]): {
  * @returns 显示名称
  */
 export function getButtonDisplayName(code: number[]): string {
+  // 检查是否是宏映射 (格式: [0x70, 宏索引, 循环模式, 循环次数高字节])
+  if (code[0] === 0x70) {
+    const macroIndex = code[1]
+    const loopMode = code[2]
+    const loopCount = code[2] | (code[3] << 8)
+
+    let loopText = ''
+    if (loopMode === 0x02) {
+      loopText = '(松开)'
+    } else if (loopMode === 0x03) {
+      loopText = '(任意键)'
+    } else if (loopMode !== 0x02 && loopMode !== 0x03) {
+      loopText = `(x${loopCount})`
+    }
+
+    return `宏${macroIndex + 1}${loopText}`
+  }
+
   // 检查是否是鼠标功能
   const mouseButton = mouseButtons.find((btn) => btn.code.every((byte, i) => byte === code[i]))
   if (mouseButton) return mouseButton.name

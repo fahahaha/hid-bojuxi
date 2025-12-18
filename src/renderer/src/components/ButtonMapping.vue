@@ -278,18 +278,6 @@
                     </div>
                   </div>
 
-                  <!-- 保存宏按钮 -->
-                  <button
-                    @click="saveMacroToDevice"
-                    class="save-macro-btn"
-                    :disabled="
-                      !isConnected || currentEditingMacro.events.length === 0 || isRecording
-                    "
-                  >
-                    <i class="fa fa-save"></i>
-                    {{ t('buttonMapping.macro.saveToDevice') }}
-                  </button>
-
                   <!-- 分隔线 -->
                   <div class="macro-divider"></div>
 
@@ -398,7 +386,6 @@ const {
   macros,
   getMacro,
   addMacro,
-  updateMacro,
   deleteMacro: deleteStoredMacro,
   getNextMacroName,
   encodeMacroEvents,
@@ -582,7 +569,24 @@ async function applyMacroMapping() {
 
   const macroIndex = parseInt(selectedMacroIndex.value)
 
-  // 构建宏映射代码
+  // 获取宏数据
+  const macro = getMacro(macroIndex)
+  if (!macro || macro.events.length === 0) {
+    alert(t('buttonMapping.macro.eventEmpty'))
+    return
+  }
+
+  // 1. 先将宏数据发送到设备
+  const encodedEvents = encodeMacroEvents(macro.events)
+  if (isConnected.value) {
+    const result = await setDeviceMacro(macroIndex, encodedEvents)
+    if (!result.success) {
+      alert(t('buttonMapping.macro.saveError', { message: result.message }))
+      return
+    }
+  }
+
+  // 2. 构建宏映射代码并绑定到按键
   // 格式: [0x70, 宏索引, 循环模式/次数低字节, 循环次数高字节]
   let code: number[]
 
@@ -605,7 +609,7 @@ async function applyMacroMapping() {
   )
   buttonMappings.value[deviceIndex] = code
 
-  // 发送到设备
+  // 3. 发送按键映射到设备
   await saveToDevice()
 
   // 重置选择
@@ -800,45 +804,6 @@ function clearAllMacroEvents() {
   recordedEvents.value = []
   selectedMacroEventIndex.value = null
   console.log('[宏管理] 已清空所有事件')
-}
-
-/**
- * 保存宏到设备
- */
-async function saveMacroToDevice() {
-  if (currentEditingMacro.value.events.length === 0) {
-    alert(t('buttonMapping.macro.eventEmpty'))
-    return
-  }
-
-  if (!currentEditingMacro.value.name.trim()) {
-    alert(t('buttonMapping.macro.nameEmpty'))
-    return
-  }
-
-  if (selectedMacroForEdit.value === null) {
-    alert(t('buttonMapping.macro.selectMacro'))
-    return
-  }
-
-  // 编码宏事件为设备协议格式
-  const encodedEvents = encodeMacroEvents(currentEditingMacro.value.events)
-
-  // 发送到设备
-  if (isConnected.value) {
-    const result = await setDeviceMacro(selectedMacroForEdit.value, encodedEvents)
-    if (!result.success) {
-      alert(t('buttonMapping.macro.saveError', { message: result.message }))
-      return
-    }
-  }
-
-  // 保存到本地存储
-  if (updateMacro(selectedMacroForEdit.value, currentEditingMacro.value)) {
-    alert(t('buttonMapping.macro.saveSuccess', { name: currentEditingMacro.value.name }))
-  } else {
-    alert(t('buttonMapping.macro.saveError', { message: 'Failed to save to local storage' }))
-  }
 }
 
 /**

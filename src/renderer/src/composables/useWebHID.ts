@@ -895,8 +895,11 @@ export function useWebHID() {
         return { success: false, message: '当前设备不支持宏功能' }
       }
 
+      // 计算宏数据长度
+      const macroDataLength = macroEvents.length
+
       // 发送创建宏命令序列
-      // 1. 第一个命令: 初始化
+      // 1. 第一个命令: 初始化宏槽位
       const initCommand = [
         0x55,
         0x0d,
@@ -906,20 +909,42 @@ export function useWebHID() {
         0x00,
         0x00,
         0x00,
+        0x40, // 标记宏槽位
         0x00,
-        ...new Array(55).fill(0)
+        macroDataLength & 0xff, // 宏数据长度低字节
+        (macroDataLength >> 8) & 0xff, // 宏数据长度高字节
+        ...new Array(52).fill(0)
       ]
       await sendReport(initCommand)
       await new Promise((resolve) => setTimeout(resolve, 50))
 
-      // 2. 第二个命令: 准备写入
-      const prepareCommand = [0x55, 0x0d, 0x00, 0x00, 0x08, 0x38, ...new Array(58).fill(0)]
+      // 2. 第二个命令: 准备写入宏数据
+      const prepareCommand = [
+        0x55,
+        0x0d,
+        0x00,
+        0x00,
+        0x20, // 命令类型: 写入宏数据
+        0x38,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        ...macroEvents, // 宏事件数据
+        ...new Array(Math.max(0, 48 - macroEvents.length)).fill(0) // 填充到64字节
+      ]
       await sendReport(prepareCommand)
       await new Promise((resolve) => setTimeout(resolve, 50))
 
-      // 3. 第三个命令: 写入宏数据
-      const dataCommand = currentProtocol.value.commands.setMacro(macroIndex, macroEvents)
-      const success = await sendReport(dataCommand)
+      // 3. 第三个命令: 确认保存
+      const confirmCommand = [0x55, 0x10, 0xa5, 0x22, 0x00, 0x00, 0x00, 0x05, ...new Array(56).fill(0)]
+      const success = await sendReport(confirmCommand)
 
       if (!success) return { success: false, message: '发送命令失败' }
 
