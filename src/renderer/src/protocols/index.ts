@@ -91,6 +91,17 @@ export interface DeviceProtocol {
       eventType: number
       keyCode: number
     }>
+    /** 解析 DPI 变化通知 (用于实时监听鼠标按键切换 DPI) */
+    dpiChange?: (response: Uint8Array) => {
+      value: number
+      level: number
+    } | null
+  }
+
+  /** 报文识别器 (可选) */
+  reporters?: {
+    /** 判断是否为 DPI 变化通知报文 */
+    isDPIChangeReport?: (response: Uint8Array) => boolean
   }
 
   /** 设备特性配置 (可选) */

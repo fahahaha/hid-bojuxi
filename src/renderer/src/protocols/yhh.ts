@@ -530,6 +530,41 @@ export const yhhProtocol: DeviceProtocol = {
       }
 
       return events
+    },
+
+    // 解析 DPI 变化通知
+    // 当鼠标物理按键切换 DPI 时，设备会发送此报文
+    // 报文格式: [0xAA, 0xFA, 0x00, xx, 0x0A, 0x01, 0x01, 0x00, 0x10, level, ...]
+    // 字节 9 是当前 DPI 档位 (1-6)
+    // 示例:
+    //   3200 (档位4): aa fa 00 92 0a 01 01 00 10 04 03...
+    //   6400 (档位5): aa fa 00 60 0a 01 01 00 10 05 03...
+    //   1000 (档位1): aa fa 00 21 0a 01 01 00 10 01 04...
+    dpiChange: (response: Uint8Array) => {
+      // 字节 9 是当前 DPI 档位
+      const currentLevel = response[9] || 1
+
+      // 根据档位获取对应的 DPI 值
+      const dpiValues = [1000, 1400, 2000, 3200, 6400, 12800]
+      const dpiIndex = currentLevel - 1
+
+      if (dpiIndex >= 0 && dpiIndex < dpiValues.length) {
+        return {
+          value: dpiValues[dpiIndex],
+          level: currentLevel
+        }
+      }
+
+      return null
+    }
+  },
+
+  // 报文识别器
+  reporters: {
+    // 判断是否为 DPI 变化通知报文
+    // 报文特征: 以 0xAA 0xFA 开头
+    isDPIChangeReport: (response: Uint8Array) => {
+      return response.length >= 11 && response[0] === 0xaa && response[1] === 0xfa
     }
   },
 

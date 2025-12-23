@@ -7,6 +7,9 @@ let device: HIDDevice | null = null
 const currentProtocol = ref<DeviceProtocol | null>(null)
 const commandRetries = 3
 
+// DPI 变化监听器引用
+let dpiChangeListener: ((event: HIDInputReportEvent) => void) | null = null
+
 // 响应式状态
 const isConnected = ref(false)
 const deviceInfo = ref({
@@ -29,6 +32,66 @@ const deviceStatus = ref({
 })
 
 export function useWebHID() {
+  /**
+   * 设置 DPI 变化监听器
+   * 用于实时监听鼠标物理按键切换 DPI 时的通知
+   */
+  function setupDPIChangeListener(): void {
+    if (!device || !currentProtocol.value) return
+
+    // 如果已有监听器，先移除
+    if (dpiChangeListener) {
+      device.removeEventListener('inputreport', dpiChangeListener)
+      dpiChangeListener = null
+    }
+
+    // 检查协议是否支持 DPI 变化监听
+    if (!currentProtocol.value.reporters?.isDPIChangeReport || !currentProtocol.value.parsers.dpiChange) {
+      console.log('[DPI监听] 当前协议不支持 DPI 变化监听')
+      return
+    }
+
+    const protocol = currentProtocol.value
+
+    // 创建监听器
+    dpiChangeListener = (event: HIDInputReportEvent) => {
+      // 复制数据以避免 Chrome bug
+      const data = new Uint8Array(event.data.byteLength)
+      for (let i = 0; i < event.data.byteLength; i++) {
+        data[i] = event.data.getUint8(i)
+      }
+
+      // 检查是否为 DPI 变化通知
+      if (protocol.reporters?.isDPIChangeReport?.(data)) {
+        const dpiData = protocol.parsers.dpiChange?.(data)
+        if (dpiData) {
+          console.log(
+            `[DPI监听] 检测到 DPI 变化: 档位 ${dpiData.level}, 值 ${dpiData.value}`,
+            `数据: [${Array.from(data.slice(0, 16)).map((d) => '0x' + d.toString(16).padStart(2, '0')).join(', ')}...]`
+          )
+          // 更新设备状态
+          deviceStatus.value.dpi = `${dpiData.value}`
+          deviceStatus.value.dpiLevel = dpiData.level
+        }
+      }
+    }
+
+    // 注册监听器
+    device.addEventListener('inputreport', dpiChangeListener)
+    console.log('[DPI监听] 已启动 DPI 变化实时监听')
+  }
+
+  /**
+   * 清理 DPI 变化监听器
+   */
+  function cleanupDPIChangeListener(): void {
+    if (device && dpiChangeListener) {
+      device.removeEventListener('inputreport', dpiChangeListener)
+      dpiChangeListener = null
+      console.log('[DPI监听] 已停止 DPI 变化监听')
+    }
+  }
+
   /**
    * 发送 HID 输出报告
    * @param data 命令数据
@@ -230,10 +293,15 @@ export function useWebHID() {
       // 定时更新电池状态
       setInterval(getBattery, 5000)
 
+      // 启动 DPI 变化实时监听
+      setupDPIChangeListener()
+
       // 监听设备断开
       navigator.hid.addEventListener('disconnect', (event: HIDConnectionEvent) => {
         if (event.device === device) {
           console.log('[设备事件] 设备已断开连接')
+          // 清理 DPI 监听器
+          cleanupDPIChangeListener()
           isConnected.value = false
           deviceInfo.value.status = '未连接'
           device = null
