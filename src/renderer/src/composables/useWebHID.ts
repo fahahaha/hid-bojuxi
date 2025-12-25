@@ -1,10 +1,12 @@
 import { ref, computed } from 'vue'
 import { detectProtocol } from '../protocols/registry'
-import type { DeviceProtocol } from '../protocols'
+import type { DeviceProtocol, ConnectionMode } from '../protocols'
+import { detectConnectionMode } from '../protocols'
 
 // 全局状态
 let device: HIDDevice | null = null
 const currentProtocol = ref<DeviceProtocol | null>(null)
+const connectionMode = ref<ConnectionMode>('usb')
 const commandRetries = 3
 
 // DPI 变化监听器引用
@@ -25,6 +27,7 @@ const deviceInfo = ref({
 const deviceStatus = ref({
   battery: '--',
   reportRate: '--',
+  reportRateIndex: 4, // 回报率索引值 (1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz)
   dpi: '--',
   dpiLevel: 1,
   backlight: '--',
@@ -276,11 +279,16 @@ export function useWebHID() {
       currentProtocol.value = detectProtocol(device)
       console.log(`[协议检测] 使用协议: ${currentProtocol.value.name}`)
 
+      // 检测连接模式
+      connectionMode.value = detectConnectionMode(device)
+      console.log(`[连接模式] 当前模式: ${connectionMode.value === 'usb' ? 'USB 有线' : '2.4G 无线'}`)
+
       // 连接后自动延迟 100ms
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       isConnected.value = true
       deviceInfo.value.status = '已连接'
+      deviceInfo.value.connectionType = connectionMode.value === 'usb' ? '有线连接' : '2.4G 无线'
 
       // 获取设备信息
       await getDeviceInfo()
@@ -304,8 +312,10 @@ export function useWebHID() {
           cleanupDPIChangeListener()
           isConnected.value = false
           deviceInfo.value.status = '未连接'
+          deviceInfo.value.connectionType = '--'
           device = null
           currentProtocol.value = null
+          connectionMode.value = 'usb'
         }
       })
 
@@ -498,7 +508,7 @@ export function useWebHID() {
           name: info.name || device.productName || '未知设备',
           model: info.model || device.productId.toString(16),
           firmwareVersion: info.firmwareVersion,
-          connectionType: '有线连接',
+          connectionType: connectionMode.value === 'usb' ? '有线连接' : '2.4G 无线',
           vidPid: `0x${device.vendorId.toString(16).padStart(4, '0')}:0x${device.productId.toString(16).padStart(4, '0')}`,
           protocol: currentProtocol.value.name,
           status: '已连接'
@@ -509,7 +519,7 @@ export function useWebHID() {
           name: device.productName || '未知设备',
           model: device.productId.toString(16),
           firmwareVersion: '未知版本',
-          connectionType: '有线连接',
+          connectionType: connectionMode.value === 'usb' ? '有线连接' : '2.4G 无线',
           vidPid: `0x${device.vendorId.toString(16).padStart(4, '0')}:0x${device.productId.toString(16).padStart(4, '0')}`,
           protocol: currentProtocol.value.name,
           status: '已连接'
@@ -591,6 +601,18 @@ export function useWebHID() {
       const dpiData = currentProtocol.value.parsers.dpi(response)
       deviceStatus.value.dpi = `${dpiData.value}`
       deviceStatus.value.dpiLevel = dpiData.level
+
+      // 同时更新回报率状态
+      if (dpiData.reportRate !== undefined) {
+        const rateMap: Record<number, number> = {
+          1: 125,
+          2: 250,
+          3: 500,
+          4: 1000
+        }
+        deviceStatus.value.reportRateIndex = dpiData.reportRate
+        deviceStatus.value.reportRate = `${rateMap[dpiData.reportRate] || 1000} Hz`
+      }
     } catch (err) {
       console.error('获取 DPI 失败:', err)
       deviceStatus.value.dpi = '2000'
@@ -658,13 +680,18 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      const command = currentProtocol.value.commands.setReportRate(rate)
+      // 获取当前 DPI 档位和滚轮方向，保持其他设置不变
+      const dpiLevel = deviceStatus.value.dpiLevel || 1
+      const scrollDirection = deviceStatus.value.scrollDirection
+
+      const command = currentProtocol.value.commands.setReportRate(rate, dpiLevel, scrollDirection)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
 
       await new Promise((resolve) => setTimeout(resolve, 100))
-      await getCurrentReportRate()
+      // 重新获取 DPI 配置（回报率从 DPI 响应中解析）
+      await getCurrentDPI()
 
       return { success: true, message: `回报率已设置为 ${rate} Hz` }
     } catch (err: any) {
@@ -684,7 +711,8 @@ export function useWebHID() {
 
     try {
       const scrollDirection = deviceStatus.value.scrollDirection
-      const command = currentProtocol.value.commands.setDPI(level, value, scrollDirection)
+      const reportRateIndex = deviceStatus.value.reportRateIndex
+      const command = currentProtocol.value.commands.setDPI(level, value, scrollDirection, reportRateIndex)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -802,10 +830,11 @@ export function useWebHID() {
         return { success: false, message: '当前设备不支持滚轮方向设置' }
       }
 
-      // 获取当前 DPI 档位
+      // 获取当前 DPI 档位和回报率
       const currentLevel = deviceStatus.value.dpiLevel || 1
+      const reportRateIndex = deviceStatus.value.reportRateIndex
 
-      const command = currentProtocol.value.commands.setScrollDirection(direction, currentLevel)
+      const command = currentProtocol.value.commands.setScrollDirection(direction, currentLevel, reportRateIndex)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -1085,6 +1114,7 @@ export function useWebHID() {
     isConnected: computed(() => isConnected.value),
     deviceInfo: computed(() => deviceInfo.value),
     deviceStatus: computed(() => deviceStatus.value),
+    connectionMode: computed(() => connectionMode.value),
     getCurrentProtocol,
     connectDevice,
     autoConnectDevice,

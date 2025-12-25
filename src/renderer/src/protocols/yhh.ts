@@ -17,8 +17,11 @@ export const yhhProtocol: DeviceProtocol = {
   identify: (device: HIDDevice) => {
     const productName = device.productName?.toLowerCase() || ''
     // 支持多种产品名称识别
+    // USB 模式: "USB MOUSE"
+    // 2.4G 模式: "USB Receiver"
     return (
       productName.includes('usb mouse') ||
+      productName.includes('usb receiver') ||
       productName.includes('yjx') ||
       productName.includes('yhh')
     )
@@ -78,23 +81,112 @@ export const yhhProtocol: DeviceProtocol = {
       return [0x55, 0x0d, 0x00, 0x00, 0x30, 0x38, ...new Array(58).fill(0)]
     },
 
-    // 设置回报率 (暂不支持,需要抓包确认)
-    setReportRate: (_rate: number) => {
-      // 暂不支持,返回空数组
-      return []
+    // 设置回报率
+    // 回报率值映射: 1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz
+    // 使用与 setDPI 相同的命令格式
+    setReportRate: (rate: number, dpiLevel?: number, scrollDirection?: number) => {
+      // 回报率值映射
+      const rateMap: Record<number, number> = {
+        125: 1,
+        250: 2,
+        500: 3,
+        1000: 4
+      }
+      const rateValue = rateMap[rate] || 4 // 默认 1000Hz
+
+      // 支持的DPI档位配置 (小端序)
+      const dpiLevels = [
+        0xe8,
+        0x03, // 1000 DPI
+        0x78,
+        0x05, // 1400 DPI
+        0xd0,
+        0x07, // 2000 DPI
+        0x80,
+        0x0c, // 3200 DPI
+        0x00,
+        0x19, // 6400 DPI
+        0x00,
+        0x32 // 12800 DPI
+      ]
+
+      // 使用传入的 DPI 档位，默认为 1
+      const currentLevel = dpiLevel !== undefined ? dpiLevel : 1
+
+      // 滚轮方向: 0=正向, 1=反向 (默认为0)
+      const wheelDirection = scrollDirection !== undefined ? scrollDirection : 0
+
+      // 构建完整命令 (保持当前 DPI 档位和滚轮方向)
+      const command = [
+        0x55,
+        0x0f,
+        0xae,
+        0x0a,
+        0x2f,
+        0x01,
+        0x01,
+        0x00,
+        0x00,
+        0x00, // 固定
+        rateValue, // 回报率值 (1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz)
+        0x06, // DPI标志
+        currentLevel, // 当前档位索引 (使用传入的值)
+        ...dpiLevels, // DPI配置数组
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00, // 填充
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        wheelDirection, // 滚轮方向 (使用传入的值)
+        0x01,
+        0x01,
+        0x35,
+        0x02,
+        0x0a, // 固定尾部
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00
+      ]
+
+      return command
     },
 
     // 设置 DPI 档位
     // 命令: 0x0F (不是0x0E!)
     // 格式: [0x55, 0x0F, 0xAE, 0x0A, 0x2F, 0x01, 0x01, 0x00,
     //        0x00, 0x00,              // 固定
-    //        0x04, 0x06,              // DPI数量和标志
+    //        回报率,                   // 回报率值 (1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz)
+    //        0x06,                    // DPI标志位
     //        level,                   // 档位索引 (1-6)
     //        DPI配置数组...,          // 所有档位的DPI值
     //        滚轮方向, 0x01,          // 滚轮方向 (0=正向, 1=反向)
     //        0x35, 0x02, 0x0A, 0x00,  // 固定尾部
     //        ...]
-    setDPI: (level: number, _value: number, scrollDirection?: number) => {
+    setDPI: (level: number, _value: number, scrollDirection?: number, reportRate?: number) => {
       // 支持的DPI档位配置 (小端序)
       const dpiLevels = [
         0xe8,
@@ -114,6 +206,9 @@ export const yhhProtocol: DeviceProtocol = {
       // 滚轮方向: 0=正向, 1=反向 (默认为0)
       const wheelDirection = scrollDirection !== undefined ? scrollDirection : 0
 
+      // 回报率值: 1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz (默认为4)
+      const rateValue = reportRate !== undefined ? reportRate : 4
+
       // 构建完整命令
       const command = [
         0x55,
@@ -126,8 +221,8 @@ export const yhhProtocol: DeviceProtocol = {
         0x00,
         0x00,
         0x00, // 固定
-        0x04,
-        0x06, // DPI数量和标志
+        rateValue, // 回报率值
+        0x06, // DPI标志
         level, // 档位索引 (1-6)
         ...dpiLevels, // DPI配置数组
         0x00,
@@ -175,7 +270,7 @@ export const yhhProtocol: DeviceProtocol = {
 
     // 设置滚轮方向
     // 使用与 setDPI 相同的命令格式,只修改滚轮方向位
-    setScrollDirection: (direction: number, currentLevel: number) => {
+    setScrollDirection: (direction: number, currentLevel: number, reportRate?: number) => {
       // 支持的DPI档位配置 (小端序)
       const dpiLevels = [
         0xe8,
@@ -192,6 +287,9 @@ export const yhhProtocol: DeviceProtocol = {
         0x32 // 12800 DPI
       ]
 
+      // 回报率值: 1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz (默认为4)
+      const rateValue = reportRate !== undefined ? reportRate : 4
+
       // 构建完整命令
       const command = [
         0x55,
@@ -204,8 +302,8 @@ export const yhhProtocol: DeviceProtocol = {
         0x00,
         0x00,
         0x00, // 固定
-        0x04,
-        0x06, // DPI数量和标志
+        rateValue, // 回报率值
+        0x06, // DPI标志
         currentLevel, // 当前档位索引 (1-6)
         ...dpiLevels, // DPI配置数组
         0x00,
@@ -415,7 +513,8 @@ export const yhhProtocol: DeviceProtocol = {
     // 解析 DPI 配置
     // 返回格式: [0xAA, 0x0E, 0xA5, 0x95, 0x2E, 0x01, 0x01, 0x00,
     //            0x00, 0x00,              // 档位 0 (未使用)
-    //            0x04, 0x06,              // DPI数量和标志
+    //            0x04,                    // 回报率值 (1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz)
+    //            0x06,                    // DPI标志位 (0x06 表示6个档位)
     //            0x03,                    // 当前档位索引 (从1开始)
     //            0xE8, 0x03,              // 档位1: 1000 DPI
     //            0x78, 0x05,              // 档位2: 1400 DPI
@@ -426,9 +525,10 @@ export const yhhProtocol: DeviceProtocol = {
     //            ...]
     dpi: (response: Uint8Array) => {
       // 字节8-9: 档位0 (未使用)
-      // 字节10: DPI数量标识 (0x04)
+      // 字节10: 回报率值 (1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz)
       // 字节11: DPI标志位 (0x06 表示6个档位)
       // 字节12: 当前DPI档位索引 (1-6)
+      const reportRateIndex = response[10] || 4
       const currentLevel = response[12] || 1
 
       // DPI档位数据从第13位开始，每档2字节 (小端序)
@@ -442,7 +542,8 @@ export const yhhProtocol: DeviceProtocol = {
 
       return {
         value: currentValue,
-        level: currentLevel
+        level: currentLevel,
+        reportRate: reportRateIndex
       }
     },
 
@@ -483,7 +584,7 @@ export const yhhProtocol: DeviceProtocol = {
     scrollDirection: (response: Uint8Array) => {
       //和DPI一样，只不过位于第4字节。 150为正向，151为方向
       const value = response[3]
-      return value === 150 ? 0 : 1
+      return (value === 148 || value === 150 )? 0 : 1
     },
 
     // 解析宏列表
@@ -572,13 +673,14 @@ export const yhhProtocol: DeviceProtocol = {
   features: {
     supportedDPI: [1000, 1400, 2000, 3200, 6400, 12800], // 支持的 DPI 档位 (6档)
     maxDPILevels: 6, // 最大 DPI 档位数
-    supportedReportRates: [1000], // 暂不支持回报率设置
+    supportedReportRates: [125, 250, 500, 1000], // 支持 4 档回报率
     buttonCount: 8, // 按键数量
     hasRGB: false, // 暂不支持 RGB 背光
     hasBattery: false, // 有线鼠标，无电池
     hasOnboardMemory: true, // 支持板载内存
     hasScrollDirection: true, // 支持滚轮方向
     hasMacro: true, // 支持宏功能
-    maxMacroCount: 10 // 最多10个宏
+    maxMacroCount: 10, // 最多10个宏
+    supportsDualMode: true // 支持双模式 (USB + 2.4G)
   }
 }

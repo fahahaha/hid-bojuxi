@@ -14,7 +14,12 @@ export default {
   },
   header: {
     title: '通用游戏鼠标驱动',
-    subtitle: '支持多种游戏鼠标'
+    subtitle: '支持多种游戏鼠标',
+    connectionMode: {
+      label: '连接模式',
+      usb: 'USB',
+      wireless: '2.4G'
+    }
   },
   footer: {
     version: '通用游戏鼠标驱动程序 v1.0.1',

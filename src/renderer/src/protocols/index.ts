@@ -31,9 +31,9 @@ export interface DeviceProtocol {
     getMacroData?: (macroIndex: number) => number[]
 
     /** 设置回报率 */
-    setReportRate: (rate: number) => number[]
+    setReportRate: (rate: number, dpiLevel?: number, scrollDirection?: number) => number[]
     /** 设置 DPI */
-    setDPI: (level: number, value: number, scrollDirection?: number) => number[]
+    setDPI: (level: number, value: number, scrollDirection?: number, reportRate?: number) => number[]
     /** 设置背光模式 */
     setBacklightMode: (mode: number) => number[]
     /** 设置背光亮度 */
@@ -43,7 +43,7 @@ export interface DeviceProtocol {
     /** 设置背光颜色 */
     setBacklightColor: (r: number, g: number, b: number) => number[]
     /** 设置滚轮方向 */
-    setScrollDirection?: (direction: number, currentLevel: number) => number[]
+    setScrollDirection?: (direction: number, currentLevel: number, reportRate?: number) => number[]
     /** 设置按键映射 */
     setButtonMapping?: (buttonMappings: number[][]) => number[]
     /** 创建/更新宏 */
@@ -64,10 +64,11 @@ export interface DeviceProtocol {
     battery: (response: Uint8Array) => number
     /** 解析回报率 */
     reportRate: (response: Uint8Array) => number
-    /** 解析 DPI (返回当前 DPI 值和档位) */
+    /** 解析 DPI (返回当前 DPI 值、档位和回报率) */
     dpi: (response: Uint8Array) => {
       value: number
       level: number
+      reportRate?: number
     }
     /** 解析背光模式 */
     backlight: (response: Uint8Array) => number
@@ -126,5 +127,20 @@ export interface DeviceProtocol {
     hasMacro?: boolean
     /** 最大宏数量 */
     maxMacroCount?: number
+    /** 是否支持双模式 (USB + 2.4G) */
+    supportsDualMode?: boolean
   }
+}
+
+/** 连接模式类型 */
+export type ConnectionMode = 'usb' | '2.4g'
+
+/** 检测设备连接模式 */
+export function detectConnectionMode(device: HIDDevice): ConnectionMode {
+  const productName = device.productName?.toLowerCase() || ''
+  // 通过产品名称判断：USB Receiver 表示 2.4G 无线模式
+  if (productName.includes('receiver') || productName.includes('dongle')) {
+    return '2.4g'
+  }
+  return 'usb'
 }

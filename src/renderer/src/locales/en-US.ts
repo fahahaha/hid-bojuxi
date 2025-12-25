@@ -14,7 +14,12 @@ export default {
   },
   header: {
     title: 'Universal Gaming Mouse Driver',
-    subtitle: 'Support Multiple Gaming Mice'
+    subtitle: 'Support Multiple Gaming Mice',
+    connectionMode: {
+      label: 'Mode',
+      usb: 'USB',
+      wireless: '2.4G'
+    }
   },
   footer: {
     version: 'Universal Gaming Mouse Driver v1.0.1',

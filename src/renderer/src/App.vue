@@ -12,6 +12,14 @@
         </div>
 
         <div class="header-right">
+          <!-- 连接模式显示 -->
+          <div v-if="isConnected && supportsDualMode" class="connection-mode">
+            <span class="mode-label">{{ t('header.connectionMode.label') }}:</span>
+            <span class="mode-value" :class="connectionMode === 'usb' ? 'mode-usb' : 'mode-wireless'">
+              <i class="fa" :class="connectionMode === 'usb' ? 'fa-brands fa-usb' : 'fa-solid fa-wifi'"></i>
+              {{ connectionMode === 'usb' ? t('header.connectionMode.usb') : t('header.connectionMode.wireless') }}
+            </span>
+          </div>
           <button class="btn-theme" @click="toggleTheme" :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'">
             <i class="fa" :class="theme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon'"></i>
           </button>
@@ -161,12 +169,18 @@ import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 
-const { isConnected, deviceStatus, connectDevice, autoConnectDevice } = useWebHID()
+const { isConnected, deviceStatus, connectDevice, autoConnectDevice, connectionMode, getCurrentProtocol } = useWebHID()
 const { locale, setLocale, t } = useI18n()
 const { theme, toggleTheme } = useTheme()
 
 const activeTab = ref('basic')
 const showLanguageDropdown = ref(false)
+
+// 检查当前协议是否支持双模式
+const supportsDualMode = computed(() => {
+  const protocol = getCurrentProtocol()
+  return protocol?.features?.supportsDualMode ?? false
+})
 
 const tabs = computed(() => [
   { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
@@ -316,6 +330,41 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.connection-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.connection-mode .mode-label {
+  color: var(--text-tertiary);
+}
+
+.connection-mode .mode-value {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.connection-mode .mode-value.mode-usb {
+  color: var(--color-primary);
+}
+
+.connection-mode .mode-value.mode-wireless {
+  color: var(--color-success);
+}
+
+.connection-mode .mode-value i {
+  font-size: 0.875rem;
 }
 
 .connection-status {

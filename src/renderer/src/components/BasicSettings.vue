@@ -117,7 +117,7 @@ import { ref, computed, watch } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 import { useI18n } from '../composables/useI18n'
 
-const { setReportRate, setDPI, setScrollDirection, getCurrentProtocol, isConnected, deviceStatus } =
+const { setReportRate, setDPI, setScrollDirection, getCurrentProtocol, isConnected, deviceStatus, connectionMode } =
   useWebHID()
 const { t } = useI18n()
 
@@ -127,9 +127,16 @@ const deviceFeatures = computed(() => {
   return protocol?.features || null
 })
 
-// 支持的回报率列表(根据设备特性动态调整)
+// 支持的回报率列表(根据设备特性和连接模式动态调整)
+// USB 模式只支持 1000Hz，2.4G 模式支持全部回报率
 const reportRates = computed(() => {
-  return deviceFeatures.value?.supportedReportRates || [125, 250, 500, 1000]
+  const allRates = deviceFeatures.value?.supportedReportRates || [125, 250, 500, 1000]
+  // USB 模式只支持 1000Hz
+  if (connectionMode.value === 'usb') {
+    return [1000]
+  }
+  // 2.4G 模式支持全部回报率
+  return allRates
 })
 
 // 支持的 DPI 档位列表
@@ -164,6 +171,34 @@ const supportedScrollDirection = computed(() => {
 const selectedReportRate = ref(1000)
 const selectedDPI = ref(2000)
 const isReverseScroll = ref(false)
+
+// 监听设备状态变化,回显当前回报率
+watch(
+  () => deviceStatus.value.reportRate,
+  (newRate) => {
+    if (newRate && newRate !== '--') {
+      // 从 "1000 Hz" 格式中提取数字
+      const rateValue = parseInt(newRate)
+      if (!isNaN(rateValue)) {
+        selectedReportRate.value = rateValue
+      }
+    }
+  },
+  { immediate: true }
+)
+
+// 监听设备连接状态,初始化回报率选中值
+watch(isConnected, (connected) => {
+  if (connected && deviceStatus.value.reportRate !== '--') {
+    const rateValue = parseInt(deviceStatus.value.reportRate)
+    if (!isNaN(rateValue)) {
+      selectedReportRate.value = rateValue
+    }
+  }
+})
+
+
+
 
 // 监听设备状态变化,回显当前 DPI
 watch(
@@ -355,7 +390,7 @@ async function handleSetReverseScroll() {
 .rate-buttons {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: start;
   gap: 0.5rem;
 }
 

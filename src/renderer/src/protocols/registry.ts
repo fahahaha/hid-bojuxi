@@ -19,5 +19,6 @@ export const protocolRegistry: DeviceProtocol[] = [
  */
 export function detectProtocol(device: HIDDevice): DeviceProtocol {
   const protocol = protocolRegistry.find((p) => p.identify(device))
+  console.log("使用协议：",protocol)
   return protocol || genericProtocol
 }

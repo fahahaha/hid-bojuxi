@@ -17,7 +17,7 @@ export const genericProtocol: DeviceProtocol = {
     getBacklight: [0x04, 0x01],
     getButtonMapping: [0x05, 0x01],
 
-    setReportRate: (rate: number) => {
+    setReportRate: (rate: number, _dpiLevel?: number, _scrollDirection?: number) => {
       const rateMap: Record<number, number> = {
         125: 0x08,
         250: 0x04,
