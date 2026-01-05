@@ -1,6 +1,7 @@
 import { DeviceProtocol } from './index'
 import { genericProtocol } from './generic'
 import { yhhProtocol } from './yhh'
+import { bojuxiProtocol } from './bojuxi'
 
 /**
  * 协议注册表
@@ -8,7 +9,8 @@ import { yhhProtocol } from './yhh'
  * genericProtocol 必须放在最后作为默认协议
  */
 export const protocolRegistry: DeviceProtocol[] = [
-  yhhProtocol,
+  bojuxiProtocol, // 博巨矽鼠标协议 (优先匹配)
+  yhhProtocol, // YHH 鼠标协议
   genericProtocol // 默认协议，匹配所有设备
 ]
 

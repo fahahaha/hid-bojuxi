@@ -58,10 +58,16 @@ function createWindow(): void {
         )
       })
 
-      // 优先选择特定的设备（VID: 0xa8a4, PID: 0x2255）
-      const targetDevice = details.deviceList.find(
+      // 优先选择博巨矽鼠标（VID: 0x1A86, PID: 0x8312 有线 / 0x8300 无线）
+      // 其次选择 YHH 鼠标（VID: 0xa8a4, PID: 0x2255）
+      const bojuxiDevice = details.deviceList.find(
+        (device) =>
+          device.vendorId === 0x1a86 && (device.productId === 0x8312 || device.productId === 0x8300)
+      )
+      const yhhDevice = details.deviceList.find(
         (device) => device.vendorId === 0xa8a4 && device.productId === 0x2255
       )
+      const targetDevice = bojuxiDevice || yhhDevice
 
       // 如果找到目标设备，使用它；否则使用第一个设备
       const selectedDevice = targetDevice || details.deviceList[0]
