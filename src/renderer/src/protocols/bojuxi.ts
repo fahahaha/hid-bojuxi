@@ -1,4 +1,4 @@
-import { DeviceProtocol } from './index'
+import { DeviceProtocol, ConnectionMode } from './index'
 
 /**
  * 博巨矽 (Bojuxi) 游戏鼠标设备协议
@@ -182,9 +182,9 @@ export const DEFAULT_BUTTON_CONFIG = {
   FORWARD: [0x02, 0x00, 0x10, 0x00],
   /** 后退键 */
   BACKWARD: [0x02, 0x00, 0x08, 0x00],
-  /** 滚轮前滚 */
+  /** 滚轮前滚 (暂不开放修改,也不显示) */
   WHEEL_UP: [0x08, 0x00, 0x00, 0x00],
-  /** 滚轮后滚 */
+  /** 滚轮后滚 (暂不开放修改,也不显示)*/
   WHEEL_DOWN: [0x08, 0x00, 0x01, 0x00],
   /** DPI 键 */
   DPI: [0x05, 0x00, 0x02, 0x00]
@@ -205,6 +205,15 @@ function createPacket(data: number[]): number[] {
     packet.push(0x00)
   }
   return packet
+}
+
+/**
+ * 根据连接模式获取对应的字节值
+ * @param mode 连接模式
+ * @returns 连接模式字节值
+ */
+function getConnectionModeByte(mode: ConnectionMode): number {
+  return mode === '2.4g' ? CONNECTION_MODE.WIRELESS : CONNECTION_MODE.USB
 }
 
 /**
@@ -263,8 +272,11 @@ export const bojuxiProtocol: DeviceProtocol = {
     // 有线 PID: 0x8312
     // 无线 PID: 0x8300
     const isBojuxi =
-      device.vendorId === 0x1a86 && (device.productId === 0x8312 || device.productId === 0x8300)
+      device.vendorId === 0x1a86 && (device.productId === 0x8312 || device.productId === 0x8300 || device.productId === 0x8301)
 
+    console.log(
+      `[Bojuxi] (VID: 0x${device.vendorId.toString(16)}, PID: 0x${device.productId.toString(16)})`
+    )
     if (isBojuxi) {
       console.log(
         `[Bojuxi] 识别到博巨矽鼠标 (VID: 0x${device.vendorId.toString(16)}, PID: 0x${device.productId.toString(16)})`
@@ -282,91 +294,104 @@ export const bojuxiProtocol: DeviceProtocol = {
     /**
      * 获取设备信息 (M05)
      * 命令码: 0xA5
+     * @param mode 连接模式
      */
-    getDeviceInfo: createPacket([
-      PACKET_HEADER.SEND,
-      CONNECTION_MODE.USB, // 将在发送时根据实际连接模式替换
-      COMMAND_CODE.GET_DEVICE_INFO,
-      0x02, // 数据长度
-      0x01, // mode
-      0x00 // table_id
-    ]),
+    getDeviceInfo: (mode: ConnectionMode = 'usb') =>
+      createPacket([
+        PACKET_HEADER.SEND,
+        getConnectionModeByte(mode),
+        COMMAND_CODE.GET_DEVICE_INFO,
+        0x02, // 数据长度
+        0x01, // mode
+        0x00 // table_id
+      ]),
 
     /**
      * 获取电池信息 (M06)
      * 命令码: 0xA6
+     * @param mode 连接模式
      */
-    getBattery: createPacket([
-      PACKET_HEADER.SEND,
-      CONNECTION_MODE.USB,
-      COMMAND_CODE.GET_BATTERY,
-      0x00 // 无数据
-    ]),
+    getBattery: (mode: ConnectionMode = 'usb') =>
+      createPacket([
+        PACKET_HEADER.SEND,
+        getConnectionModeByte(mode),
+        COMMAND_CODE.GET_BATTERY,
+        0x00 // 无数据
+      ]),
 
     /**
      * 获取回报率
      * 通过读取基础设置获取
+     * @param mode 连接模式
      */
-    getReportRate: createPacket([
-      PACKET_HEADER.SEND,
-      CONNECTION_MODE.USB,
-      COMMAND_CODE.GET_BASIC_SETTINGS,
-      0x04, // 数据长度
-      0x01, // mode
-      0x00, // table_base_id
-      0x00, // table_config_id
-      0x00 // reserved
-    ]),
+    getReportRate: (mode: ConnectionMode = 'usb') =>
+      createPacket([
+        PACKET_HEADER.SEND,
+        getConnectionModeByte(mode),
+        COMMAND_CODE.GET_BASIC_SETTINGS,
+        0x04, // 数据长度
+        0x01, // mode
+        0x00, // table_base_id
+        0x00, // table_config_id
+        0x00 // reserved
+      ]),
 
     /**
      * 获取 DPI
      * 通过读取基础设置获取
+     * @param mode 连接模式
      */
-    getDPI: createPacket([
-      PACKET_HEADER.SEND,
-      CONNECTION_MODE.USB,
-      COMMAND_CODE.GET_BASIC_SETTINGS,
-      0x04,
-      0x01,
-      0x00,
-      0x00,
-      0x00
-    ]),
+    getDPI: (mode: ConnectionMode = 'usb') =>
+      createPacket([
+        PACKET_HEADER.SEND,
+        getConnectionModeByte(mode),
+        COMMAND_CODE.GET_BASIC_SETTINGS,
+        0x04,
+        0x01,
+        0x00,
+        0x00,
+        0x00
+      ]),
 
     /**
      * 获取背光模式 (暂不支持)
+     * @param _mode 连接模式
      */
-    getBacklight: [],
+    getBacklight: (_mode: ConnectionMode = 'usb') => [],
 
     /**
      * 获取按键映射
      * 通过读取基础设置获取
+     * @param mode 连接模式
      */
-    getButtonMapping: createPacket([
-      PACKET_HEADER.SEND,
-      CONNECTION_MODE.USB,
-      COMMAND_CODE.GET_BASIC_SETTINGS,
-      0x04,
-      0x01,
-      0x00,
-      0x00,
-      0x00
-    ]),
+    getButtonMapping: (mode: ConnectionMode = 'usb') =>
+      createPacket([
+        PACKET_HEADER.SEND,
+        getConnectionModeByte(mode),
+        COMMAND_CODE.GET_BASIC_SETTINGS,
+        0x04,
+        0x01,
+        0x00,
+        0x00,
+        0x00
+      ]),
 
     /**
      * 获取滚轮方向
      * 通过读取基础设置获取
+     * @param mode 连接模式
      */
-    getScrollDirection: createPacket([
-      PACKET_HEADER.SEND,
-      CONNECTION_MODE.USB,
-      COMMAND_CODE.GET_BASIC_SETTINGS,
-      0x04,
-      0x01,
-      0x00,
-      0x00,
-      0x00
-    ]),
+    getScrollDirection: (mode: ConnectionMode = 'usb') =>
+      createPacket([
+        PACKET_HEADER.SEND,
+        getConnectionModeByte(mode),
+        COMMAND_CODE.GET_BASIC_SETTINGS,
+        0x04,
+        0x01,
+        0x00,
+        0x00,
+        0x00
+      ]),
 
     // ========================================================================
     // 设置命令
@@ -375,10 +400,11 @@ export const bojuxiProtocol: DeviceProtocol = {
     /**
      * 设置回报率
      * @param rate 回报率 Hz (125/250/500/1000)
-     * @param dpiLevel 当前 DPI 档位 (可选)
-     * @param scrollDirection 滚轮方向 (可选)
+     * @param _dpiLevel 当前 DPI 档位 (可选)
+     * @param _scrollDirection 滚轮方向 (可选)
+     * @param _connectionMode 连接模式 (可选)
      */
-    setReportRate: (rate: number, _dpiLevel?: number, _scrollDirection?: number) => {
+    setReportRate: (rate: number, _dpiLevel?: number, _scrollDirection?: number, _connectionMode?: ConnectionMode) => {
       const rateValue = HZ_TO_POLLING_RATE[rate] || POLLING_RATE.HZ_1000
       // TODO: 需要先读取当前配置，然后只修改回报率字段
       // 这里返回空数组，实际实现需要在 useWebHID 中处理
@@ -390,10 +416,11 @@ export const bojuxiProtocol: DeviceProtocol = {
      * 设置 DPI
      * @param level DPI 档位 (0-6)
      * @param value DPI 值 (50-16000)
-     * @param scrollDirection 滚轮方向 (可选)
-     * @param reportRate 回报率 (可选)
+     * @param _scrollDirection 滚轮方向 (可选)
+     * @param _reportRate 回报率 (可选)
+     * @param _connectionMode 连接模式 (可选)
      */
-    setDPI: (level: number, value: number, _scrollDirection?: number, _reportRate?: number) => {
+    setDPI: (level: number, value: number, _scrollDirection?: number, _reportRate?: number, _connectionMode?: ConnectionMode) => {
       // TODO: 需要先读取当前配置，然后只修改 DPI 字段
       console.log('[Bojuxi] setDPI: level=', level, 'value=', value)
       return []
@@ -401,31 +428,42 @@ export const bojuxiProtocol: DeviceProtocol = {
 
     /**
      * 设置背光模式 (暂不支持)
+     * @param _mode 背光模式
+     * @param _connectionMode 连接模式 (可选)
      */
-    setBacklightMode: (_mode: number) => [],
+    setBacklightMode: (_mode: number, _connectionMode?: ConnectionMode) => [],
 
     /**
      * 设置背光亮度 (暂不支持)
+     * @param _brightness 亮度
+     * @param _connectionMode 连接模式 (可选)
      */
-    setBacklightBrightness: (_brightness: number) => [],
+    setBacklightBrightness: (_brightness: number, _connectionMode?: ConnectionMode) => [],
 
     /**
      * 设置背光频率 (暂不支持)
+     * @param _frequency 频率
+     * @param _connectionMode 连接模式 (可选)
      */
-    setBacklightFrequency: (_frequency: number) => [],
+    setBacklightFrequency: (_frequency: number, _connectionMode?: ConnectionMode) => [],
 
     /**
      * 设置背光颜色 (暂不支持)
+     * @param _r 红色
+     * @param _g 绿色
+     * @param _b 蓝色
+     * @param _connectionMode 连接模式 (可选)
      */
-    setBacklightColor: (_r: number, _g: number, _b: number) => [],
+    setBacklightColor: (_r: number, _g: number, _b: number, _connectionMode?: ConnectionMode) => [],
 
     /**
      * 设置滚轮方向
      * @param direction 方向 (0=正向, 1=反向)
-     * @param currentLevel 当前 DPI 档位
-     * @param reportRate 回报率 (可选)
+     * @param _currentLevel 当前 DPI 档位
+     * @param _reportRate 回报率 (可选)
+     * @param _connectionMode 连接模式 (可选)
      */
-    setScrollDirection: (direction: number, _currentLevel: number, _reportRate?: number) => {
+    setScrollDirection: (direction: number, _currentLevel: number, _reportRate?: number, _connectionMode?: ConnectionMode) => {
       // TODO: 需要先读取当前配置，然后只修改滚轮方向字段
       console.log('[Bojuxi] setScrollDirection:', direction)
       return []
@@ -434,8 +472,9 @@ export const bojuxiProtocol: DeviceProtocol = {
     /**
      * 设置按键映射
      * @param buttonMappings 按键映射数组，每个按键 4 字节
+     * @param _connectionMode 连接模式 (可选)
      */
-    setButtonMapping: (buttonMappings: number[][]) => {
+    setButtonMapping: (buttonMappings: number[][], _connectionMode?: ConnectionMode) => {
       // TODO: 需要先读取当前配置，然后只修改按键映射字段
       console.log('[Bojuxi] setButtonMapping:', buttonMappings)
       return []
@@ -445,8 +484,9 @@ export const bojuxiProtocol: DeviceProtocol = {
      * 设置宏 (M03)
      * @param macroIndex 宏 ID (0-9)
      * @param macroEvents 宏事件数据
+     * @param _connectionMode 连接模式 (可选)
      */
-    setMacro: (macroIndex: number, macroEvents: number[]) => {
+    setMacro: (macroIndex: number, macroEvents: number[], _connectionMode?: ConnectionMode) => {
       // TODO: 实现多帧传输
       console.log('[Bojuxi] setMacro: index=', macroIndex, 'events=', macroEvents.length)
       return []
@@ -455,8 +495,9 @@ export const bojuxiProtocol: DeviceProtocol = {
     /**
      * 删除宏
      * @param macroIndex 宏 ID (0-9)
+     * @param _connectionMode 连接模式 (可选)
      */
-    deleteMacro: (macroIndex: number) => {
+    deleteMacro: (macroIndex: number, _connectionMode?: ConnectionMode) => {
       // 发送空宏（宏长度=4，循环次数=0）
       console.log('[Bojuxi] deleteMacro:', macroIndex)
       return []

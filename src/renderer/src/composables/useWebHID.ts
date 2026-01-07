@@ -12,6 +12,9 @@ const commandRetries = 3
 // DPI 变化监听器引用
 let dpiChangeListener: ((event: HIDInputReportEvent) => void) | null = null
 
+// 电池状态定时器引用
+let batteryIntervalId: ReturnType<typeof setInterval> | null = null
+
 // 响应式状态
 const isConnected = ref(false)
 const deviceInfo = ref({
@@ -33,6 +36,22 @@ const deviceStatus = ref({
   backlight: '--',
   scrollDirection: 0 //正向0，反向1
 })
+
+/**
+ * 解析命令：支持静态数组或函数形式的命令
+ * @param command 命令（数组或函数）
+ * @param mode 连接模式
+ * @returns 命令数组
+ */
+function resolveCommand(
+  command: number[] | ((connectionMode: ConnectionMode) => number[]),
+  mode: ConnectionMode
+): number[] {
+  if (typeof command === 'function') {
+    return command(mode)
+  }
+  return command
+}
 
 export function useWebHID() {
   /**
@@ -139,15 +158,18 @@ export function useWebHID() {
         // Chrome bug fix: 立即复制数据，避免异步访问时数据被覆盖。在某些 Chrome 版本（尤其是早期支持 WebHID 的版本，如 Chrome 89~105 左右），存在以下行为：
         //浏览器在事件处理函数执行完毕后，就立即释放或重用该 ArrayBuffer 的内存。
         // 如果你在 Promise、setTimeout、或其他异步回调中才去读取 event.data.buffer，此时内存可能已被清空或覆盖。
-        // 即使你同步地创建了 new Uint8Array(event.data.buffer)，但如果这个 Uint8Array 的底层数组被释放，后续访问也会出错（虽然多数情况下视图会“持有引用”，但早期实现有缺陷）。
+        // 即使你同步地创建了 new Uint8Array(event.data.buffer)，但如果这个 Uint8Array 的底层数组被释放，后续访问也会出错（虽然多数情况下视图会"持有引用"，但早期实现有缺陷）。
         const data = new Uint8Array(event.data.byteLength)
         for (let i = 0; i < event.data.byteLength; i++) {
           data[i] = event.data.getUint8(i)
         }
 
-        // Chrome bug workaround: 过滤掉不是以 0xAA 开头的响应
+        // 过滤有效响应包头:
+        // - YHH 协议: 0xAA
+        // - 博巨矽协议: 0x5A (ACK) 或 0x5B (NACK)
         // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
-        if (data[0] !== 0xaa) {
+        const validHeaders = [0xaa, 0x5a, 0x5b]
+        if (!validHeaders.includes(data[0])) {
           // 忽略无效响应，继续等待正确的响应
           return
         }
@@ -209,9 +231,11 @@ export function useWebHID() {
   async function tryGetDeviceInfo(testDevice: HIDDevice): Promise<boolean> {
     try {
       const protocol = detectProtocol(testDevice)
-      const command = protocol.commands.getDeviceInfo
+      // 检测连接模式
+      const mode = detectConnectionMode(testDevice)
+      const command = resolveCommand(protocol.commands.getDeviceInfo, mode)
 
-      console.log(`[设备验证] 尝试获取设备信息: ${testDevice.productName || '未知设备'}`)
+      console.log(`[设备验证] 尝试获取设备信息: ${testDevice.productName || '未知设备'}, 连接模式: ${mode}`)
 
       // 发送获取设备信息命令
       await testDevice.sendReport(0, new Uint8Array(command))
@@ -227,15 +251,18 @@ export function useWebHID() {
           // Chrome bug fix: 立即复制数据，避免异步访问时数据被覆盖。在某些 Chrome 版本（尤其是早期支持 WebHID 的版本，如 Chrome 89~105 左右），存在以下行为：
           //浏览器在事件处理函数执行完毕后，就立即释放或重用该 ArrayBuffer 的内存。
           // 如果你在 Promise、setTimeout、或其他异步回调中才去读取 event.data.buffer，此时内存可能已被清空或覆盖。
-          // 即使你同步地创建了 new Uint8Array(event.data.buffer)，但如果这个 Uint8Array 的底层数组被释放，后续访问也会出错（虽然多数情况下视图会“持有引用”，但早期实现有缺陷）。
+          // 即使你同步地创建了 new Uint8Array(event.data.buffer)，但如果这个 Uint8Array 的底层数组被释放，后续访问也会出错（虽然多数情况下视图会"持有引用"，但早期实现有缺陷）。
           const data = new Uint8Array(event.data.byteLength)
           for (let i = 0; i < event.data.byteLength; i++) {
             data[i] = event.data.getUint8(i)
           }
 
-          // Chrome bug workaround: 过滤掉不是以 0xAA 开头的响应
+          // 过滤有效响应包头:
+          // - YHH 协议: 0xAA
+          // - 博巨矽协议: 0x5A (ACK) 或 0x5B (NACK)
           // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
-          if (data[0] !== 0xaa) {
+          const validHeaders = [0xaa, 0x5a, 0x5b]
+          if (!validHeaders.includes(data[0])) {
             // 忽略无效响应，继续等待正确的响应
             return
           }
@@ -298,8 +325,11 @@ export function useWebHID() {
       // await getBacklightMode()
       await getCurrentScrollDirection()
 
-      // 定时更新电池状态
-      setInterval(getBattery, 5000)
+      // 定时更新电池状态（先清除已有定时器，防止创建多个）为方便开发不干扰暂不开启
+      // if (batteryIntervalId !== null) {
+      //   clearInterval(batteryIntervalId)
+      // }
+      // batteryIntervalId = setInterval(getBattery, 60000)
 
       // 启动 DPI 变化实时监听
       setupDPIChangeListener()
@@ -310,6 +340,11 @@ export function useWebHID() {
           console.log('[设备事件] 设备已断开连接')
           // 清理 DPI 监听器
           cleanupDPIChangeListener()
+          // 清理电池状态定时器
+          if (batteryIntervalId !== null) {
+            clearInterval(batteryIntervalId)
+            batteryIntervalId = null
+          }
           isConnected.value = false
           deviceInfo.value.status = '未连接'
           deviceInfo.value.connectionType = '--'
@@ -499,7 +534,7 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.value.commands.getDeviceInfo
+      const command = resolveCommand(currentProtocol.value.commands.getDeviceInfo, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (response && response.length >= 16) {
@@ -541,7 +576,7 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.value.commands.getBattery
+      const command = resolveCommand(currentProtocol.value.commands.getBattery, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 2) {
@@ -566,7 +601,7 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.value.commands.getReportRate
+      const command = resolveCommand(currentProtocol.value.commands.getReportRate, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 1) {
@@ -589,7 +624,7 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.value.commands.getDPI
+      const command = resolveCommand(currentProtocol.value.commands.getDPI, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 3) {
@@ -633,7 +668,7 @@ export function useWebHID() {
       return
 
     try {
-      const command = currentProtocol.value.commands.getScrollDirection
+      const command = resolveCommand(currentProtocol.value.commands.getScrollDirection, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 3) {
@@ -656,7 +691,7 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = currentProtocol.value.commands.getBacklight
+      const command = resolveCommand(currentProtocol.value.commands.getBacklight, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 1) {
@@ -684,7 +719,7 @@ export function useWebHID() {
       const dpiLevel = deviceStatus.value.dpiLevel || 1
       const scrollDirection = deviceStatus.value.scrollDirection
 
-      const command = currentProtocol.value.commands.setReportRate(rate, dpiLevel, scrollDirection)
+      const command = currentProtocol.value.commands.setReportRate(rate, dpiLevel, scrollDirection, connectionMode.value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -712,7 +747,7 @@ export function useWebHID() {
     try {
       const scrollDirection = deviceStatus.value.scrollDirection
       const reportRateIndex = deviceStatus.value.reportRateIndex
-      const command = currentProtocol.value.commands.setDPI(level, value, scrollDirection, reportRateIndex)
+      const command = currentProtocol.value.commands.setDPI(level, value, scrollDirection, reportRateIndex, connectionMode.value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -735,7 +770,7 @@ export function useWebHID() {
 
     try {
       const modeNames = ['常灭', '常亮', '呼吸', 'APM模式', '全光谱']
-      const command = currentProtocol.value.commands.setBacklightMode(mode)
+      const command = currentProtocol.value.commands.setBacklightMode(mode, connectionMode.value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -759,7 +794,7 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      const command = currentProtocol.value.commands.setBacklightBrightness(brightness)
+      const command = currentProtocol.value.commands.setBacklightBrightness(brightness, connectionMode.value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -781,7 +816,7 @@ export function useWebHID() {
 
     try {
       const frequencyLabels = ['极慢', '慢', '中等', '快', '极快']
-      const command = currentProtocol.value.commands.setBacklightFrequency(frequency)
+      const command = currentProtocol.value.commands.setBacklightFrequency(frequency, connectionMode.value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -804,7 +839,7 @@ export function useWebHID() {
       const g = parseInt(color.slice(3, 5), 16)
       const b = parseInt(color.slice(5, 7), 16)
 
-      const command = currentProtocol.value.commands.setBacklightColor(r, g, b)
+      const command = currentProtocol.value.commands.setBacklightColor(r, g, b, connectionMode.value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -834,7 +869,7 @@ export function useWebHID() {
       const currentLevel = deviceStatus.value.dpiLevel || 1
       const reportRateIndex = deviceStatus.value.reportRateIndex
 
-      const command = currentProtocol.value.commands.setScrollDirection(direction, currentLevel, reportRateIndex)
+      const command = currentProtocol.value.commands.setScrollDirection(direction, currentLevel, reportRateIndex, connectionMode.value)
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -857,7 +892,7 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return null
 
     try {
-      const command = currentProtocol.value.commands.getButtonMapping
+      const command = resolveCommand(currentProtocol.value.commands.getButtonMapping, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 40) {
@@ -894,7 +929,7 @@ export function useWebHID() {
         return { success: false, message: '当前设备不支持按键映射设置' }
       }
 
-      const command = currentProtocol.value.commands.setButtonMapping(buttonMappings)
+      const command = currentProtocol.value.commands.setButtonMapping(buttonMappings, connectionMode.value)
 
       if (command.length === 0) {
         return { success: false, message: '按键映射数据格式错误' }
@@ -929,7 +964,7 @@ export function useWebHID() {
         return null
       }
 
-      const command = currentProtocol.value.commands.getMacroList
+      const command = resolveCommand(currentProtocol.value.commands.getMacroList, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 10) {
@@ -962,7 +997,7 @@ export function useWebHID() {
         return null
       }
 
-      const command = currentProtocol.value.commands.getMacroData(macroIndex)
+      const command = currentProtocol.value.commands.getMacroData(macroIndex, connectionMode.value)
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 16) {

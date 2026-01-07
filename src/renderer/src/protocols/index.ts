@@ -11,45 +11,45 @@ export interface DeviceProtocol {
 
   /** 命令定义 */
   commands: {
-    /** 获取设备信息命令 */
-    getDeviceInfo: number[]
-    /** 获取电池状态命令 */
-    getBattery: number[]
-    /** 获取回报率命令 */
-    getReportRate: number[]
-    /** 获取 DPI 命令 */
-    getDPI: number[]
-    /** 获取背光模式命令 */
-    getBacklight: number[]
-    /** 获取按键映射命令 */
-    getButtonMapping: number[]
-    /** 获取 滚轮 命令 */
-    getScrollDirection?: number[]
-    /** 获取宏列表命令 */
-    getMacroList?: number[]
+    /** 获取设备信息命令 (支持连接模式参数) */
+    getDeviceInfo: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取电池状态命令 (支持连接模式参数) */
+    getBattery: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取回报率命令 (支持连接模式参数) */
+    getReportRate: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取 DPI 命令 (支持连接模式参数) */
+    getDPI: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取背光模式命令 (支持连接模式参数) */
+    getBacklight: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取按键映射命令 (支持连接模式参数) */
+    getButtonMapping: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取 滚轮 命令 (支持连接模式参数) */
+    getScrollDirection?: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取宏列表命令 (支持连接模式参数) */
+    getMacroList?: number[] | ((connectionMode: ConnectionMode) => number[])
     /** 获取宏数据命令 */
-    getMacroData?: (macroIndex: number) => number[]
+    getMacroData?: (macroIndex: number, connectionMode?: ConnectionMode) => number[]
 
     /** 设置回报率 */
-    setReportRate: (rate: number, dpiLevel?: number, scrollDirection?: number) => number[]
+    setReportRate: (rate: number, dpiLevel?: number, scrollDirection?: number, connectionMode?: ConnectionMode) => number[]
     /** 设置 DPI */
-    setDPI: (level: number, value: number, scrollDirection?: number, reportRate?: number) => number[]
+    setDPI: (level: number, value: number, scrollDirection?: number, reportRate?: number, connectionMode?: ConnectionMode) => number[]
     /** 设置背光模式 */
-    setBacklightMode: (mode: number) => number[]
+    setBacklightMode: (mode: number, connectionMode?: ConnectionMode) => number[]
     /** 设置背光亮度 */
-    setBacklightBrightness: (brightness: number) => number[]
+    setBacklightBrightness: (brightness: number, connectionMode?: ConnectionMode) => number[]
     /** 设置背光频率 */
-    setBacklightFrequency: (frequency: number) => number[]
+    setBacklightFrequency: (frequency: number, connectionMode?: ConnectionMode) => number[]
     /** 设置背光颜色 */
-    setBacklightColor: (r: number, g: number, b: number) => number[]
+    setBacklightColor: (r: number, g: number, b: number, connectionMode?: ConnectionMode) => number[]
     /** 设置滚轮方向 */
-    setScrollDirection?: (direction: number, currentLevel: number, reportRate?: number) => number[]
+    setScrollDirection?: (direction: number, currentLevel: number, reportRate?: number, connectionMode?: ConnectionMode) => number[]
     /** 设置按键映射 */
-    setButtonMapping?: (buttonMappings: number[][]) => number[]
+    setButtonMapping?: (buttonMappings: number[][], connectionMode?: ConnectionMode) => number[]
     /** 创建/更新宏 */
-    setMacro?: (macroIndex: number, macroEvents: number[]) => number[]
+    setMacro?: (macroIndex: number, macroEvents: number[], connectionMode?: ConnectionMode) => number[]
     /** 删除宏 */
-    deleteMacro?: (macroIndex: number) => number[]
+    deleteMacro?: (macroIndex: number, connectionMode?: ConnectionMode) => number[]
   }
 
   /** 响应解析器 */
