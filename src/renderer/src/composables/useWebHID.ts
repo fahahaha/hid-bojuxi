@@ -320,10 +320,9 @@ export function useWebHID() {
       // 获取设备信息
       await getDeviceInfo()
       await getBattery()
-      await getCurrentReportRate()
-      await getCurrentDPI()
+      // 一次性获取基础设置（回报率、DPI、滚轮方向），避免重复发送 A2 请求
+      await getBasicSettings()
       // await getBacklightMode()
-      await getCurrentScrollDirection()
 
       // 定时更新电池状态（先清除已有定时器，防止创建多个）为方便开发不干扰暂不开启
       // if (batteryIntervalId !== null) {
@@ -680,6 +679,72 @@ export function useWebHID() {
       deviceStatus.value.scrollDirection = scrollDirectionData
     } catch (err) {
       console.error('获取 滚轮方向 失败:', err)
+      deviceStatus.value.scrollDirection = 0
+    }
+  }
+
+  /**
+   * 获取基础设置（回报率、DPI、滚轮方向）
+   * 通过一次 A2 请求获取所有基础设置数据，避免重复请求
+   */
+  async function getBasicSettings(): Promise<void> {
+    if (!device || !currentProtocol.value) return
+
+    try {
+      // 使用 getDPI 命令（实际上是 A2 命令，返回所有基础设置）
+      const command = resolveCommand(currentProtocol.value.commands.getDPI, connectionMode.value)
+      const response = await sendCommandAndWait(command)
+
+      if (!response || response.length < 10) {
+        console.warn('[基础设置] 响应数据不足，使用默认值')
+        deviceStatus.value.reportRate = '1000 Hz'
+        deviceStatus.value.dpi = '800'
+        deviceStatus.value.dpiLevel = 0
+        deviceStatus.value.scrollDirection = 0
+        return
+      }
+
+      // 一次性解析所有数据
+      // 1. 解析回报率
+      const reportRate = currentProtocol.value.parsers.reportRate(response)
+      deviceStatus.value.reportRate = `${reportRate} Hz`
+
+      // 2. 解析 DPI
+      const dpiData = currentProtocol.value.parsers.dpi(response)
+      deviceStatus.value.dpi = `${dpiData.value}`
+      deviceStatus.value.dpiLevel = dpiData.level
+
+      // 同时更新回报率索引（如果 dpiData 中包含）
+      if (dpiData.reportRate !== undefined) {
+        const rateMap: Record<number, number> = {
+          1: 125,
+          2: 250,
+          3: 500,
+          4: 1000
+        }
+        deviceStatus.value.reportRateIndex = dpiData.reportRate
+        deviceStatus.value.reportRate = `${rateMap[dpiData.reportRate] || 1000} Hz`
+      }
+
+      // 3. 解析滚轮方向
+      if (currentProtocol.value.parsers.scrollDirection) {
+        const scrollDirection = currentProtocol.value.parsers.scrollDirection(response)
+        deviceStatus.value.scrollDirection = scrollDirection
+      } else {
+        deviceStatus.value.scrollDirection = 0
+      }
+
+      console.log('[基础设置] 一次性获取完成:', {
+        reportRate: deviceStatus.value.reportRate,
+        dpi: deviceStatus.value.dpi,
+        dpiLevel: deviceStatus.value.dpiLevel,
+        scrollDirection: deviceStatus.value.scrollDirection
+      })
+    } catch (err) {
+      console.error('[基础设置] 获取失败:', err)
+      deviceStatus.value.reportRate = '1000 Hz'
+      deviceStatus.value.dpi = '800'
+      deviceStatus.value.dpiLevel = 0
       deviceStatus.value.scrollDirection = 0
     }
   }
@@ -1153,6 +1218,13 @@ export function useWebHID() {
     getCurrentProtocol,
     connectDevice,
     autoConnectDevice,
+    // 基础设置获取（一次性获取回报率、DPI、滚轮方向）
+    getBasicSettings,
+    // 单独获取方法（供后续单独刷新使用）
+    getCurrentReportRate,
+    getCurrentDPI,
+    getCurrentScrollDirection,
+    // 设置方法
     setReportRate,
     setDPI,
     setScrollDirection,
