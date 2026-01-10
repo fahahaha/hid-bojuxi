@@ -3,7 +3,7 @@
     <!-- 背光模式 -->
     <div class="mode-card" :class="{ disabled: !supportsRGB }">
       <h3 class="card-title">
-        <i class="fa fa-lightbulb-o icon-warning"></i>{{ t('backlightSettings.mode.title') }}
+        <i class="fa fa-lightbulb icon-warning"></i>{{ t('backlightSettings.mode.title') }}
         <span v-if="!supportsRGB" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
       </h3>
       <p class="card-description">{{ t('backlightSettings.mode.description') }}</p>

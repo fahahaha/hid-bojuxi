@@ -218,8 +218,8 @@ const supportsDualMode = computed(() => {
 
 const tabs = computed(() => [
   { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
-  { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb-o' },
-  { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-keyboard-o' },
+  { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb' },
+  { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-keyboard' },
   { id: 'performance', label: t('tabs.performance'), icon: 'fa fa-tachometer' },
   { id: 'device', label: t('tabs.device'), icon: 'fa fa-info-circle' }
 ])

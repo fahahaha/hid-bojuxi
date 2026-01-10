@@ -2,7 +2,7 @@
   <div class="macro-management">
     <!-- 宏列表 -->
     <div class="macro-list-card card-hover">
-      <h3 class="card-title"><i class="fa fa-list-ol icon-primary"></i>宏列表</h3>
+      <h3 class="card-title"><i class="fa-solid fa-list"></i>宏列表</h3>
       <p class="card-description">管理您的宏,最多可保存10组宏</p>
 
       <div class="macro-buttons">
@@ -46,7 +46,7 @@
     <div class="macro-settings">
       <!-- 录制控制 -->
       <div class="record-card card-hover">
-        <h3 class="card-title"><i class="fa fa-circle-o-notch icon-accent"></i>宏录制</h3>
+        <h3 class="card-title"><i class="fa fa-circle-notch icon-accent"></i>宏录制</h3>
 
         <div class="record-controls">
           <button
@@ -114,7 +114,7 @@
                   :disabled="currentMacro.events.length === 0 || isRecording"
                   title="清空所有事件"
                 >
-                  <i class="fa fa-trash-o"></i>清空全部
+                  <i class="fa fa-trash"></i>清空全部
                 </button>
               </div>
             </div>

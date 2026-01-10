@@ -1,7 +1,7 @@
 <template>
   <div class="button-mapping-container">
     <h3 class="section-title">
-      <i class="fa fa-keyboard-o icon-primary"></i>{{ t('buttonMapping.title') }}
+      <i class="fa fa-keyboard"></i>{{ t('buttonMapping.title') }}
     </h3>
     <p class="section-description">{{ t('buttonMapping.description') }}</p>
 
@@ -274,7 +274,7 @@
                   <!-- 宏录制控制 -->
                   <div class="macro-record-area">
                     <h5 class="section-subtitle">
-                      <i class="fa fa-circle-o-notch"></i>
+                      <i class="fa fa-circle-notch"></i>
                       {{ t('buttonMapping.macro.record') }}
                     </h5>
 
@@ -333,7 +333,7 @@
                           :disabled="currentEditingMacro.events.length === 0 || isRecording"
                           :title="t('buttonMapping.macro.clearAll')"
                         >
-                          <i class="fa fa-trash-o"></i>
+                          <i class="fa fa-trash"></i>
                           {{ t('buttonMapping.macro.clearAll') }}
                         </button>
                       </div>
@@ -527,7 +527,7 @@ const tabs = computed(() => [
   { id: 'mouse', name: t('buttonMapping.tabs.mouse'), icon: 'fa fa-mouse-pointer' },
   { id: 'dpi', name: t('buttonMapping.tabs.dpi'), icon: 'fa fa-tachometer' },
   { id: 'multimedia', name: t('buttonMapping.tabs.multimedia'), icon: 'fa fa-music' },
-  { id: 'keyboard', name: t('buttonMapping.tabs.keyboard'), icon: 'fa fa-keyboard-o' },
+  { id: 'keyboard', name: t('buttonMapping.tabs.keyboard'), icon: 'fa fa-keyboard' },
   { id: 'macro', name: t('buttonMapping.tabs.macro'), icon: 'fa fa-code' }
 ])
 
