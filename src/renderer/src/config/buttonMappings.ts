@@ -1,17 +1,49 @@
 /**
  * 按键映射配置
  * 用于鼠标按键自定义功能
+ *
+ * 博巨矽协议按键配置4字节格式:
+ * | Byte1 | 类型       | Byte2      | Byte3       | Byte4    |
+ * | 0x00  | 键盘单键   | 0x00       | Key code    | 0x00     |
+ * | 0x01  | 键盘组合键 | Modify key | Key code    | 2nd code |
+ * | 0x02  | 鼠标按键   | 0x00       | Button ID   | 0x00     |
+ * | 0x03  | 多媒体键   | 0x00       | 键值高位    | 键值低位 |
+ * | 0x04  | 禁用按键   | 0x00       | 0x00        | 0x00     |
+ * | 0x05  | DPI按键    | 0x00       | DPI change  | 0x00     |
+ * | 0x06  | 功能按键   | 0x00       | Function ID | 0x00     |
+ * | 0x07  | 宏定义     | 0x00       | Macro ID    | 0x00     |
+ * | 0x08  | 滚轮       | 0x00       | 方向        | 连续滚动 |
  */
 
 /**
- * 按键类型
+ * 按键类型（博巨矽协议）
  */
 export enum ButtonType {
-  MOUSE = 'mouse', // 鼠标功能
-  MULTIMEDIA = 'multimedia', // 多媒体
-  KEYBOARD = 'keyboard', // 键盘按键
-  MACRO = 'macro' // 宏（暂不支持）
+  KEYBOARD_SINGLE = 'keyboard_single', // 键盘单键 (0x00)
+  KEYBOARD_COMBO = 'keyboard_combo', // 键盘组合键 (0x01)
+  MOUSE = 'mouse', // 鼠标按键 (0x02)
+  MULTIMEDIA = 'multimedia', // 多媒体键 (0x03)
+  DISABLED = 'disabled', // 禁用按键 (0x04)
+  DPI = 'dpi', // DPI按键 (0x05)
+  FUNCTION = 'function', // 功能按键 (0x06)
+  MACRO = 'macro', // 宏定义 (0x07)
+  SCROLL = 'scroll' // 滚轮 (0x08)
 }
+
+/**
+ * 博巨矽协议按键类型码
+ */
+export const BUTTON_TYPE_CODE = {
+  KEYBOARD_SINGLE: 0x00,
+  KEYBOARD_COMBO: 0x01,
+  MOUSE: 0x02,
+  MULTIMEDIA: 0x03,
+  DISABLED: 0x04,
+  DPI: 0x05,
+  FUNCTION: 0x06,
+  MACRO: 0x07,
+  SCROLL: 0x08
+} as const
 
 /**
  * 按键映射项
@@ -19,231 +51,319 @@ export enum ButtonType {
 export interface ButtonMapping {
   id: string
   name: string
+  nameKey?: string // 国际化 key
   type: ButtonType
   code: number[] // 4字节编码
   category?: string // 分类（用于UI分组）
+  categoryKey?: string // 分类国际化 key
 }
 
 /**
- * 鼠标功能按键
+ * 鼠标功能按键（博巨矽协议）
+ * 格式: [0x02, 0x00, Button ID, 0x00]
+ * Button ID: bit0=左键(0x01), bit1=右键(0x02), bit2=中键(0x04), bit3=后退(0x08), bit4=前进(0x10)
  */
 export const mouseButtons: ButtonMapping[] = [
   {
     id: 'left',
     name: '左键',
+    nameKey: 'buttonMapping.mouseButtons.left',
     type: ButtonType.MOUSE,
-    code: [0x20, 0x01, 0x00, 0x00],
-    category: '基础功能'
+    code: [0x02, 0x00, 0x01, 0x00],
+    category: '基础功能',
+    categoryKey: 'buttonMapping.categories.basic'
   },
   {
     id: 'right',
     name: '右键',
+    nameKey: 'buttonMapping.mouseButtons.right',
     type: ButtonType.MOUSE,
-    code: [0x20, 0x02, 0x00, 0x00],
-    category: '基础功能'
+    code: [0x02, 0x00, 0x02, 0x00],
+    category: '基础功能',
+    categoryKey: 'buttonMapping.categories.basic'
   },
   {
     id: 'middle',
     name: '中键',
+    nameKey: 'buttonMapping.mouseButtons.middle',
     type: ButtonType.MOUSE,
-    code: [0x20, 0x04, 0x00, 0x00],
-    category: '基础功能'
+    code: [0x02, 0x00, 0x04, 0x00],
+    category: '基础功能',
+    categoryKey: 'buttonMapping.categories.basic'
   },
   {
     id: 'back',
     name: '后退',
+    nameKey: 'buttonMapping.mouseButtons.back',
     type: ButtonType.MOUSE,
-    code: [0x20, 0x08, 0x00, 0x00],
-    category: '基础功能'
+    code: [0x02, 0x00, 0x08, 0x00],
+    category: '基础功能',
+    categoryKey: 'buttonMapping.categories.basic'
   },
   {
     id: 'forward',
     name: '前进',
+    nameKey: 'buttonMapping.mouseButtons.forward',
     type: ButtonType.MOUSE,
-    code: [0x20, 0x10, 0x00, 0x00],
-    category: '基础功能'
-  },
-  {
-    id: 'scroll_up',
-    name: '滚轮+',
-    type: ButtonType.MOUSE,
-    code: [0x21, 0x38, 0x01, 0x00],
-    category: '滚轮'
-  },
-  {
-    id: 'scroll_down',
-    name: '滚轮-',
-    type: ButtonType.MOUSE,
-    code: [0x21, 0x38, 0xff, 0x00],
-    category: '滚轮'
-  },
-  {
-    id: 'dpi',
-    name: 'DPI切换',
-    type: ButtonType.MOUSE,
-    code: [0x21, 0x55, 0x00, 0x00],
-    category: '特殊功能'
+    code: [0x02, 0x00, 0x10, 0x00],
+    category: '基础功能',
+    categoryKey: 'buttonMapping.categories.basic'
   },
   {
     id: 'disabled',
     name: '禁用',
-    type: ButtonType.MOUSE,
-    code: [0x20, 0x00, 0x00, 0x00],
-    category: '特殊功能'
+    nameKey: 'buttonMapping.mouseButtons.disabled',
+    type: ButtonType.DISABLED,
+    code: [0x04, 0x00, 0x00, 0x00],
+    category: '特殊功能',
+    categoryKey: 'buttonMapping.categories.special'
   }
 ]
 
 /**
- * 多媒体按键
+ * DPI 功能按键（博巨矽协议）
+ * 格式: [0x05, 0x00, DPI change, 0x00]
+ * DPI change: 0x00=DPI+不循环, 0x01=DPI-不循环, 0x02=DPI+循环, 0x03=DPI-循环
+ */
+export const dpiButtons: ButtonMapping[] = [
+  {
+    id: 'dpi_increase',
+    name: 'DPI+',
+    nameKey: 'buttonMapping.dpiButtons.increase',
+    type: ButtonType.DPI,
+    code: [0x05, 0x00, 0x00, 0x00],
+    category: 'DPI功能',
+    categoryKey: 'buttonMapping.categories.dpi'
+  },
+  {
+    id: 'dpi_decrease',
+    name: 'DPI-',
+    nameKey: 'buttonMapping.dpiButtons.decrease',
+    type: ButtonType.DPI,
+    code: [0x05, 0x00, 0x01, 0x00],
+    category: 'DPI功能',
+    categoryKey: 'buttonMapping.categories.dpi'
+  },
+  {
+    id: 'dpi_increase_cycle',
+    name: 'DPI+循环',
+    nameKey: 'buttonMapping.dpiButtons.increaseCycle',
+    type: ButtonType.DPI,
+    code: [0x05, 0x00, 0x02, 0x00],
+    category: 'DPI功能',
+    categoryKey: 'buttonMapping.categories.dpi'
+  },
+  {
+    id: 'dpi_decrease_cycle',
+    name: 'DPI-循环',
+    nameKey: 'buttonMapping.dpiButtons.decreaseCycle',
+    type: ButtonType.DPI,
+    code: [0x05, 0x00, 0x03, 0x00],
+    category: 'DPI功能',
+    categoryKey: 'buttonMapping.categories.dpi'
+  }
+]
+
+/**
+ * 多媒体按键（博巨矽协议）
+ * 格式: [0x03, 0x00, 键值高位, 键值低位]
  */
 export const multimediaButtons: ButtonMapping[] = [
   {
     id: 'vol_up',
     name: '音量+',
+    nameKey: 'buttonMapping.multimediaButtons.volUp',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0xe9, 0x00, 0x00],
-    category: '音量控制'
+    code: [0x03, 0x00, 0x00, 0xe9],
+    category: '音量控制',
+    categoryKey: 'buttonMapping.categories.volume'
   },
   {
     id: 'vol_down',
     name: '音量-',
+    nameKey: 'buttonMapping.multimediaButtons.volDown',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0xea, 0x00, 0x00],
-    category: '音量控制'
+    code: [0x03, 0x00, 0x00, 0xea],
+    category: '音量控制',
+    categoryKey: 'buttonMapping.categories.volume'
   },
   {
     id: 'mute',
     name: '静音',
+    nameKey: 'buttonMapping.multimediaButtons.mute',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0xe2, 0x00, 0x00],
-    category: '音量控制'
+    code: [0x03, 0x00, 0x00, 0xe2],
+    category: '音量控制',
+    categoryKey: 'buttonMapping.categories.volume'
   },
   {
     id: 'play_pause',
     name: '播放/暂停',
+    nameKey: 'buttonMapping.multimediaButtons.playPause',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0xcd, 0x00, 0x00],
-    category: '播放控制'
+    code: [0x03, 0x00, 0x00, 0xcd],
+    category: '播放控制',
+    categoryKey: 'buttonMapping.categories.playback'
   },
   {
     id: 'stop',
     name: '停止',
+    nameKey: 'buttonMapping.multimediaButtons.stop',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0xb7, 0x00, 0x00],
-    category: '播放控制'
+    code: [0x03, 0x00, 0x00, 0xb7],
+    category: '播放控制',
+    categoryKey: 'buttonMapping.categories.playback'
   },
   {
     id: 'prev',
     name: '上一首',
+    nameKey: 'buttonMapping.multimediaButtons.prev',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0xb6, 0x00, 0x00],
-    category: '播放控制'
+    code: [0x03, 0x00, 0x00, 0xb6],
+    category: '播放控制',
+    categoryKey: 'buttonMapping.categories.playback'
   },
   {
     id: 'next',
     name: '下一首',
+    nameKey: 'buttonMapping.multimediaButtons.next',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0xb5, 0x00, 0x00],
-    category: '播放控制'
+    code: [0x03, 0x00, 0x00, 0xb5],
+    category: '播放控制',
+    categoryKey: 'buttonMapping.categories.playback'
   },
   {
     id: 'media',
     name: '多媒体',
+    nameKey: 'buttonMapping.multimediaButtons.media',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x83, 0x01, 0x00],
-    category: '系统功能'
+    code: [0x03, 0x00, 0x01, 0x83],
+    category: '系统功能',
+    categoryKey: 'buttonMapping.categories.system'
   },
   {
     id: 'home',
     name: '主页',
+    nameKey: 'buttonMapping.multimediaButtons.home',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x23, 0x02, 0x00],
-    category: '浏览器'
+    code: [0x03, 0x00, 0x02, 0x23],
+    category: '浏览器',
+    categoryKey: 'buttonMapping.categories.browser'
   },
   {
     id: 'refresh',
     name: '网页-刷新',
+    nameKey: 'buttonMapping.multimediaButtons.refresh',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x27, 0x02, 0x00],
-    category: '浏览器'
+    code: [0x03, 0x00, 0x02, 0x27],
+    category: '浏览器',
+    categoryKey: 'buttonMapping.categories.browser'
   },
   {
     id: 'web_stop',
     name: '网页-停止',
+    nameKey: 'buttonMapping.multimediaButtons.webStop',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x26, 0x02, 0x00],
-    category: '浏览器'
+    code: [0x03, 0x00, 0x02, 0x26],
+    category: '浏览器',
+    categoryKey: 'buttonMapping.categories.browser'
   },
   {
     id: 'web_forward',
     name: '网页-前进',
+    nameKey: 'buttonMapping.multimediaButtons.webForward',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x25, 0x02, 0x00],
-    category: '浏览器'
+    code: [0x03, 0x00, 0x02, 0x25],
+    category: '浏览器',
+    categoryKey: 'buttonMapping.categories.browser'
   },
   {
     id: 'web_back',
     name: '网页-后退',
+    nameKey: 'buttonMapping.multimediaButtons.webBack',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x24, 0x02, 0x00],
-    category: '浏览器'
+    code: [0x03, 0x00, 0x02, 0x24],
+    category: '浏览器',
+    categoryKey: 'buttonMapping.categories.browser'
   },
   {
     id: 'favorites',
     name: '网页-收藏夹',
+    nameKey: 'buttonMapping.multimediaButtons.favorites',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x2a, 0x02, 0x00],
-    category: '浏览器'
+    code: [0x03, 0x00, 0x02, 0x2a],
+    category: '浏览器',
+    categoryKey: 'buttonMapping.categories.browser'
   },
   {
     id: 'search',
     name: '网页-搜索',
+    nameKey: 'buttonMapping.multimediaButtons.search',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x21, 0x02, 0x00],
-    category: '浏览器'
+    code: [0x03, 0x00, 0x02, 0x21],
+    category: '浏览器',
+    categoryKey: 'buttonMapping.categories.browser'
   },
   {
     id: 'calculator',
     name: '计算器',
+    nameKey: 'buttonMapping.multimediaButtons.calculator',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x92, 0x01, 0x00],
-    category: '系统功能'
+    code: [0x03, 0x00, 0x01, 0x92],
+    category: '系统功能',
+    categoryKey: 'buttonMapping.categories.system'
   },
   {
     id: 'my_computer',
     name: '我的电脑',
+    nameKey: 'buttonMapping.multimediaButtons.myComputer',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x94, 0x01, 0x00],
-    category: '系统功能'
+    code: [0x03, 0x00, 0x01, 0x94],
+    category: '系统功能',
+    categoryKey: 'buttonMapping.categories.system'
   },
   {
     id: 'mail',
     name: '邮件',
+    nameKey: 'buttonMapping.multimediaButtons.mail',
     type: ButtonType.MULTIMEDIA,
-    code: [0x30, 0x8a, 0x01, 0x00],
-    category: '系统功能'
+    code: [0x03, 0x00, 0x01, 0x8a],
+    category: '系统功能',
+    categoryKey: 'buttonMapping.categories.system'
   }
 ]
 
 /**
- * 修饰键枚举
+ * 修饰键枚举（博巨矽协议）
+ * Modify key 位图:
+ * bit0=L-Shift, bit1=L-Ctrl, bit2=L-Alt, bit3=L-Win
+ * bit4=R-Shift, bit5=R-Ctrl, bit6=R-Alt, bit7=R-Win
  */
 export enum ModifierKey {
   NONE = 0x00,
-  CTRL = 0x01,
-  SHIFT = 0x02,
-  ALT = 0x04,
-  WIN = 0x08
+  L_CTRL = 0x01,
+  L_SHIFT = 0x02,
+  L_ALT = 0x04,
+  L_WIN = 0x08,
+  R_CTRL = 0x10,
+  R_SHIFT = 0x20,
+  R_ALT = 0x40,
+  R_WIN = 0x80
 }
 
 /**
  * 修饰键配置
  */
 export const modifierKeys = [
-  { id: 'ctrl', name: 'Ctrl', value: ModifierKey.CTRL },
-  { id: 'shift', name: 'Shift', value: ModifierKey.SHIFT },
-  { id: 'alt', name: 'Alt', value: ModifierKey.ALT },
-  { id: 'win', name: 'Win', value: ModifierKey.WIN }
+  { id: 'l_ctrl', name: 'Ctrl', nameKey: 'buttonMapping.modifiers.ctrl', value: ModifierKey.L_CTRL },
+  {
+    id: 'l_shift',
+    name: 'Shift',
+    nameKey: 'buttonMapping.modifiers.shift',
+    value: ModifierKey.L_SHIFT
+  },
+  { id: 'l_alt', name: 'Alt', nameKey: 'buttonMapping.modifiers.alt', value: ModifierKey.L_ALT },
+  { id: 'l_win', name: 'Win', nameKey: 'buttonMapping.modifiers.win', value: ModifierKey.L_WIN }
 ]
 
 /**
@@ -364,17 +484,25 @@ export const scancodeToKey: Record<number, string> = Object.fromEntries(
 )
 
 /**
- * 创建键盘按键映射
+ * 创建键盘按键映射（博巨矽协议）
+ * 单键格式: [0x00, 0x00, Key code, 0x00]
+ * 组合键格式: [0x01, Modify key, Key code, 2nd code]
  * @param modifiers 修饰键组合（按位或）
  * @param scancode 键盘扫描码
  * @returns 4字节编码
  */
 export function createKeyboardMapping(modifiers: number, scancode: number): number[] {
-  return [0x10, modifiers, scancode, 0x00]
+  if (modifiers === 0) {
+    // 单键
+    return [BUTTON_TYPE_CODE.KEYBOARD_SINGLE, 0x00, scancode, 0x00]
+  } else {
+    // 组合键
+    return [BUTTON_TYPE_CODE.KEYBOARD_COMBO, modifiers, scancode, 0x00]
+  }
 }
 
 /**
- * 解析键盘按键映射
+ * 解析键盘按键映射（博巨矽协议）
  * @param code 4字节编码
  * @returns { modifiers: number, scancode: number, keyName: string }
  */
@@ -384,59 +512,65 @@ export function parseKeyboardMapping(code: number[]): {
   keyName: string
   modifierNames: string[]
 } {
-  if (code[0] !== 0x10) {
+  // 单键 (0x00) 或组合键 (0x01)
+  if (code[0] !== BUTTON_TYPE_CODE.KEYBOARD_SINGLE && code[0] !== BUTTON_TYPE_CODE.KEYBOARD_COMBO) {
     throw new Error('不是键盘按键映射')
   }
 
-  const modifiers = code[1]
+  const modifiers = code[0] === BUTTON_TYPE_CODE.KEYBOARD_COMBO ? code[1] : 0
   const scancode = code[2]
   const keyName = scancodeToKey[scancode] || `Unknown(0x${scancode.toString(16)})`
 
   const modifierNames: string[] = []
-  if (modifiers & ModifierKey.CTRL) modifierNames.push('Ctrl')
-  if (modifiers & ModifierKey.SHIFT) modifierNames.push('Shift')
-  if (modifiers & ModifierKey.ALT) modifierNames.push('Alt')
-  if (modifiers & ModifierKey.WIN) modifierNames.push('Win')
+  if (modifiers & ModifierKey.L_CTRL) modifierNames.push('Ctrl')
+  if (modifiers & ModifierKey.L_SHIFT) modifierNames.push('Shift')
+  if (modifiers & ModifierKey.L_ALT) modifierNames.push('Alt')
+  if (modifiers & ModifierKey.L_WIN) modifierNames.push('Win')
 
   return { modifiers, scancode, keyName, modifierNames }
 }
 
 /**
- * 获取按键映射的显示名称
+ * 获取按键映射的显示名称（博巨矽协议）
  * @param code 4字节编码
  * @returns 显示名称
  */
 export function getButtonDisplayName(code: number[]): string {
-  // 检查是否是宏映射 (格式: [0x70, 宏索引, 循环模式, 循环次数高字节])
-  if (code[0] === 0x70) {
-    const macroIndex = code[1]
-    const loopMode = code[2]
-    const loopCount = code[2] | (code[3] << 8)
+  const typeCode = code[0]
 
-    let loopText = ''
-    if (loopMode === 0x02) {
-      loopText = '(松开)'
-    } else if (loopMode === 0x03) {
-      loopText = '(任意键)'
-    } else if (loopMode !== 0x02 && loopMode !== 0x03) {
-      loopText = `(x${loopCount})`
-    }
-
-    return `宏${macroIndex + 1}${loopText}`
+  // 检查是否是宏映射 (0x07)
+  if (typeCode === BUTTON_TYPE_CODE.MACRO) {
+    const macroIndex = code[2]
+    return `宏${macroIndex + 1}`
   }
 
-  // 检查是否是鼠标功能
-  const mouseButton = mouseButtons.find((btn) => btn.code.every((byte, i) => byte === code[i]))
-  if (mouseButton) return mouseButton.name
+  // 检查是否是禁用 (0x04)
+  if (typeCode === BUTTON_TYPE_CODE.DISABLED) {
+    return '禁用'
+  }
 
-  // 检查是否是多媒体按键
-  const multimediaButton = multimediaButtons.find((btn) =>
-    btn.code.every((byte, i) => byte === code[i])
-  )
-  if (multimediaButton) return multimediaButton.name
+  // 检查是否是鼠标功能 (0x02)
+  if (typeCode === BUTTON_TYPE_CODE.MOUSE) {
+    const mouseButton = mouseButtons.find((btn) => btn.code.every((byte, i) => byte === code[i]))
+    if (mouseButton) return mouseButton.name
+  }
 
-  // 检查是否是键盘按键
-  if (code[0] === 0x10) {
+  // 检查是否是 DPI 功能 (0x05)
+  if (typeCode === BUTTON_TYPE_CODE.DPI) {
+    const dpiButton = dpiButtons.find((btn) => btn.code.every((byte, i) => byte === code[i]))
+    if (dpiButton) return dpiButton.name
+  }
+
+  // 检查是否是多媒体按键 (0x03)
+  if (typeCode === BUTTON_TYPE_CODE.MULTIMEDIA) {
+    const multimediaButton = multimediaButtons.find((btn) =>
+      btn.code.every((byte, i) => byte === code[i])
+    )
+    if (multimediaButton) return multimediaButton.name
+  }
+
+  // 检查是否是键盘按键 (0x00 单键 或 0x01 组合键)
+  if (typeCode === BUTTON_TYPE_CODE.KEYBOARD_SINGLE || typeCode === BUTTON_TYPE_CODE.KEYBOARD_COMBO) {
     try {
       const { keyName, modifierNames } = parseKeyboardMapping(code)
       if (modifierNames.length > 0) {
@@ -448,27 +582,36 @@ export function getButtonDisplayName(code: number[]): string {
     }
   }
 
-  // 未知按键，显示索引
+  // 检查是否是滚轮 (0x08)
+  if (typeCode === BUTTON_TYPE_CODE.SCROLL) {
+    const direction = code[2]
+    const directionNames = ['滚轮↑', '滚轮↓', '滚轮←', '滚轮→']
+    return directionNames[direction] || '滚轮'
+  }
+
+  // 未知按键，显示十六进制
   return `未知(${code.map((b) => b.toString(16).padStart(2, '0')).join(' ')})`
 }
 
 /**
- * 默认按键映射（8个按键）
- * 注意：设备数组索引与物理按键位置的对应关系
- * 索引0: 左键
- * 索引1: 右键
- * 索引2: 中键
- * 索引3: 后退（物理按键5）
- * 索引4: 前进（物理按键4）
- * 索引5-7: 其他功能按键
+ * 默认按键映射（博巨矽协议，8个按键）
+ * 按键顺序（设备数组索引）:
+ * 0: 左键 (暂不开放修改)
+ * 1: 中键
+ * 2: 右键
+ * 3: 前进键
+ * 4: 后退键
+ * 5: 滚轮前滚 (暂不开放修改，也不显示)
+ * 6: 滚轮后滚 (暂不开放修改，也不显示)
+ * 7: DPI键
  */
 export const defaultButtonMappings: number[][] = [
-  [0x20, 0x01, 0x00, 0x00], // 索引0: 左键
-  [0x20, 0x02, 0x00, 0x00], // 索引1: 右键
-  [0x20, 0x04, 0x00, 0x00], // 索引2: 中键
-  [0x20, 0x08, 0x00, 0x00], // 索引3: 后退（物理按键5）
-  [0x20, 0x10, 0x00, 0x00], // 索引4: 前进（物理按键4）
-  [0x21, 0x55, 0x00, 0x00], // 索引5: DPI切换
-  [0x21, 0x38, 0x01, 0x00], // 索引6: 滚轮+
-  [0x21, 0x38, 0xff, 0x00] // 索引7: 滚轮-
+  [0x02, 0x00, 0x01, 0x00], // 索引0: 左键
+  [0x02, 0x00, 0x04, 0x00], // 索引1: 中键
+  [0x02, 0x00, 0x02, 0x00], // 索引2: 右键
+  [0x02, 0x00, 0x10, 0x00], // 索引3: 前进键
+  [0x02, 0x00, 0x08, 0x00], // 索引4: 后退键
+  [0x08, 0x00, 0x00, 0x00], // 索引5: 滚轮前滚
+  [0x08, 0x00, 0x01, 0x00], // 索引6: 滚轮后滚
+  [0x05, 0x00, 0x02, 0x00] // 索引7: DPI键 (DPI+循环)
 ]

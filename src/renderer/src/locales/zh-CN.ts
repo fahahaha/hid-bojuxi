@@ -87,7 +87,14 @@ export default {
   buttonMapping: {
     title: '鼠标按键自定义',
     description: '自定义鼠标各按键的功能,可设置为鼠标功能、多媒体键或键盘组合键',
-    buttonNames: ['左键(按键 1)', '右键(按键 2)', '中键(按键 3)', '前进(按键 4)', '后退(按键 5)'],
+    buttonNames: [
+      '左键(按键 1)',
+      '右键(按键 2)',
+      '中键(按键 3)',
+      '前进(按键 4)',
+      '后退(按键 5)',
+      'DPI键(按键 6)'
+    ],
     leftKeyDisabled: '左键不允许修改',
     restoreDefault: '恢复默认',
     resetAll: '重置所有按键',
@@ -95,9 +102,64 @@ export default {
     resetAllSuccess: '所有按键已重置为默认设置',
     tabs: {
       mouse: '鼠标功能',
+      dpi: 'DPI功能',
       multimedia: '多媒体',
       keyboard: '键盘按键',
       macro: '宏'
+    },
+    // 鼠标按键
+    mouseButtons: {
+      left: '左键',
+      right: '右键',
+      middle: '中键',
+      back: '后退',
+      forward: '前进',
+      disabled: '禁用'
+    },
+    // DPI按键
+    dpiButtons: {
+      increase: 'DPI+',
+      decrease: 'DPI-',
+      increaseCycle: 'DPI+循环',
+      decreaseCycle: 'DPI-循环'
+    },
+    // 多媒体按键
+    multimediaButtons: {
+      volUp: '音量+',
+      volDown: '音量-',
+      mute: '静音',
+      playPause: '播放/暂停',
+      stop: '停止',
+      prev: '上一首',
+      next: '下一首',
+      media: '多媒体',
+      home: '主页',
+      refresh: '网页-刷新',
+      webStop: '网页-停止',
+      webForward: '网页-前进',
+      webBack: '网页-后退',
+      favorites: '网页-收藏夹',
+      search: '网页-搜索',
+      calculator: '计算器',
+      myComputer: '我的电脑',
+      mail: '邮件'
+    },
+    // 分类
+    categories: {
+      basic: '基础功能',
+      special: '特殊功能',
+      dpi: 'DPI功能',
+      volume: '音量控制',
+      playback: '播放控制',
+      system: '系统功能',
+      browser: '浏览器'
+    },
+    // 修饰键
+    modifiers: {
+      ctrl: 'Ctrl',
+      shift: 'Shift',
+      alt: 'Alt',
+      win: 'Win'
     },
     keyboard: {
       modifiers: '修饰键（可多选）',

@@ -1241,6 +1241,7 @@ export function useWebHID() {
 
   /**
    * 设置按键映射
+   * 使用统一的 A1 命令，只修改按键映射字段
    */
   async function setButtonMapping(
     buttonMappings: number[][]
@@ -1248,27 +1249,65 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查协议是否支持按键映射设置
-      if (!currentProtocol.value.commands.setButtonMapping) {
-        return { success: false, message: '当前设备不支持按键映射设置' }
+      // 检查是否为博巨矽协议
+      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
+        if (!cachedBasicSettings) {
+          await getBasicSettings()
+        }
+        if (!cachedBasicSettings) {
+          return { success: false, message: '无法获取当前设置' }
+        }
+
+        // 复制当前设置并修改按键映射
+        const newSettings: BojuxiBasicSettings = {
+          ...cachedBasicSettings,
+          buttonMappings: buttonMappings
+        }
+
+        // 构建并发送 A1 命令，等待 ACK 响应
+        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+        console.log(
+          '[设置按键映射] 发送 A1 命令:',
+          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+        )
+
+        const response = await sendCommandAndWait(command)
+        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+        // 检查响应是否为 NACK
+        if (response[0] === 0x5b) {
+          const errorCode = response[4]
+          console.error('[设置按键映射] 收到 NACK，错误码:', errorCode)
+          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+        }
+
+        // 重新获取基础设置以验证
+        await getBasicSettings()
+
+        return { success: true, message: '按键映射已更新' }
+      } else {
+        // 非博巨矽协议，检查是否支持按键映射设置
+        if (!currentProtocol.value.commands.setButtonMapping) {
+          return { success: false, message: '当前设备不支持按键映射设置' }
+        }
+
+        const command = currentProtocol.value.commands.setButtonMapping(
+          buttonMappings,
+          connectionMode.value
+        )
+
+        if (command.length === 0) {
+          return { success: false, message: '按键映射数据格式错误' }
+        }
+
+        const success = await sendReport(command)
+
+        if (!success) return { success: false, message: '发送命令失败' }
+
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        return { success: true, message: '按键映射已更新' }
       }
-
-      const command = currentProtocol.value.commands.setButtonMapping(
-        buttonMappings,
-        connectionMode.value
-      )
-
-      if (command.length === 0) {
-        return { success: false, message: '按键映射数据格式错误' }
-      }
-
-      const success = await sendReport(command)
-
-      if (!success) return { success: false, message: '发送命令失败' }
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      return { success: true, message: '按键映射已更新' }
     } catch (err: any) {
       console.error('设置按键映射失败:', err)
       return { success: false, message: '无法设置按键映射' }

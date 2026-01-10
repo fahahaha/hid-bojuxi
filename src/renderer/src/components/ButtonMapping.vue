@@ -11,7 +11,7 @@
         <div class="mouse-body">
           <!-- 按键标记 -->
           <button
-            v-for="(_, index) in buttonMappings.slice(0, 5)"
+            v-for="(_, index) in buttonMappings.slice(0, 6)"
             :key="index"
             @click="selectButton(index)"
             class="mouse-key"
@@ -63,7 +63,22 @@
                   class="function-button"
                   :class="{ active: isCurrentMapping(btn.code) }"
                 >
-                  {{ btn.name }}
+                  {{ t(btn.nameKey || '') || btn.name }}
+                </button>
+              </div>
+            </div>
+
+            <!-- DPI功能标签页 -->
+            <div v-if="activeTab === 'dpi'" class="tab-content">
+              <div class="button-grid">
+                <button
+                  v-for="btn in dpiButtons"
+                  :key="btn.id"
+                  @click="applyMapping(btn.code)"
+                  class="function-button"
+                  :class="{ active: isCurrentMapping(btn.code) }"
+                >
+                  {{ t(btn.nameKey || '') || btn.name }}
                 </button>
               </div>
             </div>
@@ -84,7 +99,7 @@
                     class="function-button"
                     :class="{ active: isCurrentMapping(btn.code) }"
                   >
-                    {{ btn.name }}
+                    {{ t(btn.nameKey || '') || btn.name }}
                   </button>
                 </div>
               </div>
@@ -399,6 +414,7 @@ import { useMacroStorage, type MacroEvent, type Macro } from '../composables/use
 import {
   mouseButtons,
   multimediaButtons,
+  dpiButtons,
   modifierKeys,
   keyboardScancodes,
   createKeyboardMapping,
@@ -426,12 +442,14 @@ const {
 } = useMacroStorage()
 const { t, ta } = useI18n()
 
-// 按键映射数据（8个按键，但只显示前5个）
+// 按键映射数据（8个按键）
+// 博巨矽协议按键顺序: 左键(0), 中键(1), 右键(2), 前进(3), 后退(4), 滚轮前滚(5), 滚轮后滚(6), DPI键(7)
 const buttonMappings = ref<number[][]>([...defaultButtonMappings])
 
 // UI按键索引到设备数组索引的映射
-// 根据实际测试，按键4和按键5在设备中的位置是对调的
-const uiToDeviceIndex = [0, 1, 2, 4, 3] // UI索引 → 设备索引
+// UI显示顺序: 左键(0), 右键(1), 中键(2), 前进(3), 后退(4), DPI键(5)
+// 设备数组索引: 左键(0), 中键(1), 右键(2), 前进(3), 后退(4), 滚轮前滚(5), 滚轮后滚(6), DPI键(7)
+const uiToDeviceIndex = [0, 2, 1, 3, 4, 7] // UI索引 → 设备索引
 
 const buttonNames = computed(() => ta('buttonMapping.buttonNames'))
 
@@ -441,6 +459,7 @@ const activeTab = ref('mouse')
 // 标签页配置
 const tabs = computed(() => [
   { id: 'mouse', name: t('buttonMapping.tabs.mouse'), icon: 'fa fa-mouse-pointer' },
+  { id: 'dpi', name: t('buttonMapping.tabs.dpi'), icon: 'fa fa-tachometer' },
   { id: 'multimedia', name: t('buttonMapping.tabs.multimedia'), icon: 'fa fa-music' },
   { id: 'keyboard', name: t('buttonMapping.tabs.keyboard'), icon: 'fa fa-keyboard-o' },
   { id: 'macro', name: t('buttonMapping.tabs.macro'), icon: 'fa fa-code' }
@@ -683,6 +702,7 @@ async function saveToDevice() {
   } else {
     console.error('保存失败:', result.message)
   }
+  loadFromDevice();
 }
 
 /**
@@ -1154,6 +1174,21 @@ onUnmounted(() => {
 
 .mouse-mode .key4:after {
   left: calc(5rem + 29px - 4px);
+}
+
+/* 按键 6 - DPI键 */
+.mouse-mode .key5 {
+  top: 105px;
+  right: -70px;
+}
+
+.mouse-mode .key5:before {
+  right: 5rem;
+  width: 86px;
+}
+
+.mouse-mode .key5:after {
+  right: calc(5rem + 86px - 4px);
 }
 
 .button-settings {

@@ -93,7 +93,8 @@ export default {
       'Right Button (Button 2)',
       'Middle Button (Button 3)',
       'Forward (Button 4)',
-      'Back (Button 5)'
+      'Back (Button 5)',
+      'DPI Button (Button 6)'
     ],
     leftKeyDisabled: 'Left button cannot be modified',
     restoreDefault: 'Restore Default',
@@ -102,9 +103,64 @@ export default {
     resetAllSuccess: 'All buttons have been reset to default settings',
     tabs: {
       mouse: 'Mouse Functions',
+      dpi: 'DPI Functions',
       multimedia: 'Multimedia',
       keyboard: 'Keyboard Keys',
       macro: 'Macro'
+    },
+    // Mouse buttons
+    mouseButtons: {
+      left: 'Left Click',
+      right: 'Right Click',
+      middle: 'Middle Click',
+      back: 'Back',
+      forward: 'Forward',
+      disabled: 'Disabled'
+    },
+    // DPI buttons
+    dpiButtons: {
+      increase: 'DPI+',
+      decrease: 'DPI-',
+      increaseCycle: 'DPI+ Cycle',
+      decreaseCycle: 'DPI- Cycle'
+    },
+    // Multimedia buttons
+    multimediaButtons: {
+      volUp: 'Volume Up',
+      volDown: 'Volume Down',
+      mute: 'Mute',
+      playPause: 'Play/Pause',
+      stop: 'Stop',
+      prev: 'Previous Track',
+      next: 'Next Track',
+      media: 'Media Player',
+      home: 'Home',
+      refresh: 'Web Refresh',
+      webStop: 'Web Stop',
+      webForward: 'Web Forward',
+      webBack: 'Web Back',
+      favorites: 'Web Favorites',
+      search: 'Web Search',
+      calculator: 'Calculator',
+      myComputer: 'My Computer',
+      mail: 'Mail'
+    },
+    // Categories
+    categories: {
+      basic: 'Basic Functions',
+      special: 'Special Functions',
+      dpi: 'DPI Functions',
+      volume: 'Volume Control',
+      playback: 'Playback Control',
+      system: 'System Functions',
+      browser: 'Browser'
+    },
+    // Modifiers
+    modifiers: {
+      ctrl: 'Ctrl',
+      shift: 'Shift',
+      alt: 'Alt',
+      win: 'Win'
     },
     keyboard: {
       modifiers: 'Modifiers (Multiple Selection)',
