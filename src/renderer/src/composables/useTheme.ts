@@ -5,9 +5,7 @@ type Theme = 'light' | 'dark'
 const THEME_STORAGE_KEY = 'app-theme'
 
 // 从 localStorage 读取主题设置，默认为 light
-const currentTheme = ref<Theme>(
-  (localStorage.getItem(THEME_STORAGE_KEY) as Theme) || 'light'
-)
+const currentTheme = ref<Theme>((localStorage.getItem(THEME_STORAGE_KEY) as Theme) || 'light')
 
 // 应用主题到 DOM
 function applyTheme(theme: Theme) {

@@ -62,7 +62,10 @@ function createWindow(): void {
       // 其次选择 YHH 鼠标（VID: 0xa8a4, PID: 0x2255）
       const bojuxiDevice = details.deviceList.find(
         (device) =>
-          device.vendorId === 0x1a86 && (device.productId === 0x8312 || device.productId === 0x8300 || device.productId === 0x8301)
+          device.vendorId === 0x1a86 &&
+          (device.productId === 0x8312 ||
+            device.productId === 0x8300 ||
+            device.productId === 0x8301)
       )
       const yhhDevice = details.deviceList.find(
         (device) => device.vendorId === 0xa8a4 && device.productId === 0x2255

@@ -1,6 +1,8 @@
 <template>
   <div class="button-mapping-container">
-    <h3 class="section-title"><i class="fa fa-keyboard-o icon-primary"></i>{{ t('buttonMapping.title') }}</h3>
+    <h3 class="section-title">
+      <i class="fa fa-keyboard-o icon-primary"></i>{{ t('buttonMapping.title') }}
+    </h3>
     <p class="section-description">{{ t('buttonMapping.description') }}</p>
 
     <div class="mapping-layout">
@@ -162,7 +164,9 @@
                       :disabled="isRecording"
                     >
                       <span class="macro-item-name">{{ macro.name }}</span>
-                      <span class="macro-item-count">{{ t('buttonMapping.macro.eventCount', { count: String(macro.events.length) }) }}</span>
+                      <span class="macro-item-count">{{
+                        t('buttonMapping.macro.eventCount', { count: String(macro.events.length) })
+                      }}</span>
                     </button>
                   </div>
 
@@ -173,7 +177,9 @@
                       :disabled="macros.length >= MAX_MACRO_COUNT || isRecording"
                     >
                       <i class="fa fa-plus"></i>
-                      {{ t('buttonMapping.macro.newMacro') }} ({{ macros.length }}/{{ MAX_MACRO_COUNT }})
+                      {{ t('buttonMapping.macro.newMacro') }} ({{ macros.length }}/{{
+                        MAX_MACRO_COUNT
+                      }})
                     </button>
                     <button
                       @click="deleteSelectedMacro"
@@ -202,7 +208,11 @@
                       class="record-control-btn"
                     >
                       <i :class="isRecording ? 'fa fa-stop' : 'fa fa-circle'"></i>
-                      {{ isRecording ? t('buttonMapping.macro.stopRecord') : t('buttonMapping.macro.startRecord') }}
+                      {{
+                        isRecording
+                          ? t('buttonMapping.macro.stopRecord')
+                          : t('buttonMapping.macro.startRecord')
+                      }}
                     </button>
 
                     <div v-if="isRecording" class="recording-status">
@@ -268,11 +278,17 @@
                           <span class="event-number">{{ index + 1 }}</span>
                           <span class="event-text">
                             <strong>{{ event.key }}</strong> -
-                            {{ event.type === 'keydown' ? t('buttonMapping.macro.keyDown') : t('buttonMapping.macro.keyUp') }}
+                            {{
+                              event.type === 'keydown'
+                                ? t('buttonMapping.macro.keyDown')
+                                : t('buttonMapping.macro.keyUp')
+                            }}
                           </span>
                         </div>
                         <div class="event-meta">
-                          <span class="event-delay">{{ t('buttonMapping.macro.delay', { ms: String(event.delay) }) }}</span>
+                          <span class="event-delay">{{
+                            t('buttonMapping.macro.delay', { ms: String(event.delay) })
+                          }}</span>
                         </div>
                       </div>
                     </div>
@@ -289,21 +305,31 @@
                     </h5>
 
                     <div class="form-group">
-                      <label class="form-label">{{ t('buttonMapping.macro.binding.selectMacro') }}</label>
+                      <label class="form-label">{{
+                        t('buttonMapping.macro.binding.selectMacro')
+                      }}</label>
                       <select v-model="selectedMacroIndex" class="form-select">
-                        <option value="">{{ t('buttonMapping.macro.binding.selectMacroPlaceholder') }}</option>
+                        <option value="">
+                          {{ t('buttonMapping.macro.binding.selectMacroPlaceholder') }}
+                        </option>
                         <option
                           v-for="(macro, index) in availableMacros"
                           :key="index"
                           :value="index"
                         >
-                          {{ macro.name }} ({{ t('buttonMapping.macro.eventCount', { count: String(macro.events.length) }) }})
+                          {{ macro.name }} ({{
+                            t('buttonMapping.macro.eventCount', {
+                              count: String(macro.events.length)
+                            })
+                          }})
                         </option>
                       </select>
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label">{{ t('buttonMapping.macro.binding.loopMode') }}</label>
+                      <label class="form-label">{{
+                        t('buttonMapping.macro.binding.loopMode')
+                      }}</label>
                       <div class="radio-group">
                         <label class="radio-label">
                           <input type="radio" v-model="macroLoopMode" value="release" />
@@ -321,7 +347,9 @@
                     </div>
 
                     <div v-if="macroLoopMode === 'count'" class="form-group">
-                      <label class="form-label">{{ t('buttonMapping.macro.binding.loopCountLabel') }}</label>
+                      <label class="form-label">{{
+                        t('buttonMapping.macro.binding.loopCountLabel')
+                      }}</label>
                       <input
                         type="number"
                         v-model.number="macroLoopCount"
@@ -338,7 +366,11 @@
                       :disabled="selectedMacroIndex === ''"
                     >
                       <i class="fa fa-check"></i>
-                      {{ t('buttonMapping.macro.binding.bindToButton', { button: String(selectedButton + 1) }) }}
+                      {{
+                        t('buttonMapping.macro.binding.bindToButton', {
+                          button: String(selectedButton + 1)
+                        })
+                      }}
                     </button>
                   </div>
                 </div>

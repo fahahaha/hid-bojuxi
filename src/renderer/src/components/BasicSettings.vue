@@ -4,7 +4,9 @@
     <div class="settings-card" :class="{ disabled: !supportsReportRate }">
       <h3 class="card-title">
         <i class="fa fa-refresh icon-secondary"></i>{{ t('basicSettings.reportRate.title') }}
-        <span v-if="!supportsReportRate" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
+        <span v-if="!supportsReportRate" class="unsupported-badge">
+          ({{ t('common.unsupported') }})
+        </span>
       </h3>
       <p class="card-description">{{ t('basicSettings.reportRate.description') }}</p>
 
@@ -27,15 +29,15 @@
     </div>
 
     <!-- DPI设置 -->
-    <div class="settings-card" :class="{ disabled: !supportsDPI }">
+    <div class="settings-card dpi-card" :class="{ disabled: !supportsDPI }">
       <h3 class="card-title">
         <i class="fa fa-tachometer icon-accent"></i>{{ t('basicSettings.dpi.title') }}
         <span v-if="!supportsDPI" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
       </h3>
       <p class="card-description">
         {{ t('basicSettings.dpi.description') }}
-        <span v-if="supportedDPI.length > 0" class="dpi-count">
-          {{ t('basicSettings.dpi.supportedCount', { count: String(supportedDPI.length) }) }}
+        <span v-if="dpiLevels.length > 0" class="dpi-count">
+          共 {{ dpiLevels.length }} 个档位
         </span>
       </p>
 
@@ -44,29 +46,68 @@
         <p>{{ t('basicSettings.dpi.notSupported') }}</p>
       </div>
 
-      <div v-else class="dpi-settings">
-        <!-- DPI 档位选择 -->
-        <div class="dpi-selector">
-          <div class="selector-header">
-            <label class="selector-label">{{ t('basicSettings.dpi.level') }}</label>
-            <span class="selector-value">{{ selectedDPI }} DPI</span>
+      <div v-else class="dpi-settings-new">
+        <!-- 当前档位状态显示 -->
+        <div class="current-dpi-status">
+          <div class="status-info">
+            <span class="status-label">当前档位</span>
+            <span class="status-value">档位 {{ currentDpiLevel + 1 }}</span>
           </div>
-
-          <select v-model.number="selectedDPI" @change="handleSetDPI" class="dpi-select">
-            <option v-for="option in dpiOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
+          <div class="status-info">
+            <span class="status-label">当前 DPI</span>
+            <span class="status-dpi-value">{{ deviceStatus.dpi }} DPI</span>
+          </div>
         </div>
 
-        <!-- 当前状态显示 -->
-        <div class="current-status">
-          <div class="status-row">
-            <div class="status-left">
-              <i class="fa fa-info-circle icon-primary"></i>
-              <span>{{ t('basicSettings.dpi.current') }}</span>
+        <!-- DPI 档位列表 -->
+        <div class="dpi-levels-container">
+          <div
+            v-for="(dpiValue, index) in dpiLevels"
+            :key="index"
+            class="dpi-level-item"
+            :class="{ active: currentDpiLevel === index }"
+          >
+            <div class="level-header">
+              <div class="level-info">
+                <span class="level-badge" :class="{ active: currentDpiLevel === index }">
+                  {{ index + 1 }}
+                </span>
+                <span class="level-label">档位 {{ index + 1 }}</span>
+                <span v-if="currentDpiLevel === index" class="current-badge">当前</span>
+              </div>
+              <button
+                class="switch-btn"
+                :class="{ active: currentDpiLevel === index }"
+                @click="handleSwitchDpiLevel(index)"
+                :disabled="currentDpiLevel === index"
+              >
+                {{ currentDpiLevel === index ? '已选中' : '切换' }}
+              </button>
             </div>
-            <span class="status-dpi">{{ deviceStatus.dpi }} DPI</span>
+
+            <div class="level-content">
+              <div class="dpi-value-display">
+                <span class="dpi-value">{{ localDpiValues[index] || dpiValue }}</span>
+                <span class="dpi-unit">DPI</span>
+              </div>
+
+              <div class="slider-container">
+                <input
+                  type="range"
+                  class="dpi-slider"
+                  :min="dpiMin"
+                  :max="dpiMax"
+                  :step="dpiStep"
+                  :value="localDpiValues[index] || dpiValue"
+                  @input="handleDpiSliderInput(index, $event)"
+                  @change="handleDpiSliderChange(index, $event)"
+                />
+                <div class="slider-labels">
+                  <span>{{ dpiMin }}</span>
+                  <span>{{ dpiMax }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -76,7 +117,9 @@
     <div class="settings-card" :class="{ disabled: !supportedScrollDirection }">
       <h3 class="card-title">
         <i class="fa fa-arrows-v icon-primary"></i>{{ t('basicSettings.scrollDirection.title') }}
-        <span v-if="!supportedScrollDirection" class="unsupported-badge"> ({{ t('common.unsupported') }}) </span>
+        <span v-if="!supportedScrollDirection" class="unsupported-badge">
+          ({{ t('common.unsupported') }})
+        </span>
       </h3>
       <p class="card-description">{{ t('basicSettings.scrollDirection.description') }}</p>
 
@@ -105,7 +148,11 @@
           <span class="checkbox-text">{{ t('basicSettings.scrollDirection.reverse') }}</span>
         </label>
         <p class="scroll-hint">
-          {{ isReverseScroll ? t('basicSettings.scrollDirection.reverseHint') : t('basicSettings.scrollDirection.normalHint') }}
+          {{
+            isReverseScroll
+              ? t('basicSettings.scrollDirection.reverseHint')
+              : t('basicSettings.scrollDirection.normalHint')
+          }}
         </p>
       </div>
     </div>
@@ -113,13 +160,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, reactive } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 import { useI18n } from '../composables/useI18n'
 
-const { setReportRate, setDPI, setScrollDirection, getCurrentProtocol, isConnected, deviceStatus, connectionMode } =
-  useWebHID()
+const {
+  setReportRate,
+  setDPI,
+  setDPILevelValue,
+  setScrollDirection,
+  getCurrentProtocol,
+  isConnected,
+  deviceStatus,
+  connectionMode
+} = useWebHID()
 const { t } = useI18n()
+
+// DPI 范围配置（从 A5 获取，暂时写死）
+const dpiMin = 50
+const dpiMax = 16000
+const dpiStep = 50
+
+// 本地 DPI 值（用于滑动条实时显示）
+const localDpiValues = reactive<Record<number, number>>({})
 
 // 获取设备特性
 const deviceFeatures = computed(() => {
@@ -139,18 +202,14 @@ const reportRates = computed(() => {
   return allRates
 })
 
-// 支持的 DPI 档位列表
-const supportedDPI = computed(() => {
-  return deviceFeatures.value?.supportedDPI || []
+// DPI 档位列表（从设备状态获取）
+const dpiLevels = computed(() => {
+  return deviceStatus.value.dpiLevels || []
 })
 
-// DPI 选项列表(用于下拉选择)
-const dpiOptions = computed(() => {
-  return supportedDPI.value.map((dpi, index) => ({
-    label: t('basicSettings.dpi.levelOption', { level: String(index + 1), value: String(dpi) }),
-    value: dpi,
-    level: index + 1
-  }))
+// 当前 DPI 档位
+const currentDpiLevel = computed(() => {
+  return deviceStatus.value.dpiLevel || 0
 })
 
 // 是否支持回报率设置
@@ -160,7 +219,7 @@ const supportsReportRate = computed(() => {
 
 // 是否支持 DPI 设置
 const supportsDPI = computed(() => {
-  return isConnected.value && supportedDPI.value.length > 0
+  return isConnected.value && dpiLevels.value.length > 0
 })
 
 // 是否支持滚轮方向设置
@@ -169,7 +228,6 @@ const supportedScrollDirection = computed(() => {
 })
 
 const selectedReportRate = ref(1000)
-const selectedDPI = ref(2000)
 const isReverseScroll = ref(false)
 
 // 监听设备状态变化,回显当前回报率
@@ -197,26 +255,18 @@ watch(isConnected, (connected) => {
   }
 })
 
-
-
-
-// 监听设备状态变化,回显当前 DPI
+// 监听 DPI 档位变化，同步本地值
 watch(
-  () => deviceStatus.value.dpi,
-  (newDPI) => {
-    if (newDPI && newDPI !== '--') {
-      selectedDPI.value = parseInt(newDPI)
+  () => deviceStatus.value.dpiLevels,
+  (newLevels) => {
+    if (newLevels && newLevels.length > 0) {
+      newLevels.forEach((value, index) => {
+        localDpiValues[index] = value
+      })
     }
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
-
-// 监听设备连接状态,初始化选中值
-watch(isConnected, (connected) => {
-  if (connected && deviceStatus.value.dpi !== '--') {
-    selectedDPI.value = parseInt(deviceStatus.value.dpi)
-  }
-})
 
 // 监听设备状态变化,回显当前 滚轮方向
 watch(
@@ -247,23 +297,42 @@ async function handleSetReportRate(rate: number) {
   }
 }
 
-async function handleSetDPI() {
+// 切换 DPI 档位
+async function handleSwitchDpiLevel(levelIndex: number) {
   if (!supportsDPI.value) {
     console.warn('当前设备不支持 DPI 设置')
     return
   }
 
-  // 找到对应的档位
-  const dpiIndex = supportedDPI.value.indexOf(selectedDPI.value)
-  if (dpiIndex === -1) {
-    console.error('无效的 DPI 值')
+  // setDPI 的 level 参数是 1-based
+  const result = await setDPI(levelIndex + 1, dpiLevels.value[levelIndex])
+  if (!result.success) {
+    console.error('切换 DPI 档位失败:', result.message)
+  }
+}
+
+// 滑动条输入时实时更新本地值（不发送命令）
+function handleDpiSliderInput(levelIndex: number, event: Event) {
+  const target = event.target as HTMLInputElement
+  const value = parseInt(target.value)
+  localDpiValues[levelIndex] = value
+}
+
+// 滑动条释放时发送命令
+async function handleDpiSliderChange(levelIndex: number, event: Event) {
+  const target = event.target as HTMLInputElement
+  const value = parseInt(target.value)
+
+  if (!supportsDPI.value) {
+    console.warn('当前设备不支持 DPI 设置')
     return
   }
 
-  const level = dpiIndex + 1
-  const result = await setDPI(level, selectedDPI.value)
+  const result = await setDPILevelValue(levelIndex, value)
   if (!result.success) {
-    console.error('设置 DPI 失败:', result.message)
+    console.error('设置 DPI 值失败:', result.message)
+    // 恢复原值
+    localDpiValues[levelIndex] = dpiLevels.value[levelIndex]
   }
 }
 
@@ -322,6 +391,10 @@ async function handleSetReverseScroll() {
   border-radius: 0.75rem;
   box-shadow: var(--shadow-sm);
   padding: 1.25rem;
+}
+
+.settings-card.dpi-card {
+  grid-column: 1 / -1;
 }
 
 .settings-card.disabled {
@@ -408,81 +481,208 @@ async function handleSetReverseScroll() {
   border-color: var(--color-primary);
 }
 
-.dpi-settings {
+/* 新的 DPI 设置样式 */
+.dpi-settings-new {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.dpi-selector {
-  flex: 1;
-}
-
-.selector-header {
+.current-dpi-status {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.selector-label {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.selector-value {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-accent);
-}
-
-.dpi-select {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border-primary);
+  gap: 2rem;
+  padding: 1rem;
+  background-color: var(--bg-tertiary);
   border-radius: 0.5rem;
-  outline: none;
-  transition: all 0.2s;
-  cursor: pointer;
-  background-color: var(--bg-primary);
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.status-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.status-value {
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
-.dpi-select:focus {
-  border-color: var(--color-primary);
+.status-dpi-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
 }
 
-.dpi-select:hover {
-  border-color: var(--color-primary);
+.dpi-levels-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
 }
 
-.current-status {
-  background-color: var(--bg-tertiary);
-  border-radius: 0.5rem;
+.dpi-level-item {
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
+  border-radius: 0.75rem;
   padding: 1rem;
+  transition: all 0.2s;
 }
 
-.status-row {
+.dpi-level-item:hover {
+  border-color: var(--color-primary);
+}
+
+.dpi-level-item.active {
+  border-color: var(--color-primary);
+  background-color: var(--bg-hover);
+}
+
+.level-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
 }
 
-.status-left {
+.level-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.status-left span {
-  font-size: 0.875rem;
+.level-badge {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary);
   color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
-.status-dpi {
-  font-size: 1.125rem;
-  font-weight: 600;
+.level-badge.active {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.level-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.current-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.switch-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switch-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+.switch-btn.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  cursor: default;
+}
+
+.switch-btn:disabled {
+  opacity: 0.7;
+}
+
+.level-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dpi-value-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.dpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.dpi-unit {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dpi-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-tertiary);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dpi-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.dpi-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.dpi-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: none;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  color: var(--text-tertiary);
 }
 
 /* 滚轮方向设置 */

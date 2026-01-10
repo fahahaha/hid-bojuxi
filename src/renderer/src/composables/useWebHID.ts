@@ -2,12 +2,22 @@ import { ref, computed } from 'vue'
 import { detectProtocol } from '../protocols/registry'
 import type { DeviceProtocol, ConnectionMode } from '../protocols'
 import { detectConnectionMode } from '../protocols'
+import {
+  buildSetBasicSettingsCommand,
+  parseBasicSettingsFromResponse,
+  getDefaultBasicSettings,
+  HZ_TO_POLLING_RATE,
+  type BojuxiBasicSettings
+} from '../protocols/bojuxi'
 
 // 全局状态
 let device: HIDDevice | null = null
 const currentProtocol = ref<DeviceProtocol | null>(null)
 const connectionMode = ref<ConnectionMode>('usb')
 const commandRetries = 3
+
+// 缓存的基础设置（从 A2 响应解析）
+let cachedBasicSettings: BojuxiBasicSettings | null = null
 
 // DPI 变化监听器引用
 let dpiChangeListener: ((event: HIDInputReportEvent) => void) | null = null
@@ -32,7 +42,9 @@ const deviceStatus = ref({
   reportRate: '--',
   reportRateIndex: 4, // 回报率索引值 (1=125Hz, 2=250Hz, 3=500Hz, 4=1000Hz)
   dpi: '--',
-  dpiLevel: 1,
+  dpiLevel: 0, // 当前 DPI 档位 (0-6)
+  dpiLevels: [] as number[], // 所有 DPI 档位值
+  dpiTotalLevels: 0, // 总档位数 (0=1档, 6=7档)
   backlight: '--',
   scrollDirection: 0 //正向0，反向1
 })
@@ -68,7 +80,10 @@ export function useWebHID() {
     }
 
     // 检查协议是否支持 DPI 变化监听
-    if (!currentProtocol.value.reporters?.isDPIChangeReport || !currentProtocol.value.parsers.dpiChange) {
+    if (
+      !currentProtocol.value.reporters?.isDPIChangeReport ||
+      !currentProtocol.value.parsers.dpiChange
+    ) {
       console.log('[DPI监听] 当前协议不支持 DPI 变化监听')
       return
     }
@@ -89,7 +104,9 @@ export function useWebHID() {
         if (dpiData) {
           console.log(
             `[DPI监听] 检测到 DPI 变化: 档位 ${dpiData.level}, 值 ${dpiData.value}`,
-            `数据: [${Array.from(data.slice(0, 16)).map((d) => '0x' + d.toString(16).padStart(2, '0')).join(', ')}...]`
+            `数据: [${Array.from(data.slice(0, 16))
+              .map((d) => '0x' + d.toString(16).padStart(2, '0'))
+              .join(', ')}...]`
           )
           // 更新设备状态
           deviceStatus.value.dpi = `${dpiData.value}`
@@ -235,7 +252,9 @@ export function useWebHID() {
       const mode = detectConnectionMode(testDevice)
       const command = resolveCommand(protocol.commands.getDeviceInfo, mode)
 
-      console.log(`[设备验证] 尝试获取设备信息: ${testDevice.productName || '未知设备'}, 连接模式: ${mode}`)
+      console.log(
+        `[设备验证] 尝试获取设备信息: ${testDevice.productName || '未知设备'}, 连接模式: ${mode}`
+      )
 
       // 发送获取设备信息命令
       await testDevice.sendReport(0, new Uint8Array(command))
@@ -308,7 +327,9 @@ export function useWebHID() {
 
       // 检测连接模式
       connectionMode.value = detectConnectionMode(device)
-      console.log(`[连接模式] 当前模式: ${connectionMode.value === 'usb' ? 'USB 有线' : '2.4G 无线'}`)
+      console.log(
+        `[连接模式] 当前模式: ${connectionMode.value === 'usb' ? 'USB 有线' : '2.4G 无线'}`
+      )
 
       // 连接后自动延迟 100ms
       await new Promise((resolve) => setTimeout(resolve, 100))
@@ -533,7 +554,10 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = resolveCommand(currentProtocol.value.commands.getDeviceInfo, connectionMode.value)
+      const command = resolveCommand(
+        currentProtocol.value.commands.getDeviceInfo,
+        connectionMode.value
+      )
       const response = await sendCommandAndWait(command)
 
       if (response && response.length >= 16) {
@@ -575,7 +599,10 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = resolveCommand(currentProtocol.value.commands.getBattery, connectionMode.value)
+      const command = resolveCommand(
+        currentProtocol.value.commands.getBattery,
+        connectionMode.value
+      )
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 2) {
@@ -600,7 +627,10 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = resolveCommand(currentProtocol.value.commands.getReportRate, connectionMode.value)
+      const command = resolveCommand(
+        currentProtocol.value.commands.getReportRate,
+        connectionMode.value
+      )
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 1) {
@@ -667,7 +697,10 @@ export function useWebHID() {
       return
 
     try {
-      const command = resolveCommand(currentProtocol.value.commands.getScrollDirection, connectionMode.value)
+      const command = resolveCommand(
+        currentProtocol.value.commands.getScrollDirection,
+        connectionMode.value
+      )
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 3) {
@@ -700,33 +733,41 @@ export function useWebHID() {
         deviceStatus.value.reportRate = '1000 Hz'
         deviceStatus.value.dpi = '800'
         deviceStatus.value.dpiLevel = 0
+        deviceStatus.value.dpiLevels = [800, 1600, 3200]
+        deviceStatus.value.dpiTotalLevels = 2
         deviceStatus.value.scrollDirection = 0
+        cachedBasicSettings = getDefaultBasicSettings()
         return
       }
 
-      // 一次性解析所有数据
+      // 缓存完整的基础设置（用于后续修改时保持其他字段不变）
+      cachedBasicSettings = parseBasicSettingsFromResponse(response)
+      console.log('[基础设置] 缓存的完整设置:', cachedBasicSettings)
+
       // 1. 解析回报率
       const reportRate = currentProtocol.value.parsers.reportRate(response)
       deviceStatus.value.reportRate = `${reportRate} Hz`
+      // 更新回报率索引
+      const rateIndexMap: Record<number, number> = {
+        125: 1,
+        250: 2,
+        500: 3,
+        1000: 4
+      }
+      deviceStatus.value.reportRateIndex = rateIndexMap[reportRate] || 4
 
       // 2. 解析 DPI
       const dpiData = currentProtocol.value.parsers.dpi(response)
       deviceStatus.value.dpi = `${dpiData.value}`
       deviceStatus.value.dpiLevel = dpiData.level
 
-      // 同时更新回报率索引（如果 dpiData 中包含）
-      if (dpiData.reportRate !== undefined) {
-        const rateMap: Record<number, number> = {
-          1: 125,
-          2: 250,
-          3: 500,
-          4: 1000
-        }
-        deviceStatus.value.reportRateIndex = dpiData.reportRate
-        deviceStatus.value.reportRate = `${rateMap[dpiData.reportRate] || 1000} Hz`
-      }
+      // 3. 解析所有 DPI 档位
+      const totalLevels = cachedBasicSettings.dpiTotalLevels
+      deviceStatus.value.dpiTotalLevels = totalLevels
+      // 只取有效的档位（totalLevels + 1 个）
+      deviceStatus.value.dpiLevels = cachedBasicSettings.dpiLevels.slice(0, totalLevels + 1)
 
-      // 3. 解析滚轮方向
+      // 4. 解析滚轮方向
       if (currentProtocol.value.parsers.scrollDirection) {
         const scrollDirection = currentProtocol.value.parsers.scrollDirection(response)
         deviceStatus.value.scrollDirection = scrollDirection
@@ -738,6 +779,8 @@ export function useWebHID() {
         reportRate: deviceStatus.value.reportRate,
         dpi: deviceStatus.value.dpi,
         dpiLevel: deviceStatus.value.dpiLevel,
+        dpiLevels: deviceStatus.value.dpiLevels,
+        dpiTotalLevels: deviceStatus.value.dpiTotalLevels,
         scrollDirection: deviceStatus.value.scrollDirection
       })
     } catch (err) {
@@ -745,7 +788,10 @@ export function useWebHID() {
       deviceStatus.value.reportRate = '1000 Hz'
       deviceStatus.value.dpi = '800'
       deviceStatus.value.dpiLevel = 0
+      deviceStatus.value.dpiLevels = [800, 1600, 3200]
+      deviceStatus.value.dpiTotalLevels = 2
       deviceStatus.value.scrollDirection = 0
+      cachedBasicSettings = getDefaultBasicSettings()
     }
   }
 
@@ -756,7 +802,10 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      const command = resolveCommand(currentProtocol.value.commands.getBacklight, connectionMode.value)
+      const command = resolveCommand(
+        currentProtocol.value.commands.getBacklight,
+        connectionMode.value
+      )
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 1) {
@@ -775,25 +824,69 @@ export function useWebHID() {
 
   /**
    * 设置回报率
+   * 使用统一的 A1 命令，只修改回报率字段
    */
   async function setReportRate(rate: number): Promise<{ success: boolean; message: string }> {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 获取当前 DPI 档位和滚轮方向，保持其他设置不变
-      const dpiLevel = deviceStatus.value.dpiLevel || 1
-      const scrollDirection = deviceStatus.value.scrollDirection
+      // 检查是否为博巨矽协议
+      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
+        // 使用缓存的基础设置，只修改回报率
+        if (!cachedBasicSettings) {
+          await getBasicSettings()
+        }
+        if (!cachedBasicSettings) {
+          return { success: false, message: '无法获取当前设置' }
+        }
 
-      const command = currentProtocol.value.commands.setReportRate(rate, dpiLevel, scrollDirection, connectionMode.value)
-      const success = await sendReport(command)
+        // 复制当前设置并修改回报率
+        const newSettings: BojuxiBasicSettings = {
+          ...cachedBasicSettings,
+          pollingRate: HZ_TO_POLLING_RATE[rate] || 0x08
+        }
 
-      if (!success) return { success: false, message: '发送命令失败' }
+        // 构建并发送 A1 命令，等待 ACK 响应
+        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+        console.log(
+          '[设置回报率] 发送 A1 命令:',
+          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+        )
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      // 重新获取 DPI 配置（回报率从 DPI 响应中解析）
-      await getCurrentDPI()
+        const response = await sendCommandAndWait(command)
+        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
 
-      return { success: true, message: `回报率已设置为 ${rate} Hz` }
+        // 检查响应是否为 NACK
+        if (response[0] === 0x5b) {
+          const errorCode = response[4]
+          console.error('[设置回报率] 收到 NACK，错误码:', errorCode)
+          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+        }
+
+        // 重新获取基础设置以验证
+        await getBasicSettings()
+
+        return { success: true, message: `回报率已设置为 ${rate} Hz` }
+      } else {
+        // 非博巨矽协议，使用原有逻辑
+        const dpiLevel = deviceStatus.value.dpiLevel || 0
+        const scrollDirection = deviceStatus.value.scrollDirection
+
+        const command = currentProtocol.value.commands.setReportRate(
+          rate,
+          dpiLevel,
+          scrollDirection,
+          connectionMode.value
+        )
+        const success = await sendReport(command)
+
+        if (!success) return { success: false, message: '发送命令失败' }
+
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        await getCurrentDPI()
+
+        return { success: true, message: `回报率已设置为 ${rate} Hz` }
+      }
     } catch (err: any) {
       console.error('设置回报率失败:', err)
       return { success: false, message: '无法设置回报率' }
@@ -801,7 +894,8 @@ export function useWebHID() {
   }
 
   /**
-   * 设置 DPI
+   * 设置 DPI（切换当前档位）
+   * 使用统一的 A1 命令，只修改当前 DPI 档位
    */
   async function setDPI(
     level: number,
@@ -810,20 +904,128 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      const scrollDirection = deviceStatus.value.scrollDirection
-      const reportRateIndex = deviceStatus.value.reportRateIndex
-      const command = currentProtocol.value.commands.setDPI(level, value, scrollDirection, reportRateIndex, connectionMode.value)
-      const success = await sendReport(command)
+      // 检查是否为博巨矽协议
+      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
+        if (!cachedBasicSettings) {
+          await getBasicSettings()
+        }
+        if (!cachedBasicSettings) {
+          return { success: false, message: '无法获取当前设置' }
+        }
 
-      if (!success) return { success: false, message: '发送命令失败' }
+        // 复制当前设置并修改当前 DPI 档位
+        // 注意：level 参数是 1-based (1-7)，需要转换为 0-based (0-6)
+        const newSettings: BojuxiBasicSettings = {
+          ...cachedBasicSettings,
+          dpiCurrentLevel: level - 1
+        }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      await getCurrentDPI()
+        // 构建并发送 A1 命令，等待 ACK 响应
+        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+        console.log(
+          '[设置DPI档位] 发送 A1 命令:',
+          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+        )
 
-      return { success: true, message: `DPI 已设置为 ${value}` }
+        const response = await sendCommandAndWait(command)
+        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+        // 检查响应是否为 NACK
+        if (response[0] === 0x5b) {
+          const errorCode = response[4]
+          console.error('[设置DPI档位] 收到 NACK，错误码:', errorCode)
+          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+        }
+
+        await getBasicSettings()
+
+        return { success: true, message: `DPI 已切换到档位 ${level}` }
+      } else {
+        // 非博巨矽协议，使用原有逻辑
+        const scrollDirection = deviceStatus.value.scrollDirection
+        const reportRateIndex = deviceStatus.value.reportRateIndex
+        const command = currentProtocol.value.commands.setDPI(
+          level,
+          value,
+          scrollDirection,
+          reportRateIndex,
+          connectionMode.value
+        )
+        const success = await sendReport(command)
+
+        if (!success) return { success: false, message: '发送命令失败' }
+
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        await getCurrentDPI()
+
+        return { success: true, message: `DPI 已设置为 ${value}` }
+      }
     } catch (err: any) {
       console.error('设置 DPI 失败:', err)
       return { success: false, message: '无法设置 DPI' }
+    }
+  }
+
+  /**
+   * 设置指定档位的 DPI 值
+   * 用于修改某个档位的具体 DPI 数值
+   */
+  async function setDPILevelValue(
+    level: number,
+    value: number
+  ): Promise<{ success: boolean; message: string }> {
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
+
+    try {
+      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
+        return { success: false, message: '当前设备不支持此功能' }
+      }
+
+      if (!cachedBasicSettings) {
+        await getBasicSettings()
+      }
+      if (!cachedBasicSettings) {
+        return { success: false, message: '无法获取当前设置' }
+      }
+
+      // 验证 DPI 值范围（50-16000，步进 50）
+      if (value < 50 || value > 16000 || value % 50 !== 0) {
+        return { success: false, message: 'DPI 值必须在 50-16000 范围内，且为 50 的倍数' }
+      }
+
+      // 复制当前设置并修改指定档位的 DPI 值
+      // level 是 0-based (0-6)
+      const newDpiLevels = [...cachedBasicSettings.dpiLevels]
+      newDpiLevels[level] = value
+
+      const newSettings: BojuxiBasicSettings = {
+        ...cachedBasicSettings,
+        dpiLevels: newDpiLevels
+      }
+
+      // 构建并发送 A1 命令，等待 ACK 响应
+      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      console.log(
+        '[设置DPI值] 发送 A1 命令:',
+        command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+      )
+
+      const response = await sendCommandAndWait(command)
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+      // 检查响应是否为 NACK
+      if (response[0] === 0x5b) {
+        const errorCode = response[4]
+        console.error('[设置DPI值] 收到 NACK，错误码:', errorCode)
+        return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+      }
+
+      await getBasicSettings()
+
+      return { success: true, message: `档位 ${level + 1} 的 DPI 已设置为 ${value}` }
+    } catch (err: any) {
+      console.error('设置 DPI 值失败:', err)
+      return { success: false, message: '无法设置 DPI 值' }
     }
   }
 
@@ -859,7 +1061,10 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      const command = currentProtocol.value.commands.setBacklightBrightness(brightness, connectionMode.value)
+      const command = currentProtocol.value.commands.setBacklightBrightness(
+        brightness,
+        connectionMode.value
+      )
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -881,7 +1086,10 @@ export function useWebHID() {
 
     try {
       const frequencyLabels = ['极慢', '慢', '中等', '快', '极快']
-      const command = currentProtocol.value.commands.setBacklightFrequency(frequency, connectionMode.value)
+      const command = currentProtocol.value.commands.setBacklightFrequency(
+        frequency,
+        connectionMode.value
+      )
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -904,7 +1112,12 @@ export function useWebHID() {
       const g = parseInt(color.slice(3, 5), 16)
       const b = parseInt(color.slice(5, 7), 16)
 
-      const command = currentProtocol.value.commands.setBacklightColor(r, g, b, connectionMode.value)
+      const command = currentProtocol.value.commands.setBacklightColor(
+        r,
+        g,
+        b,
+        connectionMode.value
+      )
       const success = await sendReport(command)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -918,6 +1131,7 @@ export function useWebHID() {
 
   /**
    * 设置滚轮方向
+   * 使用统一的 A1 命令，只修改滚轮方向字段
    */
   async function setScrollDirection(
     direction: number
@@ -925,25 +1139,67 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查协议是否支持滚轮方向设置
-      if (!currentProtocol.value.commands.setScrollDirection) {
-        return { success: false, message: '当前设备不支持滚轮方向设置' }
+      // 检查是否为博巨矽协议
+      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
+        if (!cachedBasicSettings) {
+          await getBasicSettings()
+        }
+        if (!cachedBasicSettings) {
+          return { success: false, message: '无法获取当前设置' }
+        }
+
+        // 复制当前设置并修改滚轮方向
+        const newSettings: BojuxiBasicSettings = {
+          ...cachedBasicSettings,
+          wheelDirection: direction
+        }
+
+        // 构建并发送 A1 命令，等待 ACK 响应
+        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+        console.log(
+          '[设置滚轮方向] 发送 A1 命令:',
+          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+        )
+
+        const response = await sendCommandAndWait(command)
+        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+        // 检查响应是否为 NACK
+        if (response[0] === 0x5b) {
+          const errorCode = response[4]
+          console.error('[设置滚轮方向] 收到 NACK，错误码:', errorCode)
+          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+        }
+
+        await getBasicSettings()
+
+        const directionText = direction === 0 ? '正向' : '反向'
+        return { success: true, message: `滚轮方向已设置为 ${directionText}` }
+      } else {
+        // 非博巨矽协议，检查是否支持
+        if (!currentProtocol.value.commands.setScrollDirection) {
+          return { success: false, message: '当前设备不支持滚轮方向设置' }
+        }
+
+        const currentLevel = deviceStatus.value.dpiLevel || 0
+        const reportRateIndex = deviceStatus.value.reportRateIndex
+
+        const command = currentProtocol.value.commands.setScrollDirection(
+          direction,
+          currentLevel,
+          reportRateIndex,
+          connectionMode.value
+        )
+        const success = await sendReport(command)
+
+        if (!success) return { success: false, message: '发送命令失败' }
+
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        await getCurrentScrollDirection()
+
+        const directionText = direction === 0 ? '正向' : '反向'
+        return { success: true, message: `滚轮方向已设置为 ${directionText}` }
       }
-
-      // 获取当前 DPI 档位和回报率
-      const currentLevel = deviceStatus.value.dpiLevel || 1
-      const reportRateIndex = deviceStatus.value.reportRateIndex
-
-      const command = currentProtocol.value.commands.setScrollDirection(direction, currentLevel, reportRateIndex, connectionMode.value)
-      const success = await sendReport(command)
-
-      if (!success) return { success: false, message: '发送命令失败' }
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      await getCurrentScrollDirection()
-
-      const directionText = direction === 0 ? '正向' : '反向'
-      return { success: true, message: `滚轮方向已设置为 ${directionText}` }
     } catch (err: any) {
       console.error('设置滚轮方向失败:', err)
       return { success: false, message: '无法设置滚轮方向' }
@@ -957,7 +1213,10 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return null
 
     try {
-      const command = resolveCommand(currentProtocol.value.commands.getButtonMapping, connectionMode.value)
+      const command = resolveCommand(
+        currentProtocol.value.commands.getButtonMapping,
+        connectionMode.value
+      )
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 40) {
@@ -994,7 +1253,10 @@ export function useWebHID() {
         return { success: false, message: '当前设备不支持按键映射设置' }
       }
 
-      const command = currentProtocol.value.commands.setButtonMapping(buttonMappings, connectionMode.value)
+      const command = currentProtocol.value.commands.setButtonMapping(
+        buttonMappings,
+        connectionMode.value
+      )
 
       if (command.length === 0) {
         return { success: false, message: '按键映射数据格式错误' }
@@ -1029,7 +1291,10 @@ export function useWebHID() {
         return null
       }
 
-      const command = resolveCommand(currentProtocol.value.commands.getMacroList, connectionMode.value)
+      const command = resolveCommand(
+        currentProtocol.value.commands.getMacroList,
+        connectionMode.value
+      )
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 10) {
@@ -1140,7 +1405,17 @@ export function useWebHID() {
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       // 3. 第三个命令: 确认保存
-      const confirmCommand = [0x55, 0x10, 0xa5, 0x22, 0x00, 0x00, 0x00, 0x05, ...new Array(56).fill(0)]
+      const confirmCommand = [
+        0x55,
+        0x10,
+        0xa5,
+        0x22,
+        0x00,
+        0x00,
+        0x00,
+        0x05,
+        ...new Array(56).fill(0)
+      ]
       const success = await sendReport(confirmCommand)
 
       if (!success) return { success: false, message: '发送命令失败' }
@@ -1227,6 +1502,7 @@ export function useWebHID() {
     // 设置方法
     setReportRate,
     setDPI,
+    setDPILevelValue, // 新增：设置指定档位的 DPI 值
     setScrollDirection,
     setBacklightMode,
     setBacklightBrightness,

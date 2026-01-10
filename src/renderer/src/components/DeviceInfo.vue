@@ -2,7 +2,9 @@
   <div class="device-info-container">
     <!-- 设备信息 -->
     <div class="info-card card-hover">
-      <h3 class="card-title"><i class="fa fa-info-circle icon-primary"></i>{{ t('deviceInfo.title') }}</h3>
+      <h3 class="card-title">
+        <i class="fa fa-info-circle icon-primary"></i>{{ t('deviceInfo.title') }}
+      </h3>
 
       <div class="info-list">
         <div class="info-item">
@@ -35,7 +37,11 @@
             class="info-value"
             :class="deviceInfo.status === '已连接' ? 'status-connected' : 'status-disconnected'"
           >
-            {{ deviceInfo.status === '已连接' ? t('deviceInfo.statusConnected') : t('deviceInfo.statusDisconnected') }}
+            {{
+              deviceInfo.status === '已连接'
+                ? t('deviceInfo.statusConnected')
+                : t('deviceInfo.statusDisconnected')
+            }}
           </span>
         </div>
       </div>

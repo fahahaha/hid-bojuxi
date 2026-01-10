@@ -272,7 +272,8 @@ export const bojuxiProtocol: DeviceProtocol = {
     // 有线 PID: 0x8312
     // 无线 PID: 0x8300
     const isBojuxi =
-      device.vendorId === 0x1a86 && (device.productId === 0x8312 || device.productId === 0x8300 || device.productId === 0x8301)
+      device.vendorId === 0x1a86 &&
+      (device.productId === 0x8312 || device.productId === 0x8300 || device.productId === 0x8301)
 
     console.log(
       `[Bojuxi] (VID: 0x${device.vendorId.toString(16)}, PID: 0x${device.productId.toString(16)})`
@@ -404,7 +405,12 @@ export const bojuxiProtocol: DeviceProtocol = {
      * @param _scrollDirection 滚轮方向 (可选)
      * @param _connectionMode 连接模式 (可选)
      */
-    setReportRate: (rate: number, _dpiLevel?: number, _scrollDirection?: number, _connectionMode?: ConnectionMode) => {
+    setReportRate: (
+      rate: number,
+      _dpiLevel?: number,
+      _scrollDirection?: number,
+      _connectionMode?: ConnectionMode
+    ) => {
       const rateValue = HZ_TO_POLLING_RATE[rate] || POLLING_RATE.HZ_1000
       // TODO: 需要先读取当前配置，然后只修改回报率字段
       // 这里返回空数组，实际实现需要在 useWebHID 中处理
@@ -420,7 +426,13 @@ export const bojuxiProtocol: DeviceProtocol = {
      * @param _reportRate 回报率 (可选)
      * @param _connectionMode 连接模式 (可选)
      */
-    setDPI: (level: number, value: number, _scrollDirection?: number, _reportRate?: number, _connectionMode?: ConnectionMode) => {
+    setDPI: (
+      level: number,
+      value: number,
+      _scrollDirection?: number,
+      _reportRate?: number,
+      _connectionMode?: ConnectionMode
+    ) => {
       // TODO: 需要先读取当前配置，然后只修改 DPI 字段
       console.log('[Bojuxi] setDPI: level=', level, 'value=', value)
       return []
@@ -463,7 +475,12 @@ export const bojuxiProtocol: DeviceProtocol = {
      * @param _reportRate 回报率 (可选)
      * @param _connectionMode 连接模式 (可选)
      */
-    setScrollDirection: (direction: number, _currentLevel: number, _reportRate?: number, _connectionMode?: ConnectionMode) => {
+    setScrollDirection: (
+      direction: number,
+      _currentLevel: number,
+      _reportRate?: number,
+      _connectionMode?: ConnectionMode
+    ) => {
       // TODO: 需要先读取当前配置，然后只修改滚轮方向字段
       console.log('[Bojuxi] setScrollDirection:', direction)
       return []
@@ -760,4 +777,169 @@ export interface BojuxiBatteryInfo {
   status: number
   voltage: number
   percentage: number
+}
+
+// ============================================================================
+// A1 命令构建器
+// ============================================================================
+
+/**
+ * 构建 A1 基础设置配置命令
+ * @param settings 基础设置参数
+ * @param mode 连接模式
+ * @returns 64 字节命令数据
+ */
+export function buildSetBasicSettingsCommand(
+  settings: BojuxiBasicSettings,
+  mode: ConnectionMode = 'usb'
+): number[] {
+  const packet: number[] = []
+
+  // Byte 0: 包头
+  packet.push(PACKET_HEADER.SEND)
+  // Byte 1: 连接模式
+  packet.push(getConnectionModeByte(mode))
+  // Byte 2: 命令码
+  packet.push(COMMAND_CODE.SET_BASIC_SETTINGS)
+  // Byte 3: 数据长度 (60 字节)
+  packet.push(0x3c)
+
+  // Byte 4: mode (bit0:USB, bit1:2.4G)
+  packet.push(settings.mode || 0x01)
+  // Byte 5: table_base_id
+  packet.push(settings.tableBaseId || 0x00)
+  // Byte 6: table_config_id
+  packet.push(settings.tableConfigId || 0x00)
+  // Byte 7: reserved
+  packet.push(0x00)
+
+  // Byte 8: polling_rate
+  packet.push(settings.pollingRate || POLLING_RATE.HZ_1000)
+  // Byte 9: wheel_direction
+  packet.push(settings.wheelDirection || 0x00)
+  // Byte 10: lod (静默高度，固定 0x02)
+  packet.push(settings.lod || 0x02)
+  // Byte 11: reserved
+  packet.push(0x00)
+
+  // Byte 12-25: DPI 档位 (7 档，每档 2 字节，低字节在前)
+  for (let i = 0; i < 7; i++) {
+    const dpiValue = settings.dpiLevels[i] || 0
+    packet.push(dpiValue & 0xff) // 低字节
+    packet.push((dpiValue >> 8) & 0xff) // 高字节
+  }
+
+  // Byte 26: dpi_total_levels (0=1档, 6=7档)
+  packet.push(settings.dpiTotalLevels)
+  // Byte 27: dpi_current_level
+  packet.push(settings.dpiCurrentLevel)
+
+  // Byte 28-59: 按键映射 (8 个按键，每个 4 字节)
+  const defaultButtons = [
+    DEFAULT_BUTTON_CONFIG.LEFT,
+    DEFAULT_BUTTON_CONFIG.MIDDLE,
+    DEFAULT_BUTTON_CONFIG.RIGHT,
+    DEFAULT_BUTTON_CONFIG.FORWARD,
+    DEFAULT_BUTTON_CONFIG.BACKWARD,
+    DEFAULT_BUTTON_CONFIG.WHEEL_UP,
+    DEFAULT_BUTTON_CONFIG.WHEEL_DOWN,
+    DEFAULT_BUTTON_CONFIG.DPI
+  ]
+
+  for (let i = 0; i < 8; i++) {
+    const btnConfig = settings.buttonMappings[i] || defaultButtons[i]
+    packet.push(btnConfig[0] || 0x00)
+    packet.push(btnConfig[1] || 0x00)
+    packet.push(btnConfig[2] || 0x00)
+    packet.push(btnConfig[3] || 0x00)
+  }
+
+  // Byte 60-63: reserved
+  packet.push(0x00, 0x00, 0x00, 0x00)
+
+  return packet
+}
+
+/**
+ * 从 A2 响应数据解析完整的基础设置
+ * @param response A2 响应数据
+ * @returns 基础设置对象
+ */
+export function parseBasicSettingsFromResponse(response: Uint8Array): BojuxiBasicSettings {
+  // 检查响应有效性
+  if (response[0] !== PACKET_HEADER.ACK || response[2] !== COMMAND_CODE.GET_BASIC_SETTINGS) {
+    console.warn('[Bojuxi] 无效的基础设置响应，使用默认值')
+    return getDefaultBasicSettings()
+  }
+
+  // 解析各字段
+  const mode = response[4]
+  const tableBaseId = response[5]
+  const tableConfigId = response[6]
+  const pollingRate = response[8]
+  const wheelDirection = response[9]
+  const lod = response[10]
+
+  // 解析 DPI 档位
+  const dpiLevels: number[] = []
+  for (let i = 0; i < 7; i++) {
+    const offset = 12 + i * 2
+    const dpiValue = response[offset] | (response[offset + 1] << 8)
+    dpiLevels.push(dpiValue)
+  }
+
+  const dpiTotalLevels = response[26]
+  const dpiCurrentLevel = response[27]
+
+  // 解析按键映射
+  const buttonMappings: number[][] = []
+  for (let i = 0; i < 8; i++) {
+    const offset = 28 + i * 4
+    buttonMappings.push([
+      response[offset],
+      response[offset + 1],
+      response[offset + 2],
+      response[offset + 3]
+    ])
+  }
+
+  return {
+    mode,
+    tableBaseId,
+    tableConfigId,
+    pollingRate,
+    wheelDirection,
+    lod,
+    dpiLevels,
+    dpiTotalLevels,
+    dpiCurrentLevel,
+    buttonMappings
+  }
+}
+
+/**
+ * 获取默认基础设置
+ */
+export function getDefaultBasicSettings(): BojuxiBasicSettings {
+  return {
+    mode: 0x01,
+    tableBaseId: 0x00,
+    tableConfigId: 0x00,
+    pollingRate: POLLING_RATE.HZ_1000,
+    wheelDirection: 0x00,
+    lod: 0x02,
+    dpiLevels: [800, 1600, 3200, 0, 0, 0, 0],
+    dpiTotalLevels: 2, // 0=1档, 2=3档
+    dpiCurrentLevel: 0,
+    buttonMappings: [
+      [...DEFAULT_BUTTON_CONFIG.LEFT],
+      [...DEFAULT_BUTTON_CONFIG.MIDDLE],
+      [...DEFAULT_BUTTON_CONFIG.RIGHT],
+      [...DEFAULT_BUTTON_CONFIG.FORWARD],
+      [...DEFAULT_BUTTON_CONFIG.BACKWARD],
+      [...DEFAULT_BUTTON_CONFIG.WHEEL_UP],
+      [...DEFAULT_BUTTON_CONFIG.WHEEL_DOWN],
+      [...DEFAULT_BUTTON_CONFIG.DPI]
+    ]
+  }
 }

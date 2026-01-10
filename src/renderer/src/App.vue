@@ -15,13 +15,30 @@
           <!-- 连接模式显示 -->
           <div v-if="isConnected && supportsDualMode" class="connection-mode">
             <span class="mode-label">{{ t('header.connectionMode.label') }}:</span>
-            <span class="mode-value" :class="connectionMode === 'usb' ? 'mode-usb' : 'mode-wireless'">
-              <i class="fa" :class="connectionMode === 'usb' ? 'fa-brands fa-usb' : 'fa-solid fa-wifi'"></i>
-              {{ connectionMode === 'usb' ? t('header.connectionMode.usb') : t('header.connectionMode.wireless') }}
+            <span
+              class="mode-value"
+              :class="connectionMode === 'usb' ? 'mode-usb' : 'mode-wireless'"
+            >
+              <i
+                class="fa"
+                :class="connectionMode === 'usb' ? 'fa-brands fa-usb' : 'fa-solid fa-wifi'"
+              ></i>
+              {{
+                connectionMode === 'usb'
+                  ? t('header.connectionMode.usb')
+                  : t('header.connectionMode.wireless')
+              }}
             </span>
           </div>
-          <button class="btn-theme" @click="toggleTheme" :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'">
-            <i class="fa" :class="theme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon'"></i>
+          <button
+            class="btn-theme"
+            @click="toggleTheme"
+            :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
+          >
+            <i
+              class="fa"
+              :class="theme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon'"
+            ></i>
           </button>
           <div class="language-selector">
             <button class="btn-language" @click="toggleLanguageDropdown">
@@ -169,7 +186,14 @@ import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 
-const { isConnected, deviceStatus, connectDevice, autoConnectDevice, connectionMode, getCurrentProtocol } = useWebHID()
+const {
+  isConnected,
+  deviceStatus,
+  connectDevice,
+  autoConnectDevice,
+  connectionMode,
+  getCurrentProtocol
+} = useWebHID()
 const { locale, setLocale, t } = useI18n()
 const { theme, toggleTheme } = useTheme()
 

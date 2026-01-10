@@ -86,8 +86,15 @@ export default {
   },
   buttonMapping: {
     title: 'Mouse Button Customization',
-    description: 'Customize mouse button functions, can be set to mouse functions, multimedia keys or keyboard combinations',
-    buttonNames: ['Left Button (Button 1)', 'Right Button (Button 2)', 'Middle Button (Button 3)', 'Forward (Button 4)', 'Back (Button 5)'],
+    description:
+      'Customize mouse button functions, can be set to mouse functions, multimedia keys or keyboard combinations',
+    buttonNames: [
+      'Left Button (Button 1)',
+      'Right Button (Button 2)',
+      'Middle Button (Button 3)',
+      'Forward (Button 4)',
+      'Back (Button 5)'
+    ],
     leftKeyDisabled: 'Left button cannot be modified',
     restoreDefault: 'Restore Default',
     resetAll: 'Reset All Buttons',
@@ -171,9 +178,11 @@ export default {
       notCharging: 'Not Charging',
       notConnected: 'Device Not Connected',
       checkUpdate: 'Check Firmware Update',
-      checkingUpdate: 'Checking for firmware updates...\n\nCurrent firmware is up to date, no update needed',
+      checkingUpdate:
+        'Checking for firmware updates...\n\nCurrent firmware is up to date, no update needed',
       restoreDefaults: 'Restore Factory Settings',
-      restoreConfirm: 'Are you sure you want to restore factory settings? This will clear all custom settings and restore default values.',
+      restoreConfirm:
+        'Are you sure you want to restore factory settings? This will clear all custom settings and restore default values.',
       restoring: 'Restoring factory settings...',
       restoreSuccess: 'Factory settings restored successfully'
     }

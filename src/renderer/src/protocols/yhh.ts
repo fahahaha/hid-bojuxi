@@ -584,7 +584,7 @@ export const yhhProtocol: DeviceProtocol = {
     scrollDirection: (response: Uint8Array) => {
       //和DPI一样，只不过位于第4字节。 150为正向，151为方向
       const value = response[3]
-      return (value === 148 || value === 150 )? 0 : 1
+      return value === 148 || value === 150 ? 0 : 1
     },
 
     // 解析宏列表

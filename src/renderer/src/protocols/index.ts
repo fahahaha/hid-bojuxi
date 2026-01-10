@@ -31,9 +31,20 @@ export interface DeviceProtocol {
     getMacroData?: (macroIndex: number, connectionMode?: ConnectionMode) => number[]
 
     /** 设置回报率 */
-    setReportRate: (rate: number, dpiLevel?: number, scrollDirection?: number, connectionMode?: ConnectionMode) => number[]
+    setReportRate: (
+      rate: number,
+      dpiLevel?: number,
+      scrollDirection?: number,
+      connectionMode?: ConnectionMode
+    ) => number[]
     /** 设置 DPI */
-    setDPI: (level: number, value: number, scrollDirection?: number, reportRate?: number, connectionMode?: ConnectionMode) => number[]
+    setDPI: (
+      level: number,
+      value: number,
+      scrollDirection?: number,
+      reportRate?: number,
+      connectionMode?: ConnectionMode
+    ) => number[]
     /** 设置背光模式 */
     setBacklightMode: (mode: number, connectionMode?: ConnectionMode) => number[]
     /** 设置背光亮度 */
@@ -41,13 +52,27 @@ export interface DeviceProtocol {
     /** 设置背光频率 */
     setBacklightFrequency: (frequency: number, connectionMode?: ConnectionMode) => number[]
     /** 设置背光颜色 */
-    setBacklightColor: (r: number, g: number, b: number, connectionMode?: ConnectionMode) => number[]
+    setBacklightColor: (
+      r: number,
+      g: number,
+      b: number,
+      connectionMode?: ConnectionMode
+    ) => number[]
     /** 设置滚轮方向 */
-    setScrollDirection?: (direction: number, currentLevel: number, reportRate?: number, connectionMode?: ConnectionMode) => number[]
+    setScrollDirection?: (
+      direction: number,
+      currentLevel: number,
+      reportRate?: number,
+      connectionMode?: ConnectionMode
+    ) => number[]
     /** 设置按键映射 */
     setButtonMapping?: (buttonMappings: number[][], connectionMode?: ConnectionMode) => number[]
     /** 创建/更新宏 */
-    setMacro?: (macroIndex: number, macroEvents: number[], connectionMode?: ConnectionMode) => number[]
+    setMacro?: (
+      macroIndex: number,
+      macroEvents: number[],
+      connectionMode?: ConnectionMode
+    ) => number[]
     /** 删除宏 */
     deleteMacro?: (macroIndex: number, connectionMode?: ConnectionMode) => number[]
   }
