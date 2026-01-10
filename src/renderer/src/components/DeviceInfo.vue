@@ -96,9 +96,13 @@
 import { computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 import { useI18n } from '../composables/useI18n'
+import { useMessageBox } from '../composables/useMessageBox'
+import { useConfirmBox } from '../composables/useConfirmBox'
 
 const { deviceInfo, deviceStatus } = useWebHID()
 const { t } = useI18n()
+const { info: showInfo, success: showSuccess } = useMessageBox()
+const { confirm: showConfirm } = useConfirmBox()
 
 const batteryPercent = computed(() => deviceStatus.value.battery)
 
@@ -117,14 +121,19 @@ const chargeStatus = computed(() => {
 })
 
 function checkUpdate() {
-  alert(t('deviceInfo.battery.checkingUpdate'))
+  showInfo(t('deviceInfo.battery.checkingUpdate'))
 }
 
-function restoreDefaults() {
-  if (confirm(t('deviceInfo.battery.restoreConfirm'))) {
-    alert(t('deviceInfo.battery.restoring'))
+async function restoreDefaults() {
+  const confirmed = await showConfirm(t('deviceInfo.battery.restoreConfirm'), {
+    type: 'warning',
+    confirmText: t('common.confirm'),
+    cancelText: t('common.cancel')
+  })
+  if (confirmed) {
+    showInfo(t('deviceInfo.battery.restoring'))
     setTimeout(() => {
-      alert(t('deviceInfo.battery.restoreSuccess'))
+      showSuccess(t('deviceInfo.battery.restoreSuccess'))
     }, 2000)
   }
 }

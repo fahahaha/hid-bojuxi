@@ -50,7 +50,13 @@ export default {
       current: 'Current DPI',
       levelOption: 'Level {level} - {value} DPI',
       supportedCount: '({count} levels supported)',
-      notSupported: 'Current device does not support DPI settings'
+      notSupported: 'Current device does not support DPI settings',
+      totalLevels: '{count} levels total',
+      currentLevel: 'Current Level',
+      levelLabel: 'Level {level}',
+      currentBadge: 'Current',
+      selected: 'Selected',
+      switchLevel: 'Switch'
     },
     scrollDirection: {
       title: 'Scroll Direction',
@@ -147,6 +153,18 @@ export default {
       mail: 'Mail',
       brightnessUp: 'Brightness Up',
       brightnessDown: 'Brightness Down'
+    },
+    // Display names
+    displayNames: {
+      macro: 'Macro {index}',
+      disabled: 'Disabled',
+      scrollUp: 'Scroll↑',
+      scrollDown: 'Scroll↓',
+      scrollLeft: 'Scroll←',
+      scrollRight: 'Scroll→',
+      scroll: 'Scroll',
+      none: 'None',
+      unknown: 'Unknown({code})'
     },
     // Categories
     categories: {

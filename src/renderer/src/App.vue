@@ -173,6 +173,12 @@
         </button>
       </div>
     </div>
+
+    <!-- 全局消息弹窗 -->
+    <MessageBox />
+
+    <!-- 全局确认弹窗 -->
+    <ConfirmBox />
   </div>
 </template>
 
@@ -185,6 +191,8 @@ import BasicSettings from './components/BasicSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
+import MessageBox from './components/MessageBox.vue'
+import ConfirmBox from './components/ConfirmBox.vue'
 
 const {
   isConnected,

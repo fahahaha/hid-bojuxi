@@ -37,7 +37,7 @@
       <p class="card-description">
         {{ t('basicSettings.dpi.description') }}
         <span v-if="dpiLevels.length > 0" class="dpi-count">
-          共 {{ dpiLevels.length }} 个档位
+          {{ t('basicSettings.dpi.totalLevels', { count: String(dpiLevels.length) }) }}
         </span>
       </p>
 
@@ -50,11 +50,11 @@
         <!-- 当前档位状态显示 -->
         <div class="current-dpi-status">
           <div class="status-info">
-            <span class="status-label">当前档位</span>
-            <span class="status-value">档位 {{ currentDpiLevel + 1 }}</span>
+            <span class="status-label">{{ t('basicSettings.dpi.currentLevel') }}</span>
+            <span class="status-value">{{ t('basicSettings.dpi.levelLabel', { level: String(currentDpiLevel + 1) }) }}</span>
           </div>
           <div class="status-info">
-            <span class="status-label">当前 DPI</span>
+            <span class="status-label">{{ t('basicSettings.dpi.current') }}</span>
             <span class="status-dpi-value">{{ deviceStatus.dpi }} DPI</span>
           </div>
         </div>
@@ -72,8 +72,8 @@
                 <span class="level-badge" :class="{ active: currentDpiLevel === index }">
                   {{ index + 1 }}
                 </span>
-                <span class="level-label">档位 {{ index + 1 }}</span>
-                <span v-if="currentDpiLevel === index" class="current-badge">当前</span>
+                <span class="level-label">{{ t('basicSettings.dpi.levelLabel', { level: String(index + 1) }) }}</span>
+                <span v-if="currentDpiLevel === index" class="current-badge">{{ t('basicSettings.dpi.currentBadge') }}</span>
               </div>
               <button
                 class="switch-btn"
@@ -81,7 +81,7 @@
                 @click="handleSwitchDpiLevel(index)"
                 :disabled="currentDpiLevel === index"
               >
-                {{ currentDpiLevel === index ? '已选中' : '切换' }}
+                {{ currentDpiLevel === index ? t('basicSettings.dpi.selected') : t('basicSettings.dpi.switchLevel') }}
               </button>
             </div>
 

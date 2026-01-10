@@ -593,34 +593,56 @@ export function parseKeyboardMapping(code: number[]): {
 }
 
 /**
+ * 翻译函数类型
+ */
+export type TranslateFunction = (key: string, params?: Record<string, string | number>) => string
+
+/**
  * 获取按键映射的显示名称（博巨矽协议）
  * @param code 4字节编码
+ * @param t 翻译函数（可选，不传则使用默认中文）
  * @returns 显示名称
  */
-export function getButtonDisplayName(code: number[]): string {
+export function getButtonDisplayName(code: number[], t?: TranslateFunction): string {
   const typeCode = code[0]
 
   // 检查是否是宏映射 (0x07)
   if (typeCode === BUTTON_TYPE_CODE.MACRO) {
     const macroIndex = code[2]
+    if (t) {
+      return t('buttonMapping.displayNames.macro', { index: String(macroIndex + 1) })
+    }
     return `宏${macroIndex + 1}`
   }
 
   // 检查是否是禁用 (0x04)
   if (typeCode === BUTTON_TYPE_CODE.DISABLED) {
+    if (t) {
+      return t('buttonMapping.displayNames.disabled')
+    }
     return '禁用'
   }
 
   // 检查是否是鼠标功能 (0x02)
   if (typeCode === BUTTON_TYPE_CODE.MOUSE) {
     const mouseButton = mouseButtons.find((btn) => btn.code.every((byte, i) => byte === code[i]))
-    if (mouseButton) return mouseButton.name
+    if (mouseButton) {
+      if (t && mouseButton.nameKey) {
+        return t(mouseButton.nameKey)
+      }
+      return mouseButton.name
+    }
   }
 
   // 检查是否是 DPI 功能 (0x05)
   if (typeCode === BUTTON_TYPE_CODE.DPI) {
     const dpiButton = dpiButtons.find((btn) => btn.code.every((byte, i) => byte === code[i]))
-    if (dpiButton) return dpiButton.name
+    if (dpiButton) {
+      if (t && dpiButton.nameKey) {
+        return t(dpiButton.nameKey)
+      }
+      return dpiButton.name
+    }
   }
 
   // 检查是否是多媒体按键 (0x03)
@@ -628,7 +650,12 @@ export function getButtonDisplayName(code: number[]): string {
     const multimediaButton = multimediaButtons.find((btn) =>
       btn.code.every((byte, i) => byte === code[i])
     )
-    if (multimediaButton) return multimediaButton.name
+    if (multimediaButton) {
+      if (t && multimediaButton.nameKey) {
+        return t(multimediaButton.nameKey)
+      }
+      return multimediaButton.name
+    }
   }
 
   // 检查是否是键盘按键 (0x00 单键 或 0x01 组合键)
@@ -650,6 +677,9 @@ export function getButtonDisplayName(code: number[]): string {
 
       // 如果所有部分都为空，返回空字符串或默认值
       if (parts.length === 0) {
+        if (t) {
+          return t('buttonMapping.displayNames.none')
+        }
         return '无'
       }
 
@@ -662,12 +692,28 @@ export function getButtonDisplayName(code: number[]): string {
   // 检查是否是滚轮 (0x08)
   if (typeCode === BUTTON_TYPE_CODE.SCROLL) {
     const direction = code[2]
+    if (t) {
+      const directionKeys = [
+        'buttonMapping.displayNames.scrollUp',
+        'buttonMapping.displayNames.scrollDown',
+        'buttonMapping.displayNames.scrollLeft',
+        'buttonMapping.displayNames.scrollRight'
+      ]
+      if (direction >= 0 && direction < directionKeys.length) {
+        return t(directionKeys[direction])
+      }
+      return t('buttonMapping.displayNames.scroll')
+    }
     const directionNames = ['滚轮↑', '滚轮↓', '滚轮←', '滚轮→']
     return directionNames[direction] || '滚轮'
   }
 
   // 未知按键，显示十六进制
-  return `未知(${code.map((b) => b.toString(16).padStart(2, '0')).join(' ')})`
+  const hexCode = code.map((b) => b.toString(16).padStart(2, '0')).join(' ')
+  if (t) {
+    return t('buttonMapping.displayNames.unknown', { code: hexCode })
+  }
+  return `未知(${hexCode})`
 }
 
 /**

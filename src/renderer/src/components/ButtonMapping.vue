@@ -472,6 +472,8 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 import { useI18n } from '../composables/useI18n'
+import { useMessageBox } from '../composables/useMessageBox'
+import { useConfirmBox } from '../composables/useConfirmBox'
 import { useMacroStorage, type MacroEvent, type Macro } from '../composables/useMacroStorage'
 import {
   mouseButtons,
@@ -503,6 +505,8 @@ const {
   MAX_MACRO_COUNT
 } = useMacroStorage()
 const { t, ta } = useI18n()
+const { error: showError, success: showSuccess, warning: showWarning } = useMessageBox()
+const { confirm: showConfirm } = useConfirmBox()
 
 // 按键映射数据（8个按键）
 // 博巨矽协议按键顺序: 左键(0), 中键(1), 右键(2), 前进(3), 后退(4), 滚轮前滚(5), 滚轮后滚(6), DPI键(7)
@@ -686,7 +690,7 @@ function getButtonLabel(index: number): string {
   const mapping = buttonMappings.value[deviceIndex]
   if (!mapping) return `${index + 1}`
 
-  return getButtonDisplayName(mapping)
+  return getButtonDisplayName(mapping, t)
 }
 
 /**
@@ -777,7 +781,7 @@ async function applyMacroMapping() {
   // 获取宏数据
   const macro = getMacro(macroIndex)
   if (!macro || macro.events.length === 0) {
-    alert(t('buttonMapping.macro.eventEmpty'))
+    showWarning(t('buttonMapping.macro.eventEmpty'))
     return
   }
 
@@ -786,7 +790,7 @@ async function applyMacroMapping() {
   if (isConnected.value) {
     const result = await setDeviceMacro(macroIndex, encodedEvents)
     if (!result.success) {
-      alert(t('buttonMapping.macro.saveError', { message: result.message }))
+      showError(t('buttonMapping.macro.saveError', { message: result.message }))
       return
     }
   }
@@ -827,7 +831,12 @@ async function applyMacroMapping() {
  * 重置所有按键
  */
 async function resetAllButtons() {
-  if (!confirm(t('buttonMapping.resetAllConfirm'))) {
+  const confirmed = await showConfirm(t('buttonMapping.resetAllConfirm'), {
+    type: 'warning',
+    confirmText: t('common.confirm'),
+    cancelText: t('common.cancel')
+  })
+  if (!confirmed) {
     return
   }
 
@@ -838,7 +847,7 @@ async function resetAllButtons() {
   await saveToDevice()
 
   console.log('[按键映射] 已重置所有按键')
-  alert(t('buttonMapping.resetAllSuccess'))
+  showSuccess(t('buttonMapping.resetAllSuccess'))
 }
 
 // 左键映射编码: [0x02, 0x00, 0x01, 0x00]
@@ -871,7 +880,7 @@ async function saveToDevice() {
 
   // 检查是否至少有一个左键映射
   if (!hasLeftClickMapping()) {
-    alert(t('buttonMapping.saveFailedNoLeftClick'))
+    showError(t('buttonMapping.saveFailedNoLeftClick'))
     // 重新加载设备映射以恢复原状态
     await loadFromDevice()
     return
@@ -923,7 +932,7 @@ function selectMacroForEdit(index: number) {
  */
 function createNewMacro() {
   if (macros.value.length >= MAX_MACRO_COUNT) {
-    alert(t('buttonMapping.macro.maxReached', { max: String(MAX_MACRO_COUNT) }))
+    showWarning(t('buttonMapping.macro.maxReached', { max: String(MAX_MACRO_COUNT) }))
     return
   }
 
@@ -943,7 +952,7 @@ function createNewMacro() {
     currentEditingMacro.value = { ...newMacroData }
     console.log('[宏管理] 已创建新宏:', newMacroName)
   } else {
-    alert(t('buttonMapping.macro.saveError', { message: 'Failed to add macro' }))
+    showError(t('buttonMapping.macro.saveError', { message: 'Failed to add macro' }))
   }
 }
 
@@ -952,11 +961,16 @@ function createNewMacro() {
  */
 async function deleteSelectedMacro() {
   if (selectedMacroForEdit.value === null) {
-    alert(t('buttonMapping.macro.selectMacro'))
+    showWarning(t('buttonMapping.macro.selectMacro'))
     return
   }
 
-  if (!confirm(t('buttonMapping.macro.deleteConfirm', { name: currentEditingMacro.value.name }))) {
+  const confirmed = await showConfirm(t('buttonMapping.macro.deleteConfirm', { name: currentEditingMacro.value.name }), {
+    type: 'danger',
+    confirmText: t('common.delete'),
+    cancelText: t('common.cancel')
+  })
+  if (!confirmed) {
     return
   }
 
@@ -964,7 +978,7 @@ async function deleteSelectedMacro() {
   if (isConnected.value && currentEditingMacro.value.events.length > 0) {
     const result = await deleteDeviceMacro(selectedMacroForEdit.value)
     if (!result.success) {
-      alert(t('buttonMapping.macro.saveError', { message: result.message }))
+      showError(t('buttonMapping.macro.saveError', { message: result.message }))
       // 继续删除本地存储
     }
   }
@@ -986,7 +1000,7 @@ async function deleteSelectedMacro() {
     }
     console.log('[宏管理] 宏已删除')
   } else {
-    alert(t('buttonMapping.macro.saveError', { message: 'Failed to delete macro' }))
+    showError(t('buttonMapping.macro.saveError', { message: 'Failed to delete macro' }))
   }
 }
 
@@ -1031,8 +1045,13 @@ function removeSelectedMacroEvent() {
 /**
  * 清空所有宏事件
  */
-function clearAllMacroEvents() {
-  if (!confirm(t('buttonMapping.macro.clearAllConfirm'))) return
+async function clearAllMacroEvents() {
+  const confirmed = await showConfirm(t('buttonMapping.macro.clearAllConfirm'), {
+    type: 'warning',
+    confirmText: t('common.confirm'),
+    cancelText: t('common.cancel')
+  })
+  if (!confirmed) return
   currentEditingMacro.value.events = []
   recordedEvents.value = []
   selectedMacroEventIndex.value = null

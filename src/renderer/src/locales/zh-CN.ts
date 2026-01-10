@@ -50,7 +50,13 @@ export default {
       current: '当前 DPI',
       levelOption: '档位 {level} - {value} DPI',
       supportedCount: '(支持 {count} 档)',
-      notSupported: '当前设备不支持 DPI 设置功能'
+      notSupported: '当前设备不支持 DPI 设置功能',
+      totalLevels: '共 {count} 个档位',
+      currentLevel: '当前档位',
+      levelLabel: '档位 {level}',
+      currentBadge: '当前',
+      selected: '已选中',
+      switchLevel: '切换'
     },
     scrollDirection: {
       title: '滚轮方向设置',
@@ -146,6 +152,18 @@ export default {
       mail: '邮件',
       brightnessUp: '亮度提升',
       brightnessDown: '亮度降低'
+    },
+    // 按键显示名称
+    displayNames: {
+      macro: '宏{index}',
+      disabled: '禁用',
+      scrollUp: '滚轮↑',
+      scrollDown: '滚轮↓',
+      scrollLeft: '滚轮←',
+      scrollRight: '滚轮→',
+      scroll: '滚轮',
+      none: '无',
+      unknown: '未知({code})'
     },
     // 分类
     categories: {

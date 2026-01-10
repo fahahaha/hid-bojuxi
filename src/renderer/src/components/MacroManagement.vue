@@ -152,9 +152,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
+import { useI18n } from '../composables/useI18n'
+import { useMessageBox } from '../composables/useMessageBox'
+import { useConfirmBox } from '../composables/useConfirmBox'
 import { useMacroStorage, type MacroEvent, type Macro } from '../composables/useMacroStorage'
 
 const { isConnected, setMacro: setDeviceMacro, deleteMacro: deleteDeviceMacro } = useWebHID()
+const { t } = useI18n()
+const { error: showError, success: showSuccess, warning: showWarning } = useMessageBox()
+const { confirm: showConfirm } = useConfirmBox()
 const {
   macros,
   getMacro,
@@ -196,7 +202,7 @@ function selectMacro(index: number) {
  */
 function newMacro() {
   if (macros.value.length >= MAX_MACRO_COUNT) {
-    alert(`最多只能创建 ${MAX_MACRO_COUNT} 个宏`)
+    showWarning(t('buttonMapping.macro.maxReached', { max: String(MAX_MACRO_COUNT) }))
     return
   }
 
@@ -216,7 +222,7 @@ function newMacro() {
     currentMacro.value = { ...newMacroData }
     console.log('[宏管理] 已创建新宏:', newMacroName)
   } else {
-    alert('创建宏失败')
+    showError(t('buttonMapping.macro.saveError', { message: 'Failed to add macro' }))
   }
 }
 
@@ -225,11 +231,16 @@ function newMacro() {
  */
 async function deleteMacro() {
   if (selectedMacroIndex.value === null) {
-    alert('请先选择一个宏')
+    showWarning(t('buttonMapping.macro.selectMacro'))
     return
   }
 
-  if (!confirm(`确定要删除${currentMacro.value.name}吗?此操作不可撤销。`)) {
+  const confirmed = await showConfirm(t('buttonMapping.macro.deleteConfirm', { name: currentMacro.value.name }), {
+    type: 'danger',
+    confirmText: t('common.delete'),
+    cancelText: t('common.cancel')
+  })
+  if (!confirmed) {
     return
   }
 
@@ -237,7 +248,7 @@ async function deleteMacro() {
   if (isConnected.value && currentMacro.value.events.length > 0) {
     const result = await deleteDeviceMacro(selectedMacroIndex.value)
     if (!result.success) {
-      alert(`从设备删除失败: ${result.message}`)
+      showError(t('buttonMapping.macro.saveError', { message: result.message }))
       // 继续删除本地存储
     }
   }
@@ -259,7 +270,7 @@ async function deleteMacro() {
     }
     console.log('[宏管理] 宏已删除')
   } else {
-    alert('删除宏失败')
+    showError(t('buttonMapping.macro.saveError', { message: 'Failed to delete macro' }))
   }
 }
 
@@ -304,8 +315,13 @@ function removeSelectedEvent() {
 /**
  * 清空所有事件
  */
-function clearAllEvents() {
-  if (!confirm('确定要清空所有事件吗？')) return
+async function clearAllEvents() {
+  const confirmed = await showConfirm(t('buttonMapping.macro.clearAllConfirm'), {
+    type: 'warning',
+    confirmText: t('common.confirm'),
+    cancelText: t('common.cancel')
+  })
+  if (!confirmed) return
   currentMacro.value.events = []
   recordedEvents.value = []
   selectedEventIndex.value = null
@@ -317,17 +333,17 @@ function clearAllEvents() {
  */
 async function saveMacro() {
   if (currentMacro.value.events.length === 0) {
-    alert('宏事件不能为空')
+    showWarning(t('buttonMapping.macro.eventEmpty'))
     return
   }
 
   if (!currentMacro.value.name.trim()) {
-    alert('宏名称不能为空')
+    showWarning(t('buttonMapping.macro.nameEmpty'))
     return
   }
 
   if (selectedMacroIndex.value === null) {
-    alert('请先选择一个宏')
+    showWarning(t('buttonMapping.macro.selectMacro'))
     return
   }
 
@@ -338,16 +354,16 @@ async function saveMacro() {
   if (isConnected.value) {
     const result = await setDeviceMacro(selectedMacroIndex.value, encodedEvents)
     if (!result.success) {
-      alert(`保存到设备失败: ${result.message}`)
+      showError(t('buttonMapping.macro.saveError', { message: result.message }))
       return
     }
   }
 
   // 保存到本地存储
   if (updateMacro(selectedMacroIndex.value, currentMacro.value)) {
-    alert(`${currentMacro.value.name} 已保存`)
+    showSuccess(t('buttonMapping.macro.saveSuccess', { name: currentMacro.value.name }))
   } else {
-    alert('保存到本地存储失败')
+    showError(t('buttonMapping.macro.saveError', { message: 'Failed to save to local storage' }))
   }
 }
 
