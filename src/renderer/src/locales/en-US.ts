@@ -29,6 +29,7 @@ export default {
     basic: 'Basic Settings',
     backlight: 'Backlight',
     buttons: 'Button Mapping',
+    performance: 'Performance',
     device: 'Device Info'
   },
   deviceStatus: {
@@ -274,5 +275,45 @@ export default {
   notification: {
     connectSuccess: 'Connection Successful',
     connectFailed: 'Connection Failed'
+  },
+  performanceSettings: {
+    tracking: {
+      title: 'Motion Tracking',
+      description: 'Adjust mouse motion tracking performance parameters',
+      motionSync: {
+        title: 'Motion Sync',
+        description: 'Apply smoothing algorithm to mouse movement for more accurate tracking, adds slight latency'
+      },
+      angleSnapping: {
+        title: 'Angle Snapping',
+        description: 'Correct offset jitter during straight-line mouse movement, ideal for design and drawing'
+      },
+      rippleControl: {
+        title: 'Ripple Control',
+        description: 'Apply algorithm correction at high speeds to eliminate wave-like jitter'
+      },
+      longRangeMode: {
+        title: 'Long Range Mode',
+        description: 'Improve wireless performance at long distances, but increases power consumption'
+      }
+    },
+    debounce: {
+      title: 'Button Debounce Delay',
+      description: 'Prevent repeated or accidental triggers caused by rapid clicking or button jitter'
+    },
+    sleep: {
+      title: 'Sleep Timer',
+      description: 'Mouse automatically enters sleep mode after being idle to save power. Set your preferred idle time'
+    },
+    lod: {
+      title: 'LOD (Lift-off Distance)',
+      description: 'Maximum working distance between mouse bottom and surface'
+    },
+    sensorRotation: {
+      title: 'Sensor Rotation',
+      description: 'Achieve precise horizontal movement regardless of your mouse grip style',
+      enable: 'Enable Sensor Rotation',
+      enableDesc: 'When enabled, adjust sensor angle to match your grip style'
+    }
   }
 }

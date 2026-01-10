@@ -29,6 +29,7 @@ export default {
     basic: '基础设置',
     backlight: '背光设置',
     buttons: '改键设置',
+    performance: '性能设置',
     device: '设备信息'
   },
   deviceStatus: {
@@ -271,5 +272,45 @@ export default {
   notification: {
     connectSuccess: '连接成功',
     connectFailed: '连接失败'
+  },
+  performanceSettings: {
+    tracking: {
+      title: '移动追踪',
+      description: '调整鼠标移动追踪相关的性能参数',
+      motionSync: {
+        title: '移动同步',
+        description: '对鼠标移动进行圆滑算法修正，移动轨迹更准确，增加微小延迟'
+      },
+      angleSnapping: {
+        title: '直线修正',
+        description: '修正直线移动鼠标时的偏移抖动，变成绝对直线移动，适用于设计绘图'
+      },
+      rippleControl: {
+        title: '波纹修正',
+        description: '对高移速情况下进行算法修正，消除波浪形抖动'
+      },
+      longRangeMode: {
+        title: '超远距离模式',
+        description: '提升鼠标在远距离情况下的无线性能，但会增加部分功耗'
+      }
+    },
+    debounce: {
+      title: '按键防抖延迟',
+      description: '可避免鼠标按键快速连点或抖动引发的重复触发或误触发'
+    },
+    sleep: {
+      title: '休眠时间设置',
+      description: '鼠标在静止一段时间后自动进入休眠，降低功耗。你可自由设定休眠前的等待时长'
+    },
+    lod: {
+      title: 'LOD 静默高度',
+      description: '鼠标底部距离接触面最大的工作距离'
+    },
+    sensorRotation: {
+      title: '传感器旋转',
+      description: '无论使用哪种鼠标抓握方式，都能实现精确的水平移动',
+      enable: '启用传感器旋转',
+      enableDesc: '开启后可调整传感器角度以适应您的握持方式'
+    }
   }
 }

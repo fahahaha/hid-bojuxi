@@ -142,6 +142,7 @@
         <BasicSettings v-if="activeTab === 'basic'" />
         <BacklightSettings v-if="activeTab === 'backlight'" />
         <ButtonMapping v-if="activeTab === 'buttons'" />
+        <PerformanceSettings v-if="activeTab === 'performance'" />
         <DeviceInfo v-if="activeTab === 'device'" />
       </div>
     </main>
@@ -190,6 +191,7 @@ import { useTheme } from './composables/useTheme'
 import BasicSettings from './components/BasicSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
+import PerformanceSettings from './components/PerformanceSettings.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 import MessageBox from './components/MessageBox.vue'
 import ConfirmBox from './components/ConfirmBox.vue'
@@ -218,6 +220,7 @@ const tabs = computed(() => [
   { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
   { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb-o' },
   { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-keyboard-o' },
+  { id: 'performance', label: t('tabs.performance'), icon: 'fa fa-tachometer' },
   { id: 'device', label: t('tabs.device'), icon: 'fa fa-info-circle' }
 ])
 
