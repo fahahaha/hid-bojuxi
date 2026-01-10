@@ -330,6 +330,24 @@ export const multimediaButtons: ButtonMapping[] = [
     code: [0x03, 0x00, 0x01, 0x8a],
     category: '系统功能',
     categoryKey: 'buttonMapping.categories.system'
+  },
+  {
+    id: 'brightness_up',
+    name: '亮度提升',
+    nameKey: 'buttonMapping.multimediaButtons.brightnessUp',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x03, 0x00, 0x00, 0x6f],
+    category: '系统功能',
+    categoryKey: 'buttonMapping.categories.system'
+  },
+  {
+    id: 'brightness_down',
+    name: '亮度降低',
+    nameKey: 'buttonMapping.multimediaButtons.brightnessDown',
+    type: ButtonType.MULTIMEDIA,
+    code: [0x03, 0x00, 0x00, 0x70],
+    category: '系统功能',
+    categoryKey: 'buttonMapping.categories.system'
   }
 ]
 
@@ -456,6 +474,11 @@ export const keyboardScancodes: Record<string, number> = {
   Down: 0x51,
   Up: 0x52,
 
+  // 系统键
+  PrintScreen: 0x46,
+  ScrollLock: 0x47,
+  Pause: 0x48,
+
   // 小键盘
   NumLock: 0x53,
   NumpadDivide: 0x54,
@@ -473,7 +496,35 @@ export const keyboardScancodes: Record<string, number> = {
   Numpad8: 0x60,
   Numpad9: 0x61,
   Numpad0: 0x62,
-  NumpadDecimal: 0x63
+  NumpadDecimal: 0x63,
+  NumpadEqual: 0x67,
+
+  // 应用键
+  App: 0x65,
+
+  // 扩展功能键 F13-F24
+  F13: 0x68,
+  F14: 0x69,
+  F15: 0x6a,
+  F16: 0x6b,
+  F17: 0x6c,
+  F18: 0x6d,
+  F19: 0x6e,
+  F20: 0x6f,
+  F21: 0x70,
+  F22: 0x71,
+  F23: 0x72,
+  F24: 0x73,
+
+  // 修饰键（作为单键使用）
+  LeftControl: 0xe0,
+  LeftShift: 0xe1,
+  LeftAlt: 0xe2,
+  LeftGUI: 0xe3,
+  RightControl: 0xe4,
+  RightShift: 0xe5,
+  RightAlt: 0xe6,
+  RightGUI: 0xe7
 }
 
 /**
@@ -489,27 +540,34 @@ export const scancodeToKey: Record<number, string> = Object.fromEntries(
  * 组合键格式: [0x01, Modify key, Key code, 2nd code]
  * @param modifiers 修饰键组合（按位或）
  * @param scancode 键盘扫描码
+ * @param scancode2 第二个键盘扫描码（可选）
  * @returns 4字节编码
  */
-export function createKeyboardMapping(modifiers: number, scancode: number): number[] {
-  if (modifiers === 0) {
+export function createKeyboardMapping(
+  modifiers: number,
+  scancode: number,
+  scancode2: number = 0
+): number[] {
+  if (modifiers === 0 && scancode2 === 0) {
     // 单键
     return [BUTTON_TYPE_CODE.KEYBOARD_SINGLE, 0x00, scancode, 0x00]
   } else {
     // 组合键
-    return [BUTTON_TYPE_CODE.KEYBOARD_COMBO, modifiers, scancode, 0x00]
+    return [BUTTON_TYPE_CODE.KEYBOARD_COMBO, modifiers, scancode, scancode2]
   }
 }
 
 /**
  * 解析键盘按键映射（博巨矽协议）
  * @param code 4字节编码
- * @returns { modifiers: number, scancode: number, keyName: string }
+ * @returns { modifiers: number, scancode: number, scancode2: number, keyName: string, keyName2: string }
  */
 export function parseKeyboardMapping(code: number[]): {
   modifiers: number
   scancode: number
+  scancode2: number
   keyName: string
+  keyName2: string
   modifierNames: string[]
 } {
   // 单键 (0x00) 或组合键 (0x01)
@@ -519,7 +577,11 @@ export function parseKeyboardMapping(code: number[]): {
 
   const modifiers = code[0] === BUTTON_TYPE_CODE.KEYBOARD_COMBO ? code[1] : 0
   const scancode = code[2]
-  const keyName = scancodeToKey[scancode] || `Unknown(0x${scancode.toString(16)})`
+  const scancode2 = code[3]
+
+  // 0x00 表示 No Event（无按键），不显示
+  const keyName = scancode === 0 ? '' : (scancodeToKey[scancode] || `Unknown(0x${scancode.toString(16)})`)
+  const keyName2 = scancode2 === 0 ? '' : (scancodeToKey[scancode2] || `Unknown(0x${scancode2.toString(16)})`)
 
   const modifierNames: string[] = []
   if (modifiers & ModifierKey.L_CTRL) modifierNames.push('Ctrl')
@@ -527,7 +589,7 @@ export function parseKeyboardMapping(code: number[]): {
   if (modifiers & ModifierKey.L_ALT) modifierNames.push('Alt')
   if (modifiers & ModifierKey.L_WIN) modifierNames.push('Win')
 
-  return { modifiers, scancode, keyName, modifierNames }
+  return { modifiers, scancode, scancode2, keyName, keyName2, modifierNames }
 }
 
 /**
@@ -572,11 +634,26 @@ export function getButtonDisplayName(code: number[]): string {
   // 检查是否是键盘按键 (0x00 单键 或 0x01 组合键)
   if (typeCode === BUTTON_TYPE_CODE.KEYBOARD_SINGLE || typeCode === BUTTON_TYPE_CODE.KEYBOARD_COMBO) {
     try {
-      const { keyName, modifierNames } = parseKeyboardMapping(code)
+      const { keyName, keyName2, modifierNames } = parseKeyboardMapping(code)
+
+      // 构建显示名称，过滤掉空的部分
+      const parts: string[] = []
       if (modifierNames.length > 0) {
-        return `${modifierNames.join('+')}+${keyName}`
+        parts.push(modifierNames.join('+'))
       }
-      return keyName
+      if (keyName) {
+        parts.push(keyName)
+      }
+      if (keyName2) {
+        parts.push(keyName2)
+      }
+
+      // 如果所有部分都为空，返回空字符串或默认值
+      if (parts.length === 0) {
+        return '无'
+      }
+
+      return parts.join('+')
     } catch {
       // 解析失败，返回未知
     }

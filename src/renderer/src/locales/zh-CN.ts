@@ -100,6 +100,7 @@ export default {
     resetAll: '重置所有按键',
     resetAllConfirm: '确定要重置所有按键为默认设置吗?',
     resetAllSuccess: '所有按键已重置为默认设置',
+    saveFailedNoLeftClick: '保存失败，至少需要存在一个左键',
     tabs: {
       mouse: '鼠标功能',
       dpi: 'DPI功能',
@@ -142,7 +143,9 @@ export default {
       search: '网页-搜索',
       calculator: '计算器',
       myComputer: '我的电脑',
-      mail: '邮件'
+      mail: '邮件',
+      brightnessUp: '亮度提升',
+      brightnessDown: '亮度降低'
     },
     // 分类
     categories: {
@@ -165,12 +168,19 @@ export default {
       modifiers: '修饰键（可多选）',
       selectKey: '选择按键',
       selectKeyPlaceholder: '-- 请选择按键 --',
+      key1: '按键1（可选）',
+      key2: '按键2（可选）',
+      key2Placeholder: '-- 请选择按键 --',
       saveKey: '保存按键',
       groups: {
         alphabet: '字母键',
         number: '数字键',
-        function: '功能键',
-        special: '特殊键'
+        function: '功能键 F1-F12',
+        extendedFunction: '扩展功能键 F13-F24',
+        special: '特殊键',
+        punctuation: '标点符号键',
+        numpad: '小键盘',
+        modifier: '修饰键（单键）'
       }
     },
     macro: {

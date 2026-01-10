@@ -101,6 +101,7 @@ export default {
     resetAll: 'Reset All Buttons',
     resetAllConfirm: 'Are you sure you want to reset all buttons to default settings?',
     resetAllSuccess: 'All buttons have been reset to default settings',
+    saveFailedNoLeftClick: 'Save failed, at least one left click button is required',
     tabs: {
       mouse: 'Mouse Functions',
       dpi: 'DPI Functions',
@@ -143,7 +144,9 @@ export default {
       search: 'Web Search',
       calculator: 'Calculator',
       myComputer: 'My Computer',
-      mail: 'Mail'
+      mail: 'Mail',
+      brightnessUp: 'Brightness Up',
+      brightnessDown: 'Brightness Down'
     },
     // Categories
     categories: {
@@ -166,12 +169,19 @@ export default {
       modifiers: 'Modifiers (Multiple Selection)',
       selectKey: 'Select Key',
       selectKeyPlaceholder: '-- Select a key --',
+      key1: 'Key 1 (Optional)',
+      key2: 'Key 2 (Optional)',
+      key2Placeholder: '-- Select a key --',
       saveKey: 'Save Key',
       groups: {
         alphabet: 'Alphabet Keys',
         number: 'Number Keys',
-        function: 'Function Keys',
-        special: 'Special Keys'
+        function: 'Function Keys F1-F12',
+        extendedFunction: 'Extended Function Keys F13-F24',
+        special: 'Special Keys',
+        punctuation: 'Punctuation Keys',
+        numpad: 'Numpad',
+        modifier: 'Modifier Keys (Single)'
       }
     },
     macro: {

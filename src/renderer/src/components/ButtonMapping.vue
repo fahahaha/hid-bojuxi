@@ -15,8 +15,7 @@
             :key="index"
             @click="selectButton(index)"
             class="mouse-key"
-            :class="['key' + index, { active: selectedButton === index, disabled: index === 0 }]"
-            :disabled="index === 0"
+            :class="['key' + index, { active: selectedButton === index }]"
           >
             <span class="button-label">{{ getButtonLabel(index) }}</span>
           </button>
@@ -28,17 +27,12 @@
         <div class="settings-panel">
           <div class="panel-header">
             <h4 class="panel-title">{{ buttonNames[selectedButton] }}</h4>
-            <button @click="resetButton" class="reset-button" :disabled="selectedButton === 0">
+            <button @click="resetButton" class="reset-button">
               <i class="fa fa-refresh"></i>{{ t('buttonMapping.restoreDefault') }}
             </button>
           </div>
 
-          <div v-if="selectedButton === 0" class="disabled-notice">
-            <i class="fa fa-info-circle"></i>
-            {{ t('buttonMapping.leftKeyDisabled') }}
-          </div>
-
-          <div v-else class="settings-form">
+          <div class="settings-form">
             <!-- 标签页切换 -->
             <div class="tab-buttons">
               <button
@@ -110,20 +104,21 @@
               <div class="keyboard-settings">
                 <div class="form-group">
                   <label class="form-label">{{ t('buttonMapping.keyboard.modifiers') }}</label>
-                  <div class="modifier-group">
-                    <label
+                  <div class="button-grid modifier-buttons">
+                    <button
                       v-for="modifier in modifierKeys"
                       :key="modifier.id"
-                      class="modifier-checkbox"
+                      @click="toggleModifier(modifier.value)"
+                      class="function-button"
+                      :class="{ active: selectedModifiers.includes(modifier.value) }"
                     >
-                      <input type="checkbox" v-model="selectedModifiers" :value="modifier.value" />
-                      <span>{{ modifier.name }}</span>
-                    </label>
+                      {{ modifier.name }}
+                    </button>
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">{{ t('buttonMapping.keyboard.selectKey') }}</label>
+                  <label class="form-label">{{ t('buttonMapping.keyboard.key1') }}</label>
                   <select v-model="selectedKey" class="form-select">
                     <option value="">{{ t('buttonMapping.keyboard.selectKeyPlaceholder') }}</option>
                     <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
@@ -141,15 +136,82 @@
                         {{ key }}
                       </option>
                     </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
+                      <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.special')">
                       <option v-for="key in specialKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
+                      <option v-for="key in punctuationKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
+                      <option v-for="key in numpadKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
+                      <option v-for="key in modifierAsKeys" :key="key" :value="key">
                         {{ key }}
                       </option>
                     </optgroup>
                   </select>
                 </div>
 
-                <button @click="applyKeyboardMapping" class="apply-button" :disabled="!selectedKey">
+                <div class="form-group">
+                  <label class="form-label">{{ t('buttonMapping.keyboard.key2') }}</label>
+                  <select v-model="selectedKey2" class="form-select">
+                    <option value="">{{ t('buttonMapping.keyboard.key2Placeholder') }}</option>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
+                      <option v-for="key in alphabetKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.number')">
+                      <option v-for="key in numberKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.function')">
+                      <option v-for="key in functionKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
+                      <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.special')">
+                      <option v-for="key in specialKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
+                      <option v-for="key in punctuationKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
+                      <option v-for="key in numpadKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                    <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
+                      <option v-for="key in modifierAsKeys" :key="key" :value="key">
+                        {{ key }}
+                      </option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <button @click="applyKeyboardMapping" class="apply-button" :disabled="!canSaveKeyboardMapping">
                   <i class="fa fa-check"></i>
                   {{ t('buttonMapping.keyboard.saveKey') }}
                 </button>
@@ -481,16 +543,51 @@ function getMultimediaByCategory(category: string): ButtonMapping[] {
 // 键盘按键选项
 const selectedModifiers = ref<number[]>([])
 const selectedKey = ref('')
+const selectedKey2 = ref('')
+
+/**
+ * 是否可以保存键盘映射（修饰键、按键1、按键2只要有一个选中即可）
+ */
+const canSaveKeyboardMapping = computed(() => {
+  return selectedModifiers.value.length > 0 || selectedKey.value !== '' || selectedKey2.value !== ''
+})
+
+/**
+ * 切换修饰键选中状态
+ */
+function toggleModifier(value: number) {
+  const index = selectedModifiers.value.indexOf(value)
+  if (index === -1) {
+    selectedModifiers.value.push(value)
+  } else {
+    selectedModifiers.value.splice(index, 1)
+  }
+}
 
 const alphabetKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 const functionKeys = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12']
+const extendedFunctionKeys = [
+  'F13',
+  'F14',
+  'F15',
+  'F16',
+  'F17',
+  'F18',
+  'F19',
+  'F20',
+  'F21',
+  'F22',
+  'F23',
+  'F24'
+]
 const specialKeys = [
   'Enter',
   'Escape',
   'Backspace',
   'Tab',
   'Space',
+  'CapsLock',
   'Insert',
   'Delete',
   'Home',
@@ -500,7 +597,54 @@ const specialKeys = [
   'Up',
   'Down',
   'Left',
-  'Right'
+  'Right',
+  'PrintScreen',
+  'ScrollLock',
+  'Pause',
+  'App'
+]
+const punctuationKeys = [
+  'Minus',
+  'Equal',
+  'LeftBracket',
+  'RightBracket',
+  'Backslash',
+  'Semicolon',
+  'Quote',
+  'Grave',
+  'Comma',
+  'Period',
+  'Slash'
+]
+const numpadKeys = [
+  'NumLock',
+  'Numpad0',
+  'Numpad1',
+  'Numpad2',
+  'Numpad3',
+  'Numpad4',
+  'Numpad5',
+  'Numpad6',
+  'Numpad7',
+  'Numpad8',
+  'Numpad9',
+  'NumpadDecimal',
+  'NumpadDivide',
+  'NumpadMultiply',
+  'NumpadMinus',
+  'NumpadPlus',
+  'NumpadEnter',
+  'NumpadEqual'
+]
+const modifierAsKeys = [
+  'LeftControl',
+  'LeftShift',
+  'LeftAlt',
+  'LeftGUI',
+  'RightControl',
+  'RightShift',
+  'RightAlt',
+  'RightGUI'
 ]
 
 // 宏相关变量 - 用于绑定到按键
@@ -531,7 +675,6 @@ const availableMacros = computed(() => {
  * 选择按键
  */
 function selectButton(index: number) {
-  if (index === 0) return // 左键不允许选择
   selectedButton.value = index
 }
 
@@ -560,8 +703,6 @@ function isCurrentMapping(code: number[]): boolean {
  * 应用映射
  */
 async function applyMapping(code: number[]) {
-  if (selectedButton.value === 0) return // 左键不允许修改
-
   const deviceIndex = uiToDeviceIndex[selectedButton.value]
   console.log(`[按键映射] UI按键${selectedButton.value + 1} (设备索引${deviceIndex}) 设置为:`, code)
   buttonMappings.value[deviceIndex] = [...code]
@@ -575,18 +716,33 @@ async function applyMapping(code: number[]) {
  * 应用键盘映射
  */
 async function applyKeyboardMapping() {
-  if (!selectedKey.value || selectedButton.value === 0) return
+  // 只要修饰键、按键1、按键2有一个选中即可
+  if (!canSaveKeyboardMapping.value) return
 
-  const scancode = keyboardScancodes[selectedKey.value]
-  if (scancode === undefined) {
-    console.error('未知的按键:', selectedKey.value)
-    return
+  // 获取按键1的扫描码（如果有）
+  let scancode = 0
+  if (selectedKey.value) {
+    scancode = keyboardScancodes[selectedKey.value]
+    if (scancode === undefined) {
+      console.error('未知的按键:', selectedKey.value)
+      scancode = 0
+    }
+  }
+
+  // 获取按键2的扫描码（如果有）
+  let scancode2 = 0
+  if (selectedKey2.value) {
+    scancode2 = keyboardScancodes[selectedKey2.value]
+    if (scancode2 === undefined) {
+      console.error('未知的第二按键:', selectedKey2.value)
+      scancode2 = 0
+    }
   }
 
   // 计算修饰键组合
   const modifiers = selectedModifiers.value.reduce((acc, val) => acc | val, 0)
 
-  const code = createKeyboardMapping(modifiers, scancode)
+  const code = createKeyboardMapping(modifiers, scancode, scancode2)
   const deviceIndex = uiToDeviceIndex[selectedButton.value]
   buttonMappings.value[deviceIndex] = code
 
@@ -596,14 +752,13 @@ async function applyKeyboardMapping() {
   // 重置选择
   selectedModifiers.value = []
   selectedKey.value = ''
+  selectedKey2.value = ''
 }
 
 /**
  * 恢复默认
  */
 async function resetButton() {
-  if (selectedButton.value === 0) return // 左键不允许修改
-
   const deviceIndex = uiToDeviceIndex[selectedButton.value]
   buttonMappings.value[deviceIndex] = [...defaultButtonMappings[deviceIndex]]
 
@@ -615,7 +770,6 @@ async function resetButton() {
  * 应用宏映射
  */
 async function applyMacroMapping() {
-  if (selectedButton.value === 0) return // 左键不允许修改
   if (selectedMacroIndex.value === '') return
 
   const macroIndex = parseInt(selectedMacroIndex.value)
@@ -687,12 +841,39 @@ async function resetAllButtons() {
   alert(t('buttonMapping.resetAllSuccess'))
 }
 
+// 左键映射编码: [0x02, 0x00, 0x01, 0x00]
+const LEFT_CLICK_CODE = [0x02, 0x00, 0x01, 0x00]
+
+/**
+ * 检查按键映射中是否至少有一个左键
+ * @returns true 如果至少有一个左键映射
+ */
+function hasLeftClickMapping(): boolean {
+  // 检查所有 UI 显示的按键（6个按键）
+  for (let uiIndex = 0; uiIndex < 6; uiIndex++) {
+    const deviceIndex = uiToDeviceIndex[uiIndex]
+    const mapping = buttonMappings.value[deviceIndex]
+    if (mapping && mapping.every((byte, i) => byte === LEFT_CLICK_CODE[i])) {
+      return true
+    }
+  }
+  return false
+}
+
 /**
  * 保存到设备
  */
 async function saveToDevice() {
   if (!isConnected.value) {
     console.warn('设备未连接')
+    return
+  }
+
+  // 检查是否至少有一个左键映射
+  if (!hasLeftClickMapping()) {
+    alert(t('buttonMapping.saveFailedNoLeftClick'))
+    // 重新加载设备映射以恢复原状态
+    await loadFromDevice()
     return
   }
 
@@ -1022,7 +1203,7 @@ onUnmounted(() => {
 .mouse-body {
   width: 16rem;
   height: 24rem;
-  background-image: url('../assets/mouse.png');
+  background-image: url('../assets/basicSettings/mouse.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -1053,19 +1234,13 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.mouse-mode .mouse-key:hover:not(.disabled) {
+.mouse-mode .mouse-key:hover {
   background-color: rgba(22, 93, 255, 0.25);
 }
 
 .mouse-mode .mouse-key.active {
   background-color: rgba(22, 93, 255, 0.3);
   border: 2px solid rgba(22, 93, 255, 0.6);
-}
-
-.mouse-mode .mouse-key.disabled {
-  background-color: rgba(128, 128, 128, 0.2);
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .mouse-mode .mouse-key .button-label {
@@ -1103,7 +1278,7 @@ onUnmounted(() => {
 
 /* 按键 1 - 左键 */
 .mouse-mode .key0 {
-  top: 5px;
+  top: 15px;
   left: -70px;
 }
 
@@ -1118,8 +1293,8 @@ onUnmounted(() => {
 
 /* 按键 2 - 右键 */
 .mouse-mode .key1 {
-  top: 5px;
-  right: -65px;
+  top: 15px;
+  right: -72px;
 }
 
 .mouse-mode .key1:before {
@@ -1133,8 +1308,8 @@ onUnmounted(() => {
 
 /* 按键 3 - 中键 */
 .mouse-mode .key2 {
-  top: 55px;
-  right: -70px;
+  top: 65px;
+  right: -72px;
 }
 
 .mouse-mode .key2:before {
@@ -1148,17 +1323,17 @@ onUnmounted(() => {
 
 /* 按键 4 - 前进 */
 .mouse-mode .key3 {
-  top: 112px;
+  top: 132px;
   left: -70px;
 }
 
 .mouse-mode .key3:before {
   left: 5rem;
-  width: 29px;
+  width: 39px;
 }
 
 .mouse-mode .key3:after {
-  left: calc(5rem + 29px - 4px);
+  left: calc(5rem + 39px - 4px);
 }
 
 /* 按键 5 - 后退 */
@@ -1169,26 +1344,26 @@ onUnmounted(() => {
 
 .mouse-mode .key4:before {
   left: 5rem;
-  width: 29px;
+  width: 39px;
 }
 
 .mouse-mode .key4:after {
-  left: calc(5rem + 29px - 4px);
+  left: calc(5rem + 39px - 4px);
 }
 
 /* 按键 6 - DPI键 */
 .mouse-mode .key5 {
-  top: 105px;
-  right: -70px;
+  top: 125px;
+  right: -72px;
 }
 
 .mouse-mode .key5:before {
   right: 5rem;
-  width: 86px;
+  width: 116px;
 }
 
 .mouse-mode .key5:after {
-  right: calc(5rem + 86px - 4px);
+  right: calc(5rem + 116px - 4px);
 }
 
 .button-settings {
@@ -1235,18 +1410,6 @@ onUnmounted(() => {
 
 .reset-button i {
   margin-right: 0.25rem;
-}
-
-.disabled-notice {
-  padding: 1rem;
-  background-color: var(--bg-tertiary);
-  border-radius: 0.5rem;
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.disabled-notice i {
-  margin-right: 0.5rem;
 }
 
 .settings-form {
@@ -1374,6 +1537,12 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+/* 修饰键按钮样式 */
+.modifier-buttons {
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 400px;
 }
 
 .modifier-checkbox {
