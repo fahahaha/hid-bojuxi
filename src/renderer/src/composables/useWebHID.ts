@@ -1382,85 +1382,132 @@ export function useWebHID() {
   }
 
   /**
-   * 设置宏
+   * 设置宏 (博巨矽协议 M03)
+   * 支持多帧传输，每帧最多 56 字节宏数据
+   * @param macroIndex 宏 ID (0-9)
+   * @param macroData 完整的宏数据 (包含宏长度和循环次数)
    */
   async function setMacro(
     macroIndex: number,
-    macroEvents: number[]
+    macroData: number[]
   ): Promise<{ success: boolean; message: string }> {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查协议是否支持宏功能
-      if (!currentProtocol.value.commands.setMacro) {
-        return { success: false, message: '当前设备不支持宏功能' }
+      // 检查宏索引范围
+      if (macroIndex < 0 || macroIndex > 9) {
+        return { success: false, message: '宏索引超出范围 (0-9)' }
       }
 
-      // 计算宏数据长度
-      const macroDataLength = macroEvents.length
+      // 检查是否为博巨矽协议
+      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
+        // 非博巨矽协议，使用原有逻辑
+        if (!currentProtocol.value.commands.setMacro) {
+          return { success: false, message: '当前设备不支持宏功能' }
+        }
 
-      // 发送创建宏命令序列
-      // 1. 第一个命令: 初始化宏槽位
-      const initCommand = [
-        0x55,
-        0x0d,
-        0x00,
-        0x00,
-        0x38,
-        0x00,
-        0x00,
-        0x00,
-        0x40, // 标记宏槽位
-        0x00,
-        macroDataLength & 0xff, // 宏数据长度低字节
-        (macroDataLength >> 8) & 0xff, // 宏数据长度高字节
-        ...new Array(52).fill(0)
-      ]
-      await sendReport(initCommand)
-      await new Promise((resolve) => setTimeout(resolve, 50))
+        // 发送创建宏命令序列
+        const initCommand = [
+          0x55, 0x0d, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00,
+          0x40, 0x00,
+          macroData.length & 0xff,
+          (macroData.length >> 8) & 0xff,
+          ...new Array(52).fill(0)
+        ]
+        await sendReport(initCommand)
+        await new Promise((resolve) => setTimeout(resolve, 50))
 
-      // 2. 第二个命令: 准备写入宏数据
-      const prepareCommand = [
-        0x55,
-        0x0d,
-        0x00,
-        0x00,
-        0x20, // 命令类型: 写入宏数据
-        0x38,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        ...macroEvents, // 宏事件数据
-        ...new Array(Math.max(0, 48 - macroEvents.length)).fill(0) // 填充到64字节
-      ]
-      await sendReport(prepareCommand)
-      await new Promise((resolve) => setTimeout(resolve, 50))
+        const prepareCommand = [
+          0x55, 0x0d, 0x00, 0x00, 0x20, 0x38, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          ...macroData,
+          ...new Array(Math.max(0, 48 - macroData.length)).fill(0)
+        ]
+        await sendReport(prepareCommand)
+        await new Promise((resolve) => setTimeout(resolve, 50))
 
-      // 3. 第三个命令: 确认保存
-      const confirmCommand = [
-        0x55,
-        0x10,
-        0xa5,
-        0x22,
-        0x00,
-        0x00,
-        0x00,
-        0x05,
-        ...new Array(56).fill(0)
-      ]
-      const success = await sendReport(confirmCommand)
+        const confirmCommand = [
+          0x55, 0x10, 0xa5, 0x22, 0x00, 0x00, 0x00, 0x05,
+          ...new Array(56).fill(0)
+        ]
+        const success = await sendReport(confirmCommand)
 
-      if (!success) return { success: false, message: '发送命令失败' }
+        if (!success) return { success: false, message: '发送命令失败' }
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        return { success: true, message: `宏 ${macroIndex + 1} 已保存` }
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      // 博巨矽协议：多帧传输
+      const FRAME_DATA_SIZE = 56 // 每帧最多 56 字节数据
+      const totalDataLength = macroData.length
+      const totalFrames = Math.ceil(totalDataLength / FRAME_DATA_SIZE)
 
+      console.log(`[宏配置] 开始传输宏 ${macroIndex}, 总数据长度: ${totalDataLength}, 总帧数: ${totalFrames}`)
+
+      for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+        const currentFrame = frameIndex + 1 // 帧序号从 1 开始
+        const dataOffset = frameIndex * FRAME_DATA_SIZE
+        const frameData = macroData.slice(dataOffset, dataOffset + FRAME_DATA_SIZE)
+        const frameDataLength = frameData.length
+
+        // 构建命令包
+        // Byte 0: 包头 0xBA
+        // Byte 1: 连接模式
+        // Byte 2: 命令码 0xA3
+        // Byte 3: 数据长度
+        // Byte 4: macro_id
+        // Byte 5: total_frames
+        // Byte 6: current_frame
+        // Byte 7: frame_data_len
+        // Byte 8~63: macro_data
+        const command: number[] = [
+          0xba, // 包头
+          connectionMode.value === '2.4g' ? 0x8a : 0xff, // 连接模式
+          0xa3, // 命令码
+          4 + frameDataLength, // 数据长度 (4字节头 + 帧数据)
+          macroIndex, // 宏 ID
+          totalFrames, // 总帧数
+          currentFrame, // 当前帧序号
+          frameDataLength, // 本帧数据长度
+          ...frameData // 宏数据
+        ]
+
+        // 填充到 64 字节
+        while (command.length < 64) {
+          command.push(0x00)
+        }
+
+        console.log(
+          `[宏配置] 发送帧 ${currentFrame}/${totalFrames}:`,
+          command.slice(0, 16).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+        )
+
+        // 发送命令并等待 ACK
+        const response = await sendCommandAndWait(command)
+        if (!response) {
+          return { success: false, message: `帧 ${currentFrame} 发送失败或未收到响应` }
+        }
+
+        // 检查响应是否为 NACK
+        if (response[0] === 0x5b) {
+          const errorCode = response[4]
+          console.error(`[宏配置] 帧 ${currentFrame} 收到 NACK，错误码:`, errorCode)
+          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+        }
+
+        // 检查响应是否为正确的 ACK
+        if (response[0] !== 0x5a || response[2] !== 0xa3) {
+          console.error(`[宏配置] 帧 ${currentFrame} 收到无效响应`)
+          return { success: false, message: `帧 ${currentFrame} 收到无效响应` }
+        }
+
+        // 帧间延迟
+        if (frameIndex < totalFrames - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50))
+        }
+      }
+
+      console.log(`[宏配置] 宏 ${macroIndex} 传输完成`)
       return { success: true, message: `宏 ${macroIndex + 1} 已保存` }
     } catch (err: any) {
       console.error('[宏管理] 设置宏失败:', err)
@@ -1469,47 +1516,88 @@ export function useWebHID() {
   }
 
   /**
-   * 删除宏
+   * 删除宏 (博巨矽协议)
+   * 发送空宏（宏长度=4，循环次数=0）
    */
   async function deleteMacro(macroIndex: number): Promise<{ success: boolean; message: string }> {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查协议是否支持宏功能
-      if (!currentProtocol.value.commands.deleteMacro) {
-        return { success: false, message: '当前设备不支持宏功能' }
+      // 检查宏索引范围
+      if (macroIndex < 0 || macroIndex > 9) {
+        return { success: false, message: '宏索引超出范围 (0-9)' }
       }
 
-      // 发送删除宏命令序列
-      // 1. 第一个命令: 初始化
-      const initCommand = [
-        0x55,
-        0x0d,
-        0x00,
-        0x00,
-        0x38,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        ...new Array(55).fill(0)
+      // 检查是否为博巨矽协议
+      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
+        // 非博巨矽协议，使用原有逻辑
+        if (!currentProtocol.value.commands.deleteMacro) {
+          return { success: false, message: '当前设备不支持宏功能' }
+        }
+
+        const initCommand = [
+          0x55, 0x0d, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00,
+          ...new Array(55).fill(0)
+        ]
+        await sendReport(initCommand)
+        await new Promise((resolve) => setTimeout(resolve, 50))
+
+        const prepareCommand = [0x55, 0x0d, 0x00, 0x00, 0x08, 0x38, ...new Array(58).fill(0)]
+        await sendReport(prepareCommand)
+        await new Promise((resolve) => setTimeout(resolve, 50))
+
+        const deleteCommand = currentProtocol.value.commands.deleteMacro(macroIndex)
+        const success = await sendReport(deleteCommand)
+
+        if (!success) return { success: false, message: '发送命令失败' }
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        return { success: true, message: `宏 ${macroIndex + 1} 已删除` }
+      }
+
+      // 博巨矽协议：发送空宏
+      // 空宏检测条件: 宏长度=4 且 循环次数=0
+      const emptyMacroData = [
+        0x04, 0x00, // 宏长度 = 4
+        0x00, 0x00  // 循环次数 = 0
       ]
-      await sendReport(initCommand)
-      await new Promise((resolve) => setTimeout(resolve, 50))
 
-      // 2. 第二个命令: 准备删除
-      const prepareCommand = [0x55, 0x0d, 0x00, 0x00, 0x08, 0x38, ...new Array(58).fill(0)]
-      await sendReport(prepareCommand)
-      await new Promise((resolve) => setTimeout(resolve, 50))
+      // 构建命令包
+      const command: number[] = [
+        0xba, // 包头
+        connectionMode.value === '2.4g' ? 0x8a : 0xff, // 连接模式
+        0xa3, // 命令码
+        0x08, // 数据长度 (4字节头 + 4字节空宏数据)
+        macroIndex, // 宏 ID
+        0x01, // 总帧数 = 1
+        0x01, // 当前帧序号 = 1
+        0x04, // 本帧数据长度 = 4
+        ...emptyMacroData // 空宏数据
+      ]
 
-      // 3. 第三个命令: 删除宏
-      const deleteCommand = currentProtocol.value.commands.deleteMacro(macroIndex)
-      const success = await sendReport(deleteCommand)
+      // 填充到 64 字节
+      while (command.length < 64) {
+        command.push(0x00)
+      }
 
-      if (!success) return { success: false, message: '发送命令失败' }
+      console.log(
+        `[宏配置] 删除宏 ${macroIndex}:`,
+        command.slice(0, 16).map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+      )
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      // 发送命令并等待 ACK
+      const response = await sendCommandAndWait(command)
+      if (!response) {
+        return { success: false, message: '发送命令失败或未收到响应' }
+      }
 
+      // 检查响应是否为 NACK
+      if (response[0] === 0x5b) {
+        const errorCode = response[4]
+        console.error('[宏配置] 删除宏收到 NACK，错误码:', errorCode)
+        return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+      }
+
+      console.log(`[宏配置] 宏 ${macroIndex} 已删除`)
       return { success: true, message: `宏 ${macroIndex + 1} 已删除` }
     } catch (err: any) {
       console.error('[宏管理] 删除宏失败:', err)

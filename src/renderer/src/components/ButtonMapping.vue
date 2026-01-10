@@ -413,6 +413,10 @@
                           <span>{{ t('buttonMapping.macro.binding.loopRelease') }}</span>
                         </label>
                         <label class="radio-label">
+                          <input type="radio" v-model="macroLoopMode" value="toggle" />
+                          <span>{{ t('buttonMapping.macro.binding.loopToggle') }}</span>
+                        </label>
+                        <label class="radio-label">
                           <input type="radio" v-model="macroLoopMode" value="anykey" />
                           <span>{{ t('buttonMapping.macro.binding.loopAnykey') }}</span>
                         </label>
@@ -432,7 +436,7 @@
                         v-model.number="macroLoopCount"
                         class="form-input"
                         min="1"
-                        max="65535"
+                        max="65532"
                         :placeholder="t('buttonMapping.macro.binding.loopCountPlaceholder')"
                       />
                     </div>
@@ -474,7 +478,12 @@ import { useWebHID } from '../composables/useWebHID'
 import { useI18n } from '../composables/useI18n'
 import { useMessageBox } from '../composables/useMessageBox'
 import { useConfirmBox } from '../composables/useConfirmBox'
-import { useMacroStorage, type MacroEvent, type Macro } from '../composables/useMacroStorage'
+import {
+  useMacroStorage,
+  type MacroEvent,
+  type Macro,
+  type MacroLoopMode
+} from '../composables/useMacroStorage'
 import {
   mouseButtons,
   multimediaButtons,
@@ -498,10 +507,12 @@ const {
   macros,
   getMacro,
   addMacro,
+  updateMacro,
   deleteMacro: deleteStoredMacro,
   getNextMacroName,
-  encodeMacroEvents,
-  getScancodeFromKeyName,
+  encodeMacroForDevice,
+  getMacroCodeFromKeyName,
+  validateMacro,
   MAX_MACRO_COUNT
 } = useMacroStorage()
 const { t, ta } = useI18n()
@@ -653,7 +664,7 @@ const modifierAsKeys = [
 
 // 宏相关变量 - 用于绑定到按键
 const selectedMacroIndex = ref<string>('')
-const macroLoopMode = ref<'release' | 'anykey' | 'count'>('release')
+const macroLoopMode = ref<MacroLoopMode>('release')
 const macroLoopCount = ref(1)
 
 // 宏管理相关变量 - 用于编辑宏
@@ -785,10 +796,23 @@ async function applyMacroMapping() {
     return
   }
 
+  // 验证宏数据
+  const validation = validateMacro(macro)
+  if (!validation.valid) {
+    showError(validation.message)
+    return
+  }
+
   // 1. 先将宏数据发送到设备
-  const encodedEvents = encodeMacroEvents(macro.events)
+  // 使用选择的循环模式编码宏数据
+  const { data: encodedMacroData } = encodeMacroForDevice(
+    macro.events,
+    macroLoopMode.value,
+    macroLoopCount.value
+  )
+
   if (isConnected.value) {
-    const result = await setDeviceMacro(macroIndex, encodedEvents)
+    const result = await setDeviceMacro(macroIndex, encodedMacroData)
     if (!result.success) {
       showError(t('buttonMapping.macro.saveError', { message: result.message }))
       return
@@ -796,20 +820,8 @@ async function applyMacroMapping() {
   }
 
   // 2. 构建宏映射代码并绑定到按键
-  // 格式: [0x70, 宏索引, 循环模式/次数低字节, 循环次数高字节]
-  let code: number[]
-
-  if (macroLoopMode.value === 'release') {
-    // 循环直到按键松开: [0x70, macroIndex, 0x02, 0x00]
-    code = [0x70, macroIndex, 0x02, 0x00]
-  } else if (macroLoopMode.value === 'anykey') {
-    // 循环直到任意键按下: [0x70, macroIndex, 0x03, 0x00]
-    code = [0x70, macroIndex, 0x03, 0x00]
-  } else {
-    // 循环指定次数: [0x70, macroIndex, 次数低字节, 次数高字节]
-    const count = Math.min(65535, Math.max(1, macroLoopCount.value))
-    code = [0x70, macroIndex, count & 0xff, (count >> 8) & 0xff]
-  }
+  // 博巨矽协议格式: [0x07, 0x00, 宏ID, 0x00]
+  const code = [0x07, 0x00, macroIndex, 0x00]
 
   const deviceIndex = uiToDeviceIndex[selectedButton.value]
   console.log(
@@ -825,6 +837,8 @@ async function applyMacroMapping() {
   selectedMacroIndex.value = ''
   macroLoopMode.value = 'release'
   macroLoopCount.value = 1
+
+  showSuccess(t('buttonMapping.macro.saveSuccess', { name: macro.name }))
 }
 
 /**
@@ -1012,6 +1026,12 @@ function toggleMacroRecord() {
     // 结束录制
     isRecording.value = false
     console.log('[宏录制] 结束录制，共录制', recordedEvents.value.length, '个事件')
+
+    // 保存宏数据到本地存储
+    if (selectedMacroForEdit.value !== null) {
+      updateMacro(selectedMacroForEdit.value, currentEditingMacro.value)
+      console.log('[宏录制] 已保存宏数据到本地存储')
+    }
   } else {
     // 开始录制
     isRecording.value = true
@@ -1039,6 +1059,11 @@ function removeSelectedMacroEvent() {
   currentEditingMacro.value.events.splice(selectedMacroEventIndex.value, 1)
   recordedEvents.value.splice(selectedMacroEventIndex.value, 1)
   selectedMacroEventIndex.value = null
+
+  // 保存宏数据到本地存储
+  if (selectedMacroForEdit.value !== null) {
+    updateMacro(selectedMacroForEdit.value, currentEditingMacro.value)
+  }
   console.log('[宏管理] 已删除选中事件')
 }
 
@@ -1055,6 +1080,11 @@ async function clearAllMacroEvents() {
   currentEditingMacro.value.events = []
   recordedEvents.value = []
   selectedMacroEventIndex.value = null
+
+  // 保存宏数据到本地存储
+  if (selectedMacroForEdit.value !== null) {
+    updateMacro(selectedMacroForEdit.value, currentEditingMacro.value)
+  }
   console.log('[宏管理] 已清空所有事件')
 }
 
@@ -1074,10 +1104,10 @@ function handleKeyDown(e: KeyboardEvent) {
 
   const now = Date.now()
 
-  // 获取按键扫描码
-  const scancode = getScancodeFromKeyName(e.key)
+  // 获取按键 Macro Code
+  const macroCode = getMacroCodeFromKeyName(e.key)
 
-  if (scancode === 0x00) {
+  if (macroCode === 0x00) {
     console.warn('[宏录制] 未知按键:', e.key)
     return
   }
@@ -1086,7 +1116,7 @@ function handleKeyDown(e: KeyboardEvent) {
   const event: MacroEvent = {
     type: 'keydown',
     key: e.key.length === 1 ? e.key.toUpperCase() : e.key,
-    scancode,
+    macroCode,
     delay: 0
   }
 
@@ -1118,10 +1148,10 @@ function handleKeyUp(e: KeyboardEvent) {
   const now = Date.now()
   const holdDuration = now - pressedKey.startTime // 按键持续时间
 
-  // 获取按键扫描码
-  const scancode = getScancodeFromKeyName(e.key)
+  // 获取按键 Macro Code
+  const macroCode = getMacroCodeFromKeyName(e.key)
 
-  if (scancode === 0x00) {
+  if (macroCode === 0x00) {
     console.warn('[宏录制] 未知按键:', e.key)
     return
   }
@@ -1138,7 +1168,7 @@ function handleKeyUp(e: KeyboardEvent) {
   const event: MacroEvent = {
     type: 'keyup',
     key: e.key.length === 1 ? e.key.toUpperCase() : e.key,
-    scancode,
+    macroCode,
     delay: 0
   }
 

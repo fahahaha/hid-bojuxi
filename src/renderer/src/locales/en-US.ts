@@ -238,9 +238,10 @@ export default {
         selectMacroPlaceholder: '-- Select a macro --',
         loopMode: 'Loop Mode',
         loopRelease: 'Loop until button release',
+        loopToggle: 'Toggle mode (press to start, press again to stop)',
         loopAnykey: 'Loop until any key press',
         loopCount: 'Loop specified times',
-        loopCountLabel: 'Loop Count (1-65535)',
+        loopCountLabel: 'Loop Count (1-65532)',
         loopCountPlaceholder: 'Enter loop count',
         bindToButton: 'Bind to Button {button}'
       }

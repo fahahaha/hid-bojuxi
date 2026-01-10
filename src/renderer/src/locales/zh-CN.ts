@@ -237,9 +237,10 @@ export default {
         selectMacroPlaceholder: '-- 请选择宏 --',
         loopMode: '循环模式',
         loopRelease: '循环直到按键松开',
+        loopToggle: '切换模式（按一次开始，再按停止）',
         loopAnykey: '循环直到任意键按下',
         loopCount: '循环指定次数',
-        loopCountLabel: '循环次数 (1-65535)',
+        loopCountLabel: '循环次数 (1-65532)',
         loopCountPlaceholder: '输入循环次数',
         bindToButton: '绑定到按键 {button}'
       }
