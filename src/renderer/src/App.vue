@@ -13,35 +13,29 @@
 
         <div class="header-right">
           <!-- 连接模式显示 -->
-          <div v-if="isConnected && supportsDualMode" class="connection-mode">
-            <span class="mode-label">{{ t('header.connectionMode.label') }}:</span>
-            <span
-              class="mode-value"
-              :class="connectionMode === 'usb' ? 'mode-usb' : 'mode-wireless'"
-            >
-              <i
-                class="fa"
-                :class="connectionMode === 'usb' ? 'fa-brands fa-usb' : 'fa-solid fa-wifi'"
-              ></i>
+          <div v-if="isConnected && supportsDualMode" class="header-btn connection-mode">
+            <i
+              class="fa"
+              :class="connectionMode === 'usb' ? 'fa-brands fa-usb' : 'fa-solid fa-wifi'"
+            ></i>
+            <span>
               {{
                 connectionMode === 'usb'
                   ? t('header.connectionMode.usb')
                   : t('header.connectionMode.wireless')
               }}
+              {{ t('header.connectionMode.label') }}
             </span>
           </div>
-          <button
-            class="btn-theme"
-            @click="toggleTheme"
-            :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
-          >
+          <button class="header-btn btn-theme" @click="toggleTheme">
             <i
               class="fa"
               :class="theme === 'dark' ? 'fa-regular fa-sun' : 'fa-regular fa-moon'"
             ></i>
+            <span>{{ t('header.theme') }}</span>
           </button>
           <div class="language-selector">
-            <button class="btn-language" @click="toggleLanguageDropdown">
+            <button class="header-btn btn-language" @click="toggleLanguageDropdown">
               <i class="fa fa-language"></i>
               <span>{{ locale === 'zh-CN' ? '中文' : 'English' }}</span>
               <i class="fa fa-chevron-down" :class="{ 'rotate-180': showLanguageDropdown }"></i>
@@ -86,7 +80,7 @@
             </div>
             <div class="status-info">
               <p class="status-label">{{ t('deviceStatus.battery') }}</p>
-              <p class="status-value">{{ deviceStatus.battery }}</p>
+              <p class="status-value">{{ connectionMode === 'usb' ? t('deviceStatus.charging') : deviceStatus.battery }}</p>
             </div>
           </div>
 
@@ -364,42 +358,65 @@ onUnmounted(() => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
-.connection-mode {
+/* 统一的头部按钮样式 */
+.header-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  background-color: var(--bg-secondary);
+  padding: 0.5rem 0.75rem;
+  background-color: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
   font-size: 0.875rem;
-}
-
-.connection-mode .mode-label {
-  color: var(--text-tertiary);
-}
-
-.connection-mode .mode-value {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-secondary);
+  height: 2.25rem;
+  box-sizing: border-box;
 }
 
-.connection-mode .mode-value.mode-usb {
+.header-btn:hover {
+  border-color: var(--color-primary);
   color: var(--color-primary);
+  background-color: var(--bg-hover);
 }
 
-.connection-mode .mode-value.mode-wireless {
-  color: var(--color-success);
+.header-btn i:first-child {
+  font-size: 1rem;
 }
 
-.connection-mode .mode-value i {
-  font-size: 0.875rem;
+/* 连接模式 */
+.connection-mode {
+  cursor: default;
+}
+
+.connection-mode:hover {
+  border-color: var(--border-primary);
+  color: var(--text-secondary);
+  background-color: var(--bg-primary);
+}
+
+/* 主题按钮 */
+.btn-theme i:first-child {
+  transition: transform 0.3s ease;
+}
+
+.btn-theme:hover i:first-child {
+  transform: rotate(20deg);
+}
+
+/* 语言按钮 */
+.btn-language i.fa-chevron-down {
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+
+.btn-language i.fa-chevron-down.rotate-180 {
+  transform: rotate(180deg);
 }
 
 .connection-status {
@@ -429,77 +446,8 @@ onUnmounted(() => {
   margin-right: 0.25rem;
 }
 
-.btn-theme {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1.25rem;
-  color: var(--text-secondary);
-  position: relative;
-}
-
-.btn-theme:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background-color: var(--bg-hover);
-  transform: scale(1.05);
-}
-
-.btn-theme:active {
-  transform: scale(0.95);
-}
-
-.btn-theme i {
-  transition: transform 0.3s ease;
-}
-
-.btn-theme:hover i {
-  transform: rotate(20deg);
-}
-
 .language-selector {
   position: relative;
-}
-
-.btn-language {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.btn-language:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background-color: var(--bg-hover);
-}
-
-.btn-language i.fa-language {
-  font-size: 1rem;
-}
-
-.btn-language i.fa-chevron-down {
-  font-size: 0.75rem;
-  transition: transform 0.2s;
-}
-
-.btn-language i.fa-chevron-down.rotate-180 {
-  transform: rotate(180deg);
 }
 
 .language-dropdown {

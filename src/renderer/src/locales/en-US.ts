@@ -15,6 +15,7 @@ export default {
   header: {
     title: 'Shenzhen BJX Mouse Driver',
     subtitle: 'Mouse supports multiple solutions',
+    theme: 'Theme',
     connectionMode: {
       label: 'Mode',
       usb: 'USB',
@@ -34,6 +35,7 @@ export default {
   },
   deviceStatus: {
     battery: 'Battery',
+    charging: 'Charging',
     reportRate: 'Report Rate',
     dpi: 'Current DPI',
     backlight: 'Backlight Mode'
@@ -304,7 +306,9 @@ export default {
     },
     sleep: {
       title: 'Sleep Timer',
-      description: 'Mouse automatically enters sleep mode after being idle to save power. Set your preferred idle time'
+      description: 'Mouse automatically enters sleep mode after being idle to save power. Set your preferred idle time',
+      seconds: 's',
+      minutes: 'min'
     },
     lod: {
       title: 'LOD (Lift-off Distance)',

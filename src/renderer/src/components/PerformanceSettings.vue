@@ -85,16 +85,51 @@
       </h3>
       <p class="card-description">{{ t('performanceSettings.sleep.description') }}</p>
 
-      <div class="segmented-buttons">
-        <button
-          v-for="time in sleepTimes"
-          :key="time.value"
-          @click="handleSleepTimeChange(time.value)"
-          class="segment-button"
-          :class="{ active: sleepTime === time.value }"
-        >
-          {{ time.label }}
-        </button>
+      <div class="sleep-slider-container">
+        <!-- 当前值显示 -->
+        <div class="sleep-value-display">
+          <span class="sleep-value">{{ formatSleepTime(sleepTime) }}</span>
+        </div>
+
+        <!-- 滑块轨道 -->
+        <div class="sleep-slider-wrapper">
+          <div class="sleep-slider-track">
+            <!-- 进度条填充 -->
+            <div class="sleep-slider-fill" :style="{ width: sleepProgress + '%' }"></div>
+            <!-- 刻度点 -->
+            <div
+              v-for="(time, index) in sleepTimes"
+              :key="time.value"
+              class="sleep-tick"
+              :class="{ active: sleepTimeIndex >= index }"
+              :style="{ left: (index / (sleepTimes.length - 1)) * 100 + '%' }"
+              @click="handleSleepTimeChange(time.value)"
+            ></div>
+          </div>
+          <!-- 滑块 -->
+          <input
+            type="range"
+            class="sleep-slider"
+            :min="0"
+            :max="sleepTimes.length - 1"
+            :value="sleepTimeIndex"
+            @input="handleSleepSliderInput"
+          />
+        </div>
+
+        <!-- 刻度标签 -->
+        <div class="sleep-labels">
+          <span
+            v-for="(time, index) in sleepTimes"
+            :key="time.value"
+            class="sleep-label"
+            :class="{ active: sleepTimeIndex === index }"
+            :style="{ left: (index / (sleepTimes.length - 1)) * 100 + '%' }"
+            @click="handleSleepTimeChange(time.value)"
+          >
+            {{ time.label }}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -311,10 +346,31 @@ const sleepTimes = computed(() => [
   { value: 120, label: '2min' },
   { value: 180, label: '3min' },
   { value: 300, label: '5min' },
+  { value: 600, label: '10min' },
   { value: 1200, label: '20min' },
-  { value: 1500, label: '25min' },
   { value: 1800, label: '30min' }
 ])
+
+// 当前休眠时间在数组中的索引
+const sleepTimeIndex = computed(() => {
+  const index = sleepTimes.value.findIndex((t) => t.value === sleepTime.value)
+  return index >= 0 ? index : 0
+})
+
+// 进度条百分比
+const sleepProgress = computed(() => {
+  return (sleepTimeIndex.value / (sleepTimes.value.length - 1)) * 100
+})
+
+// 格式化休眠时间显示
+function formatSleepTime(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds}${t('performanceSettings.sleep.seconds')}`
+  } else {
+    const minutes = Math.floor(seconds / 60)
+    return `${minutes}${t('performanceSettings.sleep.minutes')}`
+  }
+}
 
 // 模块 D: LOD 静默高度
 const lodHeight = ref(1)
@@ -370,6 +426,14 @@ function handleDebounceChange(value: number) {
 function handleSleepTimeChange(value: number) {
   sleepTime.value = value
   console.log('Sleep Time:', value)
+  // TODO: 发送命令到设备
+}
+
+function handleSleepSliderInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  const index = parseInt(target.value)
+  sleepTime.value = sleepTimes.value[index].value
+  console.log('Sleep Time:', sleepTime.value)
   // TODO: 发送命令到设备
 }
 
@@ -585,6 +649,112 @@ function handleRotationAngleChange() {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
+}
+
+/* 休眠时间滑块样式 */
+.sleep-slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sleep-value-display {
+  text-align: start;
+}
+
+.sleep-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.sleep-slider-wrapper {
+  position: relative;
+  height: 24px;
+  padding: 0 8px;
+}
+
+.sleep-slider-track {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  background-color: var(--bg-tertiary);
+  border-radius: 3px;
+  transform: translateY(-50%);
+}
+
+.sleep-slider-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: var(--color-accent);
+  border-radius: 3px;
+  transition: width 0.15s ease;
+}
+
+.sleep-tick {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background-color: var(--bg-tertiary);
+  border: 2px solid var(--border-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 1;
+}
+
+.sleep-tick:hover {
+  border-color: var(--color-accent);
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
+.sleep-tick.active {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.sleep-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sleep-labels {
+  position: relative;
+  height: 20px;
+  margin: 0 8px;
+}
+
+.sleep-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sleep-label:hover {
+  color: var(--color-accent);
+}
+
+.sleep-label.active {
+  color: var(--color-accent);
+  font-weight: 600;
 }
 
 /* LOD 静默高度样式 */

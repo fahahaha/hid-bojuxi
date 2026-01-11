@@ -15,6 +15,7 @@ export default {
   header: {
     title: '深圳博巨矽鼠标驱动',
     subtitle: '支持多种方案鼠标',
+    theme: '主题',
     connectionMode: {
       label: '连接模式',
       usb: 'USB',
@@ -34,6 +35,7 @@ export default {
   },
   deviceStatus: {
     battery: '电池状态',
+    charging: '充电中',
     reportRate: '当前回报率',
     dpi: '当前DPI',
     backlight: '背光模式'
@@ -301,7 +303,9 @@ export default {
     },
     sleep: {
       title: '休眠时间设置',
-      description: '鼠标在静止一段时间后自动进入休眠，降低功耗。你可自由设定休眠前的等待时长'
+      description: '鼠标在静止一段时间后自动进入休眠，降低功耗。你可自由设定休眠前的等待时长',
+      seconds: '秒',
+      minutes: '分钟'
     },
     lod: {
       title: 'LOD 静默高度',
