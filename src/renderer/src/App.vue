@@ -65,10 +65,10 @@
               </button>
             </div>
           </div>
-          <div class="connection-status">
-            <span class="status-indicator" :class="{ connected: isConnected }"></span>
-            <span>{{ isConnected ? t('common.connected') : t('common.disconnected') }}</span>
-          </div>
+<!--          <div class="connection-status">-->
+<!--            <span class="status-indicator" :class="{ connected: isConnected }"></span>-->
+<!--            <span>{{ isConnected ? t('common.connected') : t('common.disconnected') }}</span>-->
+<!--          </div>-->
           <button @click="handleConnect" class="btn-primary btn-sm">
             <i class="fa fa-plug"></i> {{ t('common.connect') }}
           </button>
@@ -150,7 +150,7 @@
     <!-- 页脚 -->
     <footer class="app-footer">
       <div class="footer-content">
-        <p>{{ t('footer.version') }}</p>
+<!--        <p>{{ t('footer.version') }}</p>-->
         <p class="copyright">{{ t('footer.copyright') }}</p>
       </div>
     </footer>
@@ -218,9 +218,9 @@ const supportsDualMode = computed(() => {
 
 const tabs = computed(() => [
   { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
-  { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb' },
-  { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-keyboard' },
+  { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-computer-mouse' },
   { id: 'performance', label: t('tabs.performance'), icon: 'fa fa-tachometer' },
+  { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb' },
   { id: 'device', label: t('tabs.device'), icon: 'fa fa-info-circle' }
 ])
 

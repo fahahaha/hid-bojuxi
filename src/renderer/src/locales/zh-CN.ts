@@ -13,8 +13,8 @@ export default {
     unsupported: '不支持'
   },
   header: {
-    title: '通用游戏鼠标驱动',
-    subtitle: '支持多种游戏鼠标',
+    title: '深圳博巨矽鼠标驱动',
+    subtitle: '支持多种方案鼠标',
     connectionMode: {
       label: '连接模式',
       usb: 'USB',
@@ -23,7 +23,7 @@ export default {
   },
   footer: {
     version: '通用游戏鼠标驱动程序 v1.0.1',
-    copyright: '© 2026 博巨矽科技有限公司 版权所有'
+    copyright: '© 2026 深圳博巨矽科技有限公司 版权所有'
   },
   tabs: {
     basic: '基础设置',

@@ -338,6 +338,8 @@ export function useWebHID() {
       deviceInfo.value.status = '已连接'
       deviceInfo.value.connectionType = connectionMode.value === 'usb' ? '有线连接' : '2.4G 无线'
 
+      // await getBasicSettings()//同样的命令，板载发送FF获取是哪个板载，存在全局命令，后续全部同步
+
       // 获取设备信息
       await getDeviceInfo()
       await getBattery()

@@ -13,8 +13,8 @@ export default {
     unsupported: 'Not Supported'
   },
   header: {
-    title: 'Universal Gaming Mouse Driver',
-    subtitle: 'Support Multiple Gaming Mice',
+    title: 'Shenzhen BJX Mouse Driver',
+    subtitle: 'Mouse supports multiple solutions',
     connectionMode: {
       label: 'Mode',
       usb: 'USB',
@@ -23,7 +23,7 @@ export default {
   },
   footer: {
     version: 'Universal Gaming Mouse Driver v1.0.1',
-    copyright: '© 2026 Bojuxi Technology Co., Ltd. All Rights Reserved'
+    copyright: '© 2026 ShenZhen Bojuxi Technology Co., Ltd. All Rights Reserved'
   },
   tabs: {
     basic: 'Basic Settings',

@@ -1,8 +1,8 @@
 <template>
   <div class="button-mapping-container">
-    <h3 class="section-title">
-      <i class="fa fa-keyboard"></i>{{ t('buttonMapping.title') }}
-    </h3>
+<!--    <h3 class="section-title">-->
+<!--      <i class="fa fa-keyboard"></i>{{ t('buttonMapping.title') }}-->
+<!--    </h3>-->
     <p class="section-description">{{ t('buttonMapping.description') }}</p>
 
     <div class="mapping-layout">
@@ -1245,7 +1245,7 @@ onUnmounted(() => {
 .mouse-diagram {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
 }
 
