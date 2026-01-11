@@ -1267,29 +1267,38 @@ onUnmounted(() => {
   min-width: 80px;
   padding: 0.25rem 0.5rem;
   user-select: none;
-  border-radius: 0.25rem;
-  border-width: 2px;
-  background-color: rgba(22, 93, 255, 0.2);
+  border-radius: 0.5rem;
+  background-color: var(--bg-primary);
   text-align: center;
-  box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.1),
-    0 1px 2px -1px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.2s;
-  border: none;
-  z-index: 1;
+  border: 1px solid var(--border-primary);
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* 默认颜色变量 */
+  --mouse-key-line: var(--border-primary);
+  --mouse-key-dot: var(--border-primary);
 }
 
 .mouse-mode .mouse-key:hover {
-  background-color: rgba(22, 93, 255, 0.25);
+  border-color: var(--color-primary);
+  background-color: var(--bg-hover);
+  --mouse-key-line: var(--color-primary);
+  --mouse-key-dot: var(--color-primary);
+}
+
+.mouse-mode .mouse-key:hover .button-label {
+  color: var(--color-primary);
 }
 
 .mouse-mode .mouse-key.active {
-  background-color: rgba(22, 93, 255, 0.3);
-  border: 2px solid rgba(22, 93, 255, 0.6);
+  border-color: var(--color-primary);
+  background-color: var(--bg-active);
+  --mouse-key-line: var(--color-primary);
+  --mouse-key-dot: var(--color-primary);
 }
 
 .mouse-mode .mouse-key .button-label {
@@ -1300,16 +1309,20 @@ onUnmounted(() => {
   color: var(--text-primary);
 }
 
+.mouse-mode .mouse-key.active .button-label {
+  color: var(--color-primary);
+}
+
 /* 连接线基础样式 */
 .mouse-mode .mouse-key:before {
   content: '';
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  height: 1px;
-  border-bottom-width: 1px;
-  border-color: rgb(2 132 199);
-  border-bottom-style: solid;
+  height: 0;
+  border-bottom: 2px solid var(--mouse-key-line);
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* 连接线末端小圆圈 */
@@ -1320,9 +1333,10 @@ onUnmounted(() => {
   transform: translateY(-50%);
   width: 8px;
   height: 8px;
-  background-color: rgb(2 132 199);
+  background-color: var(--mouse-key-dot);
   border-radius: 50%;
-  z-index: 2;
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* 按键 1 - 左键 */
@@ -1332,12 +1346,12 @@ onUnmounted(() => {
 }
 
 .mouse-mode .key0:before {
-  left: 5rem;
+  left: 100%;
   width: 86px;
 }
 
 .mouse-mode .key0:after {
-  left: calc(5rem + 86px - 4px);
+  left: calc(100% + 86px - 4px);
 }
 
 /* 按键 2 - 右键 */
@@ -1347,12 +1361,12 @@ onUnmounted(() => {
 }
 
 .mouse-mode .key1:before {
-  right: 5rem;
+  right: 100%;
   width: 86px;
 }
 
 .mouse-mode .key1:after {
-  right: calc(5rem + 86px - 4px);
+  right: calc(100% + 86px - 4px);
 }
 
 /* 按键 3 - 中键 */
@@ -1362,12 +1376,12 @@ onUnmounted(() => {
 }
 
 .mouse-mode .key2:before {
-  right: 5rem;
+  right: 100%;
   width: 118px;
 }
 
 .mouse-mode .key2:after {
-  right: calc(5rem + 118px - 4px);
+  right: calc(100% + 118px - 4px);
 }
 
 /* 按键 4 - 前进 */
@@ -1377,12 +1391,12 @@ onUnmounted(() => {
 }
 
 .mouse-mode .key3:before {
-  left: 5rem;
+  left: 100%;
   width: 39px;
 }
 
 .mouse-mode .key3:after {
-  left: calc(5rem + 39px - 4px);
+  left: calc(100% + 39px - 4px);
 }
 
 /* 按键 5 - 后退 */
@@ -1392,12 +1406,12 @@ onUnmounted(() => {
 }
 
 .mouse-mode .key4:before {
-  left: 5rem;
+  left: 100%;
   width: 39px;
 }
 
 .mouse-mode .key4:after {
-  left: calc(5rem + 39px - 4px);
+  left: calc(100% + 39px - 4px);
 }
 
 /* 按键 6 - DPI键 */
@@ -1407,12 +1421,12 @@ onUnmounted(() => {
 }
 
 .mouse-mode .key5:before {
-  right: 5rem;
+  right: 100%;
   width: 116px;
 }
 
 .mouse-mode .key5:after {
-  right: calc(5rem + 116px - 4px);
+  right: calc(100% + 116px - 4px);
 }
 
 .button-settings {
