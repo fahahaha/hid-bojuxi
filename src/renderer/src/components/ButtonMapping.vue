@@ -473,7 +473,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 import { useI18n } from '../composables/useI18n'
 import { useMessageBox } from '../composables/useMessageBox'
@@ -672,7 +672,7 @@ const selectedMacroForEdit = ref<number | null>(null)
 const currentEditingMacro = ref<Macro>({
   name: '',
   events: [],
-  loopMode: 'once',
+  loopMode: 'release',
   loopCount: 1
 })
 const isRecording = ref(false)
@@ -684,6 +684,18 @@ const selectedMacroEventIndex = ref<number | null>(null)
 // 可用的宏列表 (只显示有事件的宏)
 const availableMacros = computed(() => {
   return macros.value.filter((macro) => macro.events.length > 0)
+})
+
+// 监听宏选择变化，自动回显循环模式
+watch(selectedMacroIndex, (newIndex) => {
+  if (newIndex !== '') {
+    const macroIndex = parseInt(newIndex)
+    const macro = availableMacros.value[macroIndex]
+    if (macro) {
+      macroLoopMode.value = macro.loopMode
+      macroLoopCount.value = macro.loopCount
+    }
+  }
 })
 
 /**
@@ -955,7 +967,7 @@ function createNewMacro() {
   const newMacroData: Macro = {
     name: newMacroName,
     events: [],
-    loopMode: 'once',
+    loopMode: 'release',
     loopCount: 1
   }
 
@@ -1008,7 +1020,7 @@ async function deleteSelectedMacro() {
       currentEditingMacro.value = {
         name: '',
         events: [],
-        loopMode: 'once',
+        loopMode: 'release',
         loopCount: 1
       }
     }

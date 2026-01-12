@@ -23,13 +23,12 @@ export interface MacroEvent {
 
 /**
  * 循环模式
- * - 'once': 执行一次
  * - 'release': 循环直到按键松开 (0xFFFF)
  * - 'toggle': 切换模式，第一次按下开始循环，第二次按下停止 (0xFFFE)
  * - 'anykey': 循环直到任意键按下 (0xFFFD)
- * - 'count': 循环指定次数 (0x0000~0xFFFC)
+ * - 'count': 循环指定次数 (0x0001~0xFFFC)
  */
-export type MacroLoopMode = 'once' | 'release' | 'toggle' | 'anykey' | 'count'
+export type MacroLoopMode = 'release' | 'toggle' | 'anykey' | 'count'
 
 /**
  * 宏接口
@@ -247,7 +246,6 @@ export const MACRO_CODE_TO_NAME: Record<number, string> = Object.entries(MACRO_C
  * 循环模式到协议值的映射
  */
 export const LOOP_MODE_TO_VALUE: Record<MacroLoopMode, number | null> = {
-  once: 1, // 执行1次
   release: 0xffff, // 按住循环，松开停止
   toggle: 0xfffe, // 切换模式
   anykey: 0xfffd, // 循环至任意键按下
@@ -460,7 +458,7 @@ export function useMacroStorage() {
    * @deprecated 请使用 encodeMacroForDevice
    */
   function encodeMacroEvents(events: MacroEvent[]): number[] {
-    const result = encodeMacroForDevice(events, 'once', 1)
+    const result = encodeMacroForDevice(events, "release", 1)
     return result.data
   }
 
