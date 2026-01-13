@@ -1,13 +1,15 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, screen } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/bojuxi.png?asset'
 
 function createWindow(): void {
+  const { height } = screen.getPrimaryDisplay().workAreaSize
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1380,
+    height,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -84,6 +86,8 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
+    // const { height } = screen.getPrimaryDisplay().workAreaSize
+    // mainWindow.setSize(1000, height)
     mainWindow.show()
   })
 
