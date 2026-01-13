@@ -13,7 +13,7 @@ asarUnpack:
   - resources/**
 win:
   executableName: webhid-bojuxi
-  icon: resources/icon.png
+  icon: resources/bojuxi.png
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -28,7 +28,7 @@ nsis:
   runAfterFinish: true # 安装完后可选"启动应用"
 mac:
   entitlementsInherit: build/entitlements.mac.plist
-  icon: resources/icon.png
+  icon: resources/bojuxi.png
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
@@ -44,7 +44,7 @@ linux:
     - deb
   maintainer: electronjs.org
   category: Utility
-  icon: resources/icon.png
+  icon: resources/bojuxi.png
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false

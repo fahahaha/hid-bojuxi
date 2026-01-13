@@ -5,7 +5,7 @@
       <div class="header-content">
         <div class="header-left">
           <div class="logo-icon">
-            <i class="fa fa-mouse-pointer"></i>
+<!--            <i class="fa fa-mouse-pointer"></i>-->
           </div>
           <h1 class="app-title">{{ t('header.title') }}</h1>
           <span class="app-subtitle">{{ t('header.subtitle') }}</span>
@@ -327,13 +327,18 @@ onUnmounted(() => {
 .logo-icon {
   width: 2.5rem;
   height: 2.5rem;
-  background-color: var(--color-primary);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 1.25rem;
+
+  background-image: url('./assets/bojuxi.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: relative;
 }
 
 .app-title {
