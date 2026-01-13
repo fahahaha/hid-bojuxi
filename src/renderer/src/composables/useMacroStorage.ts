@@ -300,7 +300,7 @@ export function useMacroStorage() {
    */
   function getMacro(index: number): Macro | null {
     if (index < 0 || index >= macros.value.length) {
-      console.error('[宏存储] 宏索引超出范围:', index)
+      // console.error('[宏存储] 宏索引超出范围:', index)
       return null
     }
     return macros.value[index]
