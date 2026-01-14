@@ -1614,6 +1614,75 @@ export function useWebHID() {
     return currentProtocol.value
   }
 
+  /**
+   * 恢复出厂设置 (博巨矽协议 M07)
+   * 命令码: 0xA7
+   */
+  async function factoryReset(): Promise<{ success: boolean; message: string }> {
+    if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
+
+    try {
+      // 检查是否为博巨矽协议
+      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
+        return { success: false, message: '当前设备不支持此功能' }
+      }
+
+      // 检查协议是否有 factoryReset 命令
+      if (!currentProtocol.value.commands.factoryReset) {
+        return { success: false, message: '当前设备不支持恢复出厂设置' }
+      }
+
+      // 构建并发送 A7 命令
+      const command = resolveCommand(
+        currentProtocol.value.commands.factoryReset,
+        connectionMode.value
+      )
+      console.log(
+        '[恢复出厂设置] 发送 A7 命令:',
+        command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+      )
+
+      // 使用较长的超时时间（Flash 擦除可能需要较长时间）
+      const response = await sendCommandAndWait(command)
+      if (!response) {
+        return { success: false, message: '发送命令失败或未收到响应' }
+      }
+
+      // 检查响应是否为 NACK
+      if (response[0] === 0x5b) {
+        const errorCode = response[4]
+        console.error('[恢复出厂设置] 收到 NACK，错误码:', errorCode)
+        return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+      }
+
+      // 检查响应是否为正确的 ACK
+      if (response[0] !== 0x5a || response[2] !== 0xa7) {
+        console.error('[恢复出厂设置] 收到无效响应')
+        return { success: false, message: '收到无效响应' }
+      }
+
+      // 检查状态码
+      const status = response[4]
+      if (status !== 0x00) {
+        console.error('[恢复出厂设置] 执行失败，状态码:', status)
+        return { success: false, message: `执行失败，状态码: ${status}` }
+      }
+
+      console.log('[恢复出厂设置] 执行成功')
+
+      // 清除缓存的基础设置
+      cachedBasicSettings = null
+
+      // 重新获取基础设置以同步 UI
+      await getBasicSettings()
+
+      return { success: true, message: '已恢复出厂设置' }
+    } catch (err: any) {
+      console.error('[恢复出厂设置] 失败:', err)
+      return { success: false, message: '恢复出厂设置失败' }
+    }
+  }
+
   return {
     isConnected: computed(() => isConnected.value),
     deviceInfo: computed(() => deviceInfo.value),
@@ -1642,6 +1711,7 @@ export function useWebHID() {
     getMacroList,
     getMacroData,
     setMacro,
-    deleteMacro
+    deleteMacro,
+    factoryReset
   }
 }

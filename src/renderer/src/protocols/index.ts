@@ -75,6 +75,8 @@ export interface DeviceProtocol {
     ) => number[]
     /** 删除宏 */
     deleteMacro?: (macroIndex: number, connectionMode?: ConnectionMode) => number[]
+    /** 恢复出厂设置 */
+    factoryReset?: number[] | ((connectionMode: ConnectionMode) => number[])
   }
 
   /** 响应解析器 */

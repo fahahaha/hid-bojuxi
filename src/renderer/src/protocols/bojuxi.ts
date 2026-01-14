@@ -518,7 +518,20 @@ export const bojuxiProtocol: DeviceProtocol = {
       // 发送空宏（宏长度=4，循环次数=0）
       console.log('[Bojuxi] deleteMacro:', macroIndex)
       return []
-    }
+    },
+
+    /**
+     * 恢复出厂设置 (M07)
+     * 命令码: 0xA7
+     * @param mode 连接模式
+     */
+    factoryReset: (mode: ConnectionMode = 'usb') =>
+      createPacket([
+        PACKET_HEADER.SEND,
+        getConnectionModeByte(mode),
+        COMMAND_CODE.FACTORY_RESET,
+        0x00 // 无数据
+      ])
   },
 
   parsers: {

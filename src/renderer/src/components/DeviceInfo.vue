@@ -99,9 +99,9 @@ import { useI18n } from '../composables/useI18n'
 import { useMessageBox } from '../composables/useMessageBox'
 import { useConfirmBox } from '../composables/useConfirmBox'
 
-const { deviceInfo, deviceStatus } = useWebHID()
+const { deviceInfo, deviceStatus, factoryReset, getBasicSettings } = useWebHID()
 const { t } = useI18n()
-const { info: showInfo, success: showSuccess } = useMessageBox()
+const { info: showInfo, success: showSuccess, error: showError } = useMessageBox()
 const { confirm: showConfirm } = useConfirmBox()
 
 const batteryPercent = computed(() => deviceStatus.value.battery)
@@ -124,6 +124,8 @@ function checkUpdate() {
   showInfo(t('deviceInfo.battery.checkingUpdate'))
 }
 
+const MACRO_STORAGE_KEY = 'mouse_macros'
+
 async function restoreDefaults() {
   const confirmed = await showConfirm(t('deviceInfo.battery.restoreConfirm'), {
     type: 'warning',
@@ -132,9 +134,25 @@ async function restoreDefaults() {
   })
   if (confirmed) {
     showInfo(t('deviceInfo.battery.restoring'))
-    setTimeout(() => {
+
+    const result = await factoryReset()
+
+    if (result.success) {
+      // 清除本地宏缓存
+      try {
+        localStorage.removeItem(MACRO_STORAGE_KEY)
+        console.log('[恢复出厂设置] 已清除本地宏缓存')
+      } catch (err) {
+        console.error('[恢复出厂设置] 清除宏缓存失败:', err)
+      }
+
+      // 重新获取基础设置
+      await getBasicSettings()
+
       showSuccess(t('deviceInfo.battery.restoreSuccess'))
-    }, 2000)
+    } else {
+      showError(result.message)
+    }
   }
 }
 </script>
