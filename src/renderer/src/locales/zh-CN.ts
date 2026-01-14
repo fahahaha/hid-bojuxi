@@ -28,6 +28,7 @@ export default {
   },
   tabs: {
     basic: '基础设置',
+    dpi: 'DPI设置',
     backlight: '背光设置',
     buttons: '改键设置',
     performance: '性能设置',

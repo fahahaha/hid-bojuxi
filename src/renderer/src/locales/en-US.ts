@@ -28,6 +28,7 @@ export default {
   },
   tabs: {
     basic: 'Basic Settings',
+    dpi: 'DPI Settings',
     backlight: 'Backlight',
     buttons: 'Button Mapping',
     performance: 'Performance',

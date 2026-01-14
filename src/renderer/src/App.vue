@@ -134,6 +134,7 @@
       <!-- 标签页内容 -->
       <div class="tab-contents">
         <BasicSettings v-if="activeTab === 'basic'" />
+        <DpiSettings v-if="activeTab === 'dpi'" />
         <BacklightSettings v-if="activeTab === 'backlight'" />
         <ButtonMapping v-if="activeTab === 'buttons'" />
         <PerformanceSettings v-if="activeTab === 'performance'" />
@@ -183,6 +184,7 @@ import { useWebHID } from './composables/useWebHID'
 import { useI18n } from './composables/useI18n'
 import { useTheme } from './composables/useTheme'
 import BasicSettings from './components/BasicSettings.vue'
+import DpiSettings from './components/DpiSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
 import PerformanceSettings from './components/PerformanceSettings.vue'
@@ -212,8 +214,9 @@ const supportsDualMode = computed(() => {
 
 const tabs = computed(() => [
   { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
+  { id: 'dpi', label: t('tabs.dpi'), icon: 'fa fa-tachometer' },
   { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-computer-mouse' },
-  { id: 'performance', label: t('tabs.performance'), icon: 'fa fa-tachometer' },
+  { id: 'performance', label: t('tabs.performance'), icon: 'fa fa-gauge-high' },
   { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb' },
   { id: 'device', label: t('tabs.device'), icon: 'fa fa-info-circle' }
 ])
