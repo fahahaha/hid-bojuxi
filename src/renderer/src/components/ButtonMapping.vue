@@ -20,6 +20,11 @@
             <span class="button-label">{{ getButtonLabel(index) }}</span>
           </button>
         </div>
+        <!-- 重置所有按键按钮 -->
+        <button @click="resetAllButtons" class="reset-all-button">
+          <i class="fa fa-refresh"></i>
+          {{ t('buttonMapping.resetAll') }}
+        </button>
       </div>
 
       <!-- 按键功能设置 -->
@@ -534,13 +539,6 @@
       </div>
     </div>
 
-    <!-- 重置所有按键按钮 -->
-    <div class="reset-all-container">
-      <button @click="resetAllButtons" class="reset-all-button">
-        <i class="fa fa-refresh"></i>
-        {{ t('buttonMapping.resetAll') }}
-      </button>
-    </div>
   </div>
 </template>
 
@@ -1750,9 +1748,9 @@ onUnmounted(() => {
 
 .mouse-diagram {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   position: relative;
+  flex-direction: column;
 }
 
 .mouse-body {
@@ -2203,17 +2201,12 @@ onUnmounted(() => {
 }
 
 /* 重置所有按键按钮 */
-.reset-all-container {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: center;
-}
-
-.reset-all-button {
-  padding: 0.75rem 2rem;
-  background-color: var(--bg-primary);
-  color: var(--color-danger);
-  border: 2px solid var(--color-danger);
+.mouse-diagram .reset-all-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -2221,12 +2214,11 @@ onUnmounted(() => {
   font-weight: 500;
 }
 
-.reset-all-button:hover {
-  background-color: var(--color-danger);
-  color: var(--bg-primary);
+.mouse-diagram .reset-all-button:hover {
+  background-color: #1557cc;
 }
 
-.reset-all-button i {
+.mouse-diagram .reset-all-button i {
   margin-right: 0.5rem;
 }
 
