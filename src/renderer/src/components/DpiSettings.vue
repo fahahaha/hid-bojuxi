@@ -7,7 +7,7 @@
       </h3>
       <p class="card-description">
         {{ t('basicSettings.dpi.description') }}
-        <span v-if="dpiLevels.length > 0" class="dpi-count">
+        <span class="dpi-count">
           {{ t('basicSettings.dpi.totalLevels', { count: String(dpiLevels.length) }) }}
         </span>
       </p>
@@ -37,6 +37,7 @@
             :key="index"
             class="dpi-level-item"
             :class="{ active: currentDpiLevel === index }"
+            @click="handleSwitchDpiLevel(index)"
           >
             <div class="level-header">
               <div class="level-info">
@@ -46,14 +47,9 @@
                 <span class="level-label">{{ t('basicSettings.dpi.levelLabel', { level: String(index + 1) }) }}</span>
                 <span v-if="currentDpiLevel === index" class="current-badge">{{ t('basicSettings.dpi.currentBadge') }}</span>
               </div>
-              <button
-                class="switch-btn"
-                :class="{ active: currentDpiLevel === index }"
-                @click="handleSwitchDpiLevel(index)"
-                :disabled="currentDpiLevel === index"
-              >
+              <span class="switch-indicator" :class="{ active: currentDpiLevel === index }">
                 {{ currentDpiLevel === index ? t('basicSettings.dpi.selected') : t('basicSettings.dpi.switchLevel') }}
-              </button>
+              </span>
             </div>
 
             <div class="level-content">
@@ -62,7 +58,7 @@
                 <span class="dpi-unit">DPI</span>
               </div>
 
-              <div class="slider-container">
+              <div class="slider-container" @click.stop>
                 <input
                   type="range"
                   class="dpi-slider"
@@ -102,8 +98,14 @@ const dpiStep = 50
 // 本地 DPI 值（用于滑动条实时显示）
 const localDpiValues = reactive<Record<number, number>>({})
 
-// DPI 档位列表
-const dpiLevels = computed(() => deviceStatus.value.dpiLevels || [])
+// 固定档位数量
+const DPI_LEVEL_COUNT = 7
+
+// DPI 档位列表（固定7档，从设备获取值或使用默认值800）
+const dpiLevels = computed(() => {
+  const deviceLevels = deviceStatus.value.dpiLevels || []
+  return Array.from({ length: DPI_LEVEL_COUNT }, (_, i) => deviceLevels[i] || 800)
+})
 
 // 当前 DPI 档位
 const currentDpiLevel = computed(() => deviceStatus.value.dpiLevel || 0)
@@ -270,6 +272,7 @@ async function handleDpiSliderChange(levelIndex: number, event: Event) {
   border-radius: 0.75rem;
   padding: 1rem;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .dpi-level-item:hover {
@@ -327,31 +330,20 @@ async function handleDpiSliderChange(levelIndex: number, event: Event) {
   font-weight: 500;
 }
 
-.switch-btn {
+.switch-indicator {
   padding: 0.375rem 0.75rem;
   font-size: 0.75rem;
   border-radius: 0.375rem;
   border: 1px solid var(--border-primary);
   background-color: var(--bg-primary);
   color: var(--text-secondary);
-  cursor: pointer;
   transition: all 0.2s;
 }
 
-.switch-btn:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.switch-btn.active {
+.switch-indicator.active {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
-  cursor: default;
-}
-
-.switch-btn:disabled {
-  opacity: 0.7;
 }
 
 .level-content {
