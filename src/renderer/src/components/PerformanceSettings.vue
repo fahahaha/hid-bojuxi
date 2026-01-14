@@ -58,28 +58,107 @@
       </div>
     </div>
 
-    <!-- 模块 B: 按键防抖延迟 -->
-    <div class="settings-card">
-      <h3 class="card-title">
-        <i class="fa-solid fa-hand-pointer icon-secondary"></i>{{ t('performanceSettings.debounce.title') }}
-      </h3>
-      <p class="card-description">{{ t('performanceSettings.debounce.description') }}</p>
+    <!-- 模块 B: LOD静默高度 + 按键防抖延迟 -->
+    <div class="combined-card">
+      <div class="settings-card">
+        <!-- LOD 静默高度 -->
+        <div class="combined-section">
+          <h3 class="card-title">
+            <i class="fa fa-arrows-v icon-warning"></i>{{ t('performanceSettings.lod.title') }}
+          </h3>
+          <p class="card-description">{{ t('performanceSettings.lod.description') }}</p>
 
-      <div class="segmented-buttons">
-        <button
-          v-for="delay in debounceDelays"
-          :key="delay.value"
-          @click="handleDebounceChange(delay.value)"
-          class="segment-button"
-          :class="{ active: debounceDelay === delay.value }"
-        >
-          {{ delay.label }}
-        </button>
+          <div class="lod-content">
+            <div class="lod-buttons">
+              <button
+                class="lod-button"
+                :class="{ active: lodHeight === 1 }"
+                @click="handleLodChange(1)"
+              >
+                1mm
+              </button>
+              <button
+                class="lod-button"
+                :class="{ active: lodHeight === 2 }"
+                @click="handleLodChange(2)"
+              >
+                2mm
+              </button>
+            </div>
+
+            <div class="lod-illustration">
+              <svg viewBox="0 0 140 70" class="lod-svg">
+                <path
+                  d="M 25 45 Q 25 20 50 15 Q 80 12 100 20 Q 115 28 115 45 L 115 48 Q 115 52 100 52 L 30 52 Q 25 52 25 48 Z"
+                  fill="var(--bg-tertiary)"
+                  stroke="var(--text-secondary)"
+                  stroke-width="2"
+                />
+                <path
+                  d="M 30 45 Q 30 25 55 18 Q 75 15 90 20"
+                  fill="none"
+                  stroke="var(--text-tertiary)"
+                  stroke-width="1"
+                />
+                <circle cx="70" cy="52" r="3" fill="var(--color-primary)" class="sensor-glow" />
+                <line
+                  x1="70"
+                  y1="55"
+                  x2="70"
+                  :y2="lodHeight === 1 ? 60 : 65"
+                  stroke="var(--color-primary)"
+                  stroke-width="2"
+                  stroke-dasharray="3,2"
+                  class="lod-line"
+                />
+                <g class="lod-marker">
+                  <line x1="125" y1="55" x2="125" :y2="lodHeight === 1 ? 60 : 65" stroke="var(--color-primary)" stroke-width="1" />
+                  <line x1="122" y1="55" x2="128" y2="55" stroke="var(--color-primary)" stroke-width="1" />
+                  <line x1="122" :y1="lodHeight === 1 ? 60 : 65" x2="128" :y2="lodHeight === 1 ? 60 : 65" stroke="var(--color-primary)" stroke-width="1" />
+                  <text x="132" :y="lodHeight === 1 ? 59 : 62" class="lod-text-right">{{ lodHeight }}mm</text>
+                </g>
+                <line
+                  x1="10"
+                  :y1="lodHeight === 1 ? 60 : 65"
+                  x2="120"
+                  :y2="lodHeight === 1 ? 60 : 65"
+                  stroke="var(--text-secondary)"
+                  stroke-width="2"
+                />
+                <line x1="15" :y1="lodHeight === 1 ? 63 : 68" x2="30" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
+                <line x1="40" :y1="lodHeight === 1 ? 63 : 68" x2="65" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
+                <line x1="75" :y1="lodHeight === 1 ? 63 : 68" x2="95" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
+                <line x1="105" :y1="lodHeight === 1 ? 63 : 68" x2="115" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-card">
+        <!-- 按键防抖延迟 -->
+        <div class="combined-section">
+          <h3 class="card-title">
+            <i class="fa-solid fa-hand-pointer icon-secondary"></i>{{ t('performanceSettings.debounce.title') }}
+          </h3>
+          <p class="card-description">{{ t('performanceSettings.debounce.description') }}</p>
+
+          <div class="segmented-buttons">
+            <button
+              v-for="delay in debounceDelays"
+              :key="delay.value"
+              @click="handleDebounceChange(delay.value)"
+              class="segment-button"
+              :class="{ active: debounceDelay === delay.value }"
+            >
+              {{ delay.label }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- 模块 C: 休眠时间设置 -->
-    <div class="settings-card">
+    <div class="settings-card sleep-card">
       <h3 class="card-title">
         <i class="fa-solid fa-moon icon-accent"></i>{{ t('performanceSettings.sleep.title') }}
       </h3>
@@ -133,94 +212,7 @@
       </div>
     </div>
 
-    <!-- 模块 D: LOD 静默高度 -->
-    <div class="settings-card">
-      <h3 class="card-title">
-        <i class="fa fa-arrows-v icon-warning"></i>{{ t('performanceSettings.lod.title') }}
-      </h3>
-      <p class="card-description">{{ t('performanceSettings.lod.description') }}</p>
-
-      <div class="lod-content">
-        <!-- LOD 按钮选择 -->
-        <div class="lod-buttons">
-          <button
-            class="lod-button"
-            :class="{ active: lodHeight === 1 }"
-            @click="handleLodChange(1)"
-          >
-            1mm
-          </button>
-          <button
-            class="lod-button"
-            :class="{ active: lodHeight === 2 }"
-            @click="handleLodChange(2)"
-          >
-            2mm
-          </button>
-        </div>
-
-        <!-- 鼠标示意图（侧面图） -->
-        <div class="lod-illustration">
-          <svg viewBox="0 0 140 70" class="lod-svg">
-            <!-- 鼠标侧面轮廓 -->
-            <path
-              d="M 25 45 Q 25 20 50 15 Q 80 12 100 20 Q 115 28 115 45 L 115 48 Q 115 52 100 52 L 30 52 Q 25 52 25 48 Z"
-              fill="var(--bg-tertiary)"
-              stroke="var(--text-secondary)"
-              stroke-width="2"
-            />
-            <!-- 鼠标按键区域（顶部弧线） -->
-            <path
-              d="M 30 45 Q 30 25 55 18 Q 75 15 90 20"
-              fill="none"
-              stroke="var(--text-tertiary)"
-              stroke-width="1"
-            />
-            <!-- 传感器位置（底部发光点） -->
-            <circle cx="70" cy="52" r="3" fill="var(--color-primary)" class="sensor-glow" />
-
-            <!-- LOD 虚线（鼠标底部到地面） -->
-            <line
-              x1="70"
-              y1="55"
-              x2="70"
-              :y2="lodHeight === 1 ? 60 : 65"
-              stroke="var(--color-primary)"
-              stroke-width="2"
-              stroke-dasharray="3,2"
-              class="lod-line"
-            />
-
-            <!-- LOD 高度标注 -->
-            <g class="lod-marker">
-              <!-- 右侧标注线 -->
-              <line x1="125" y1="55" x2="125" :y2="lodHeight === 1 ? 60 : 65" stroke="var(--color-primary)" stroke-width="1" />
-              <line x1="122" y1="55" x2="128" y2="55" stroke="var(--color-primary)" stroke-width="1" />
-              <line x1="122" :y1="lodHeight === 1 ? 60 : 65" x2="128" :y2="lodHeight === 1 ? 60 : 65" stroke="var(--color-primary)" stroke-width="1" />
-              <!-- 高度文字 -->
-              <text x="132" :y="lodHeight === 1 ? 59 : 62" class="lod-text-right">{{ lodHeight }}mm</text>
-            </g>
-
-            <!-- 地面线 -->
-            <line
-              x1="10"
-              :y1="lodHeight === 1 ? 60 : 65"
-              x2="120"
-              :y2="lodHeight === 1 ? 60 : 65"
-              stroke="var(--text-secondary)"
-              stroke-width="2"
-            />
-            <!-- 地面纹理 -->
-            <line x1="15" :y1="lodHeight === 1 ? 63 : 68" x2="30" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
-            <line x1="40" :y1="lodHeight === 1 ? 63 : 68" x2="65" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
-            <line x1="75" :y1="lodHeight === 1 ? 63 : 68" x2="95" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
-            <line x1="105" :y1="lodHeight === 1 ? 63 : 68" x2="115" :y2="lodHeight === 1 ? 63 : 68" stroke="var(--text-tertiary)" stroke-width="1" opacity="0.4" />
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- 模块 E: 传感器旋转 -->
+    <!-- 模块 D: 传感器旋转 -->
     <div class="settings-card sensor-rotation-card">
       <h3 class="card-title">
         <i class="fa fa-compass icon-primary"></i>{{ t('performanceSettings.sensorRotation.title') }}
@@ -497,6 +489,30 @@ function handleRotationAngleChange() {
   grid-column: 1 / -1;
 }
 
+.settings-card.sleep-card {
+  grid-column: 1 / -1;
+}
+
+/* 合并卡片样式 */
+.combined-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+.combined-card .settings-card{
+  flex: 1;
+}
+.combined-section {
+  flex: 1;
+}
+
+.combined-divider {
+  height: 1px;
+  background-color: var(--border-primary);
+  margin: 1rem 0;
+}
+
 .card-title {
   font-size: 1.125rem;
   font-weight: 600;
@@ -656,6 +672,7 @@ function handleRotationAngleChange() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 80%;
 }
 
 .sleep-value-display {
