@@ -31,6 +31,7 @@ export default {
     dpi: 'DPI Settings',
     backlight: 'Backlight',
     buttons: 'Button Mapping',
+    macro: 'Macro',
     performance: 'Performance',
     device: 'Device Info'
   },
@@ -332,5 +333,8 @@ export default {
       enable: 'Enable Sensor Rotation',
       enableDesc: 'When enabled, adjust sensor angle to match your grip style'
     }
+  },
+  macroManagement: {
+    description: 'Create and manage macros, record key sequences and set loop modes'
   }
 }

@@ -137,6 +137,7 @@
         <DpiSettings v-if="activeTab === 'dpi'" />
         <BacklightSettings v-if="activeTab === 'backlight'" />
         <ButtonMapping v-if="activeTab === 'buttons'" />
+        <MacroManagement v-if="activeTab === 'macro'" />
         <PerformanceSettings v-if="activeTab === 'performance'" />
         <DeviceInfo v-if="activeTab === 'device'" />
       </div>
@@ -187,6 +188,7 @@ import BasicSettings from './components/BasicSettings.vue'
 import DpiSettings from './components/DpiSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
 import ButtonMapping from './components/ButtonMapping.vue'
+import MacroManagement from './components/MacroManagement.vue'
 import PerformanceSettings from './components/PerformanceSettings.vue'
 import DeviceInfo from './components/DeviceInfo.vue'
 import MessageBox from './components/MessageBox.vue'
@@ -216,6 +218,7 @@ const tabs = computed(() => [
   { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
   { id: 'dpi', label: t('tabs.dpi'), icon: 'fa fa-tachometer' },
   { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-computer-mouse' },
+  { id: 'macro', label: t('tabs.macro'), icon: 'fa fa-code' },
   { id: 'performance', label: t('tabs.performance'), icon: 'fa fa-gauge-high' },
   { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb' },
   { id: 'device', label: t('tabs.device'), icon: 'fa fa-info-circle' }

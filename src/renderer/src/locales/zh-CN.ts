@@ -31,6 +31,7 @@ export default {
     dpi: 'DPI设置',
     backlight: '背光设置',
     buttons: '改键设置',
+    macro: '宏管理',
     performance: '性能设置',
     device: '设备信息'
   },
@@ -329,5 +330,8 @@ export default {
       enable: '启用传感器旋转',
       enableDesc: '开启后可调整传感器角度以适应您的握持方式'
     }
+  },
+  macroManagement: {
+    description: '创建和管理宏，录制按键序列并设置循环模式'
   }
 }
