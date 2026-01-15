@@ -182,10 +182,9 @@ export function useWebHID() {
         }
 
         // 过滤有效响应包头:
-        // - YHH 协议: 0xAA
         // - 博巨矽协议: 0x5A (ACK) 或 0x5B (NACK)
         // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
-        const validHeaders = [0xaa, 0x5a, 0x5b]
+        const validHeaders = [0x5a, 0x5b]
         if (!validHeaders.includes(data[0])) {
           // 忽略无效响应，继续等待正确的响应
           return
@@ -248,6 +247,10 @@ export function useWebHID() {
   async function tryGetDeviceInfo(testDevice: HIDDevice): Promise<boolean> {
     try {
       const protocol = detectProtocol(testDevice)
+      if (!protocol) {
+        console.log(`[设备验证] 未找到匹配的协议: ${testDevice.productName || '未知设备'}`)
+        return false
+      }
       // 检测连接模式
       const mode = detectConnectionMode(testDevice)
       const command = resolveCommand(protocol.commands.getDeviceInfo, mode)
@@ -277,10 +280,9 @@ export function useWebHID() {
           }
 
           // 过滤有效响应包头:
-          // - YHH 协议: 0xAA
           // - 博巨矽协议: 0x5A (ACK) 或 0x5B (NACK)
           // Chrome 会将鼠标移动数据 (0x02) 误认为命令响应，需要过滤
-          const validHeaders = [0xaa, 0x5a, 0x5b]
+          const validHeaders = [0x5a, 0x5b]
           if (!validHeaders.includes(data[0])) {
             // 忽略无效响应，继续等待正确的响应
             return
@@ -323,6 +325,9 @@ export function useWebHID() {
 
       // 检测设备协议
       currentProtocol.value = detectProtocol(device)
+      if (!currentProtocol.value) {
+        return { success: false, message: '未找到匹配的设备协议' }
+      }
       console.log(`[协议检测] 使用协议: ${currentProtocol.value.name}`)
 
       // 检测连接模式
@@ -832,63 +837,41 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查是否为博巨矽协议
-      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
-        // 使用缓存的基础设置，只修改回报率
-        if (!cachedBasicSettings) {
-          await getBasicSettings()
-        }
-        if (!cachedBasicSettings) {
-          return { success: false, message: '无法获取当前设置' }
-        }
-
-        // 复制当前设置并修改回报率
-        const newSettings: BojuxiBasicSettings = {
-          ...cachedBasicSettings,
-          pollingRate: HZ_TO_POLLING_RATE[rate] || 0x08
-        }
-
-        // 构建并发送 A1 命令，等待 ACK 响应
-        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
-        console.log(
-          '[设置回报率] 发送 A1 命令:',
-          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
-        )
-
-        const response = await sendCommandAndWait(command)
-        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
-
-        // 检查响应是否为 NACK
-        if (response[0] === 0x5b) {
-          const errorCode = response[4]
-          console.error('[设置回报率] 收到 NACK，错误码:', errorCode)
-          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
-        }
-
-        // 重新获取基础设置以验证
+      // 使用缓存的基础设置，只修改回报率
+      if (!cachedBasicSettings) {
         await getBasicSettings()
-
-        return { success: true, message: `回报率已设置为 ${rate} Hz` }
-      } else {
-        // 非博巨矽协议，使用原有逻辑
-        const dpiLevel = deviceStatus.value.dpiLevel || 0
-        const scrollDirection = deviceStatus.value.scrollDirection
-
-        const command = currentProtocol.value.commands.setReportRate(
-          rate,
-          dpiLevel,
-          scrollDirection,
-          connectionMode.value
-        )
-        const success = await sendReport(command)
-
-        if (!success) return { success: false, message: '发送命令失败' }
-
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        await getCurrentDPI()
-
-        return { success: true, message: `回报率已设置为 ${rate} Hz` }
       }
+      if (!cachedBasicSettings) {
+        return { success: false, message: '无法获取当前设置' }
+      }
+
+      // 复制当前设置并修改回报率
+      const newSettings: BojuxiBasicSettings = {
+        ...cachedBasicSettings,
+        pollingRate: HZ_TO_POLLING_RATE[rate] || 0x08
+      }
+
+      // 构建并发送 A1 命令，等待 ACK 响应
+      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      console.log(
+        '[设置回报率] 发送 A1 命令:',
+        command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+      )
+
+      const response = await sendCommandAndWait(command)
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+      // 检查响应是否为 NACK
+      if (response[0] === 0x5b) {
+        const errorCode = response[4]
+        console.error('[设置回报率] 收到 NACK，错误码:', errorCode)
+        return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+      }
+
+      // 重新获取基础设置以验证
+      await getBasicSettings()
+
+      return { success: true, message: `回报率已设置为 ${rate} Hz` }
     } catch (err: any) {
       console.error('设置回报率失败:', err)
       return { success: false, message: '无法设置回报率' }
@@ -901,67 +884,45 @@ export function useWebHID() {
    */
   async function setDPI(
     level: number,
-    value: number
+    _value: number
   ): Promise<{ success: boolean; message: string }> {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查是否为博巨矽协议
-      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
-        if (!cachedBasicSettings) {
-          await getBasicSettings()
-        }
-        if (!cachedBasicSettings) {
-          return { success: false, message: '无法获取当前设置' }
-        }
-
-        // 复制当前设置并修改当前 DPI 档位
-        // 注意：level 参数是 1-based (1-7)，需要转换为 0-based (0-6)
-        const newSettings: BojuxiBasicSettings = {
-          ...cachedBasicSettings,
-          dpiCurrentLevel: level - 1
-        }
-
-        // 构建并发送 A1 命令，等待 ACK 响应
-        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
-        console.log(
-          '[设置DPI档位] 发送 A1 命令:',
-          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
-        )
-
-        const response = await sendCommandAndWait(command)
-        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
-
-        // 检查响应是否为 NACK
-        if (response[0] === 0x5b) {
-          const errorCode = response[4]
-          console.error('[设置DPI档位] 收到 NACK，错误码:', errorCode)
-          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
-        }
-
+      if (!cachedBasicSettings) {
         await getBasicSettings()
-
-        return { success: true, message: `DPI 已切换到档位 ${level}` }
-      } else {
-        // 非博巨矽协议，使用原有逻辑
-        const scrollDirection = deviceStatus.value.scrollDirection
-        const reportRateIndex = deviceStatus.value.reportRateIndex
-        const command = currentProtocol.value.commands.setDPI(
-          level,
-          value,
-          scrollDirection,
-          reportRateIndex,
-          connectionMode.value
-        )
-        const success = await sendReport(command)
-
-        if (!success) return { success: false, message: '发送命令失败' }
-
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        await getCurrentDPI()
-
-        return { success: true, message: `DPI 已设置为 ${value}` }
       }
+      if (!cachedBasicSettings) {
+        return { success: false, message: '无法获取当前设置' }
+      }
+
+      // 复制当前设置并修改当前 DPI 档位
+      // 注意：level 参数是 1-based (1-7)，需要转换为 0-based (0-6)
+      const newSettings: BojuxiBasicSettings = {
+        ...cachedBasicSettings,
+        dpiCurrentLevel: level - 1
+      }
+
+      // 构建并发送 A1 命令，等待 ACK 响应
+      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      console.log(
+        '[设置DPI档位] 发送 A1 命令:',
+        command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+      )
+
+      const response = await sendCommandAndWait(command)
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+      // 检查响应是否为 NACK
+      if (response[0] === 0x5b) {
+        const errorCode = response[4]
+        console.error('[设置DPI档位] 收到 NACK，错误码:', errorCode)
+        return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+      }
+
+      await getBasicSettings()
+
+      return { success: true, message: `DPI 已切换到档位 ${level}` }
     } catch (err: any) {
       console.error('设置 DPI 失败:', err)
       return { success: false, message: '无法设置 DPI' }
@@ -979,10 +940,6 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
-        return { success: false, message: '当前设备不支持此功能' }
-      }
-
       if (!cachedBasicSettings) {
         await getBasicSettings()
       }
@@ -1141,67 +1098,40 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查是否为博巨矽协议
-      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
-        if (!cachedBasicSettings) {
-          await getBasicSettings()
-        }
-        if (!cachedBasicSettings) {
-          return { success: false, message: '无法获取当前设置' }
-        }
-
-        // 复制当前设置并修改滚轮方向
-        const newSettings: BojuxiBasicSettings = {
-          ...cachedBasicSettings,
-          wheelDirection: direction
-        }
-
-        // 构建并发送 A1 命令，等待 ACK 响应
-        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
-        console.log(
-          '[设置滚轮方向] 发送 A1 命令:',
-          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
-        )
-
-        const response = await sendCommandAndWait(command)
-        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
-
-        // 检查响应是否为 NACK
-        if (response[0] === 0x5b) {
-          const errorCode = response[4]
-          console.error('[设置滚轮方向] 收到 NACK，错误码:', errorCode)
-          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
-        }
-
+      if (!cachedBasicSettings) {
         await getBasicSettings()
-
-        const directionText = direction === 0 ? '正向' : '反向'
-        return { success: true, message: `滚轮方向已设置为 ${directionText}` }
-      } else {
-        // 非博巨矽协议，检查是否支持
-        if (!currentProtocol.value.commands.setScrollDirection) {
-          return { success: false, message: '当前设备不支持滚轮方向设置' }
-        }
-
-        const currentLevel = deviceStatus.value.dpiLevel || 0
-        const reportRateIndex = deviceStatus.value.reportRateIndex
-
-        const command = currentProtocol.value.commands.setScrollDirection(
-          direction,
-          currentLevel,
-          reportRateIndex,
-          connectionMode.value
-        )
-        const success = await sendReport(command)
-
-        if (!success) return { success: false, message: '发送命令失败' }
-
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        await getCurrentScrollDirection()
-
-        const directionText = direction === 0 ? '正向' : '反向'
-        return { success: true, message: `滚轮方向已设置为 ${directionText}` }
       }
+      if (!cachedBasicSettings) {
+        return { success: false, message: '无法获取当前设置' }
+      }
+
+      // 复制当前设置并修改滚轮方向
+      const newSettings: BojuxiBasicSettings = {
+        ...cachedBasicSettings,
+        wheelDirection: direction
+      }
+
+      // 构建并发送 A1 命令，等待 ACK 响应
+      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      console.log(
+        '[设置滚轮方向] 发送 A1 命令:',
+        command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+      )
+
+      const response = await sendCommandAndWait(command)
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+      // 检查响应是否为 NACK
+      if (response[0] === 0x5b) {
+        const errorCode = response[4]
+        console.error('[设置滚轮方向] 收到 NACK，错误码:', errorCode)
+        return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+      }
+
+      await getBasicSettings()
+
+      const directionText = direction === 0 ? '正向' : '反向'
+      return { success: true, message: `滚轮方向已设置为 ${directionText}` }
     } catch (err: any) {
       console.error('设置滚轮方向失败:', err)
       return { success: false, message: '无法设置滚轮方向' }
@@ -1251,65 +1181,40 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查是否为博巨矽协议
-      if (currentProtocol.value.name === 'Bojuxi Gaming Mouse') {
-        if (!cachedBasicSettings) {
-          await getBasicSettings()
-        }
-        if (!cachedBasicSettings) {
-          return { success: false, message: '无法获取当前设置' }
-        }
-
-        // 复制当前设置并修改按键映射
-        const newSettings: BojuxiBasicSettings = {
-          ...cachedBasicSettings,
-          buttonMappings: buttonMappings
-        }
-
-        // 构建并发送 A1 命令，等待 ACK 响应
-        const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
-        console.log(
-          '[设置按键映射] 发送 A1 命令:',
-          command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
-        )
-
-        const response = await sendCommandAndWait(command)
-        if (!response) return { success: false, message: '发送命令失败或未收到响应' }
-
-        // 检查响应是否为 NACK
-        if (response[0] === 0x5b) {
-          const errorCode = response[4]
-          console.error('[设置按键映射] 收到 NACK，错误码:', errorCode)
-          return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
-        }
-
-        // 重新获取基础设置以验证
+      if (!cachedBasicSettings) {
         await getBasicSettings()
-
-        return { success: true, message: '按键映射已更新' }
-      } else {
-        // 非博巨矽协议，检查是否支持按键映射设置
-        if (!currentProtocol.value.commands.setButtonMapping) {
-          return { success: false, message: '当前设备不支持按键映射设置' }
-        }
-
-        const command = currentProtocol.value.commands.setButtonMapping(
-          buttonMappings,
-          connectionMode.value
-        )
-
-        if (command.length === 0) {
-          return { success: false, message: '按键映射数据格式错误' }
-        }
-
-        const success = await sendReport(command)
-
-        if (!success) return { success: false, message: '发送命令失败' }
-
-        await new Promise((resolve) => setTimeout(resolve, 100))
-
-        return { success: true, message: '按键映射已更新' }
       }
+      if (!cachedBasicSettings) {
+        return { success: false, message: '无法获取当前设置' }
+      }
+
+      // 复制当前设置并修改按键映射
+      const newSettings: BojuxiBasicSettings = {
+        ...cachedBasicSettings,
+        buttonMappings: buttonMappings
+      }
+
+      // 构建并发送 A1 命令，等待 ACK 响应
+      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      console.log(
+        '[设置按键映射] 发送 A1 命令:',
+        command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+      )
+
+      const response = await sendCommandAndWait(command)
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
+
+      // 检查响应是否为 NACK
+      if (response[0] === 0x5b) {
+        const errorCode = response[4]
+        console.error('[设置按键映射] 收到 NACK，错误码:', errorCode)
+        return { success: false, message: `设备返回错误，错误码: ${errorCode}` }
+      }
+
+      // 重新获取基础设置以验证
+      await getBasicSettings()
+
+      return { success: true, message: '按键映射已更新' }
     } catch (err: any) {
       console.error('设置按键映射失败:', err)
       return { success: false, message: '无法设置按键映射' }
@@ -1401,45 +1306,7 @@ export function useWebHID() {
         return { success: false, message: '宏索引超出范围 (0-9)' }
       }
 
-      // 检查是否为博巨矽协议
-      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
-        // 非博巨矽协议，使用原有逻辑
-        if (!currentProtocol.value.commands.setMacro) {
-          return { success: false, message: '当前设备不支持宏功能' }
-        }
-
-        // 发送创建宏命令序列
-        const initCommand = [
-          0x55, 0x0d, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00,
-          0x40, 0x00,
-          macroData.length & 0xff,
-          (macroData.length >> 8) & 0xff,
-          ...new Array(52).fill(0)
-        ]
-        await sendReport(initCommand)
-        await new Promise((resolve) => setTimeout(resolve, 50))
-
-        const prepareCommand = [
-          0x55, 0x0d, 0x00, 0x00, 0x20, 0x38, 0x00, 0x00,
-          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-          ...macroData,
-          ...new Array(Math.max(0, 48 - macroData.length)).fill(0)
-        ]
-        await sendReport(prepareCommand)
-        await new Promise((resolve) => setTimeout(resolve, 50))
-
-        const confirmCommand = [
-          0x55, 0x10, 0xa5, 0x22, 0x00, 0x00, 0x00, 0x05,
-          ...new Array(56).fill(0)
-        ]
-        const success = await sendReport(confirmCommand)
-
-        if (!success) return { success: false, message: '发送命令失败' }
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        return { success: true, message: `宏 ${macroIndex + 1} 已保存` }
-      }
-
-      // 博巨矽协议：多帧传输
+      // 多帧传输
       const FRAME_DATA_SIZE = 56 // 每帧最多 56 字节数据
       const totalDataLength = macroData.length
       const totalFrames = Math.ceil(totalDataLength / FRAME_DATA_SIZE)
@@ -1530,33 +1397,7 @@ export function useWebHID() {
         return { success: false, message: '宏索引超出范围 (0-9)' }
       }
 
-      // 检查是否为博巨矽协议
-      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
-        // 非博巨矽协议，使用原有逻辑
-        if (!currentProtocol.value.commands.deleteMacro) {
-          return { success: false, message: '当前设备不支持宏功能' }
-        }
-
-        const initCommand = [
-          0x55, 0x0d, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00,
-          ...new Array(55).fill(0)
-        ]
-        await sendReport(initCommand)
-        await new Promise((resolve) => setTimeout(resolve, 50))
-
-        const prepareCommand = [0x55, 0x0d, 0x00, 0x00, 0x08, 0x38, ...new Array(58).fill(0)]
-        await sendReport(prepareCommand)
-        await new Promise((resolve) => setTimeout(resolve, 50))
-
-        const deleteCommand = currentProtocol.value.commands.deleteMacro(macroIndex)
-        const success = await sendReport(deleteCommand)
-
-        if (!success) return { success: false, message: '发送命令失败' }
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        return { success: true, message: `宏 ${macroIndex + 1} 已删除` }
-      }
-
-      // 博巨矽协议：发送空宏
+      // 发送空宏
       // 空宏检测条件: 宏长度=4 且 循环次数=0
       const emptyMacroData = [
         0x04, 0x00, // 宏长度 = 4
@@ -1622,11 +1463,6 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return { success: false, message: '设备未连接' }
 
     try {
-      // 检查是否为博巨矽协议
-      if (currentProtocol.value.name !== 'Bojuxi Gaming Mouse') {
-        return { success: false, message: '当前设备不支持此功能' }
-      }
-
       // 检查协议是否有 factoryReset 命令
       if (!currentProtocol.value.commands.factoryReset) {
         return { success: false, message: '当前设备不支持恢复出厂设置' }
