@@ -652,7 +652,7 @@ async function bindMacroToButton(macroIndex: number) {
   // 发送按键映射到设备
   await saveToDevice()
 
-  showSuccess(t('buttonMapping.macro.bindSuccess', { name: macro.name }))
+  // showSuccess(t('buttonMapping.macro.bindSuccess', { name: macro.name }))
 }
 
 /**
