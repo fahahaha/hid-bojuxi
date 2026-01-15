@@ -197,6 +197,16 @@
 
     <!-- 全局确认弹窗 -->
     <ConfirmBox />
+
+    <!-- 全局加载遮罩层 -->
+    <Transition name="fade">
+      <div v-if="isLoading" class="loading-overlay">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p class="loading-text">通信中...</p>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -205,6 +215,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useWebHID } from './composables/useWebHID'
 import { useI18n } from './composables/useI18n'
 import { useTheme } from './composables/useTheme'
+import { useLoading } from './composables/useLoading'
 import BasicSettings from './components/BasicSettings.vue'
 import DpiSettings from './components/DpiSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
@@ -225,6 +236,7 @@ const {
 } = useWebHID()
 const { locale, setLocale, t } = useI18n()
 const { theme, toggleTheme } = useTheme()
+const { isLoading } = useLoading()
 
 const activeTab = ref('basic')
 const showLanguageDropdown = ref(false)
@@ -879,5 +891,60 @@ onUnmounted(() => {
 
 .notification.info .notification-icon {
   color: var(--color-primary);
+}
+
+/* 全局加载遮罩层 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-primary);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: #ffffff;
+  font-size: 0.875rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* 淡入淡出过渡效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

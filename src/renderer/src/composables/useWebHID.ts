@@ -9,6 +9,7 @@ import {
   HZ_TO_POLLING_RATE,
   type BojuxiBasicSettings
 } from '../protocols/bojuxi'
+import { useLoading } from './useLoading'
 
 // 全局状态
 let device: HIDDevice | null = null
@@ -132,11 +133,10 @@ export function useWebHID() {
   }
 
   /**
-   * 发送 HID 输出报告
+   * 发送 HID 输出报告（底层方法，不含重试机制）
    * @param data 命令数据
-   * @param retries 重试次数
    */
-  async function sendReport(data: number[], retries = commandRetries): Promise<boolean> {
+  async function sendReport(data: number[]): Promise<boolean> {
     if (!device) return false
 
     try {
@@ -149,13 +149,7 @@ export function useWebHID() {
       await device.sendReport(0, new Uint8Array(data))
       return true
     } catch (err) {
-      console.error(`[发送命令失败] 重试次数: ${commandRetries - retries}/${commandRetries}`, err)
-
-      if (retries > 1) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        return sendReport(data, retries - 1)
-      }
-
+      console.error('[发送命令失败]', err)
       return false
     }
   }
@@ -207,12 +201,23 @@ export function useWebHID() {
 
   /**
    * 发送命令并等待响应
+   * @param command 命令数据
+   * @param retries 重试次数
+   * @param isInitialCall 是否是初始调用（用于管理加载状态）
    */
   async function sendCommandAndWait(
     command: number[],
-    retries = commandRetries
+    retries = commandRetries,
+    isInitialCall = true
   ): Promise<Uint8Array | null> {
     if (!device) return null
+
+    const { startLoading, stopLoading } = useLoading()
+
+    // 只在初始调用时开始加载状态
+    if (isInitialCall) {
+      startLoading()
+    }
 
     try {
       const success = await sendReport(command)
@@ -226,15 +231,24 @@ export function useWebHID() {
         throw new Error('未收到响应')
       }
 
+      // 只在初始调用时结束加载状态
+      if (isInitialCall) {
+        stopLoading()
+      }
       return response
     } catch (err) {
       console.error(`[命令执行失败] 重试次数: ${commandRetries - retries}/${commandRetries}`, err)
 
       if (retries > 1) {
         await new Promise((resolve) => setTimeout(resolve, 100))
-        return sendCommandAndWait(command, retries - 1)
+        // 递归调用时标记为非初始调用
+        return sendCommandAndWait(command, retries - 1, false)
       }
 
+      // 只在初始调用时结束加载状态
+      if (isInitialCall) {
+        stopLoading()
+      }
       return null
     }
   }
@@ -997,11 +1011,10 @@ export function useWebHID() {
     try {
       const modeNames = ['常灭', '常亮', '呼吸', 'APM模式', '全光谱']
       const command = currentProtocol.value.commands.setBacklightMode(mode, connectionMode.value)
-      const success = await sendReport(command)
+      const response = await sendCommandAndWait(command)
 
-      if (!success) return { success: false, message: '发送命令失败' }
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
       await getBacklightMode()
 
       return { success: true, message: `背光模式已设置为 ${modeNames[mode]}` }
@@ -1024,9 +1037,9 @@ export function useWebHID() {
         brightness,
         connectionMode.value
       )
-      const success = await sendReport(command)
+      const response = await sendCommandAndWait(command)
 
-      if (!success) return { success: false, message: '发送命令失败' }
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
 
       return { success: true, message: `背光亮度已设置为 ${brightness}%` }
     } catch (err: any) {
@@ -1049,9 +1062,9 @@ export function useWebHID() {
         frequency,
         connectionMode.value
       )
-      const success = await sendReport(command)
+      const response = await sendCommandAndWait(command)
 
-      if (!success) return { success: false, message: '发送命令失败' }
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
 
       return { success: true, message: `呼吸频率已设置为 ${frequencyLabels[frequency - 1]}` }
     } catch (err: any) {
@@ -1077,9 +1090,9 @@ export function useWebHID() {
         b,
         connectionMode.value
       )
-      const success = await sendReport(command)
+      const response = await sendCommandAndWait(command)
 
-      if (!success) return { success: false, message: '发送命令失败' }
+      if (!response) return { success: false, message: '发送命令失败或未收到响应' }
 
       return { success: true, message: '背光颜色已更新' }
     } catch (err: any) {
