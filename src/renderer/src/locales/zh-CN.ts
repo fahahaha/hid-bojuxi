@@ -20,6 +20,11 @@ export default {
       label: '连接模式',
       usb: 'USB',
       wireless: '2.4G'
+    },
+    profile: {
+      label: '板载配置',
+      profile1: '板载配置1',
+      profile2: '板载配置2'
     }
   },
   footer: {

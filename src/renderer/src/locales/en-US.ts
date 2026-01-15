@@ -20,6 +20,11 @@ export default {
       label: 'Mode',
       usb: 'USB',
       wireless: '2.4G'
+    },
+    profile: {
+      label: 'Profile',
+      profile1: 'Profile 1',
+      profile2: 'Profile 2'
     }
   },
   footer: {

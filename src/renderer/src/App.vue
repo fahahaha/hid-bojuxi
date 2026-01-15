@@ -12,6 +12,27 @@
         </div>
 
         <div class="header-right">
+          <!-- 板载配置选择 -->
+          <div class="profile-selector">
+            <button class="header-btn btn-profile" @click="toggleProfileDropdown">
+              <i class="fa fa-layer-group"></i>
+              <span>{{ t('header.profile.label') }} {{ selectedProfile }}</span>
+              <i class="fa fa-chevron-down" :class="{ 'rotate-180': showProfileDropdown }"></i>
+            </button>
+            <div v-if="showProfileDropdown" class="profile-dropdown">
+              <button
+                v-for="profile in profiles"
+                :key="profile.id"
+                @click="selectProfile(profile.id)"
+                class="profile-option"
+                :class="{ active: selectedProfile === profile.id }"
+              >
+                <i class="fa fa-check" :class="{ invisible: selectedProfile !== profile.id }"></i>
+                <span>{{ profile.name }}</span>
+              </button>
+            </div>
+          </div>
+
           <!-- 连接模式显示 -->
           <div v-if="isConnected && supportsDualMode" class="header-btn connection-mode">
             <i
@@ -46,7 +67,7 @@
                 class="language-option"
                 :class="{ active: locale === 'zh-CN' }"
               >
-                <i class="fa fa-check" v-if="locale === 'zh-CN'"></i>
+                <i class="fa fa-check" :class="{ invisible: locale !== 'zh-CN' }"></i>
                 <span>中文</span>
               </button>
               <button
@@ -54,7 +75,7 @@
                 class="language-option"
                 :class="{ active: locale === 'en-US' }"
               >
-                <i class="fa fa-check" v-if="locale === 'en-US'"></i>
+                <i class="fa fa-check" :class="{ invisible: locale !== 'en-US' }"></i>
                 <span>English</span>
               </button>
             </div>
@@ -207,6 +228,14 @@ const { theme, toggleTheme } = useTheme()
 
 const activeTab = ref('basic')
 const showLanguageDropdown = ref(false)
+const showProfileDropdown = ref(false)
+const selectedProfile = ref(1)
+
+// 板载配置列表
+const profiles = computed(() => [
+  { id: 1, name: t('header.profile.profile1') },
+  { id: 2, name: t('header.profile.profile2') }
+])
 
 // 检查当前协议是否支持双模式
 const supportsDualMode = computed(() => {
@@ -263,6 +292,18 @@ function selectLanguage(lang: 'zh-CN' | 'en-US') {
   showLanguageDropdown.value = false
 }
 
+function toggleProfileDropdown() {
+  showProfileDropdown.value = !showProfileDropdown.value
+  // 关闭其他下拉框
+  showLanguageDropdown.value = false
+}
+
+function selectProfile(profileId: number) {
+  selectedProfile.value = profileId
+  showProfileDropdown.value = false
+  // TODO: 这里可以添加切换板载配置的实际逻辑
+}
+
 function showNotification(type: string, title: string, message: string) {
   notification.value = { show: true, type, title, message }
   setTimeout(hideNotification, 30000)
@@ -289,6 +330,9 @@ function handleClickOutside(event: MouseEvent) {
   if (!target.closest('.language-selector')) {
     showLanguageDropdown.value = false
   }
+  if (!target.closest('.profile-selector')) {
+    showProfileDropdown.value = false
+  }
 }
 
 // 页面加载时自动连接已授权的设备
@@ -314,6 +358,8 @@ onUnmounted(() => {
 .app-container {
   min-height: 100vh;
   background-color: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
 }
 
 /* 顶部导航栏 */
@@ -515,11 +561,79 @@ onUnmounted(() => {
   width: 1rem;
 }
 
+.language-option i.fa-check.invisible {
+  visibility: hidden;
+}
+
+/* 板载配置选择器 */
+.profile-selector {
+  position: relative;
+}
+
+.btn-profile i.fa-chevron-down {
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+
+.btn-profile i.fa-chevron-down.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 0.375rem;
+  box-shadow: var(--shadow-md);
+  min-width: 140px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.profile-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.profile-option:hover {
+  background-color: var(--bg-hover);
+  color: var(--color-primary);
+}
+
+.profile-option.active {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.profile-option i.fa-check {
+  font-size: 0.875rem;
+  width: 1rem;
+}
+
+.profile-option i.fa-check.invisible {
+  visibility: hidden;
+}
+
 /* 主内容区 */
 .main-content {
   max-width: 1280px;
   margin: 0 auto;
   padding: 1.5rem 1rem;
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .device-status-card {
@@ -648,8 +762,8 @@ onUnmounted(() => {
 .app-footer {
   background-color: var(--bg-primary);
   border-top: 1px solid var(--border-primary);
-  margin-top: 2.5rem;
   padding: 1.5rem 0;
+  flex-shrink: 0;
 }
 
 .footer-content {
