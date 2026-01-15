@@ -347,14 +347,14 @@ import {
 } from '../composables/useMacroStorage'
 
 const emit = defineEmits<{
-  (e: 'switchTab', tab: string): void
+  (e: 'switchTab', tab: string, subTab?: string): void
 }>()
 
 /**
- * 跳转到按键映射页面
+ * 跳转到按键映射页面并打开宏子标签页
  */
 function goToButtonMapping() {
-  emit('switchTab', 'buttons')
+  emit('switchTab', 'buttons', 'macro')
 }
 
 const {

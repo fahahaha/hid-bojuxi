@@ -258,7 +258,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useWebHID } from '../composables/useWebHID'
 import { useI18n } from '../composables/useI18n'
 import { useMessageBox } from '../composables/useMessageBox'
@@ -266,6 +266,10 @@ import { useConfirmBox } from '../composables/useConfirmBox'
 import {
   useMacroStorage
 } from '../composables/useMacroStorage'
+
+const props = defineProps<{
+  initialSubTab?: string | null
+}>()
 
 const emit = defineEmits<{
   (e: 'switchTab', tab: string): void
@@ -323,6 +327,13 @@ const buttonNames = computed(() => ta('buttonMapping.buttonNames'))
 
 const selectedButton = ref(0)
 const activeTab = ref('mouse')
+
+// 监听 initialSubTab 变化，自动切换子标签页
+watch(() => props.initialSubTab, (newVal) => {
+  if (newVal) {
+    activeTab.value = newVal
+  }
+}, { immediate: true })
 
 // 标签页配置
 const tabs = computed(() => [

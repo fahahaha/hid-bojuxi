@@ -136,7 +136,7 @@
         <BasicSettings v-if="activeTab === 'basic'" />
         <DpiSettings v-if="activeTab === 'dpi'" />
         <BacklightSettings v-if="activeTab === 'backlight'" />
-        <ButtonMapping v-if="activeTab === 'buttons'" @switchTab="handleSwitchTab" />
+        <ButtonMapping v-if="activeTab === 'buttons'" :initialSubTab="pendingSubTab" @switchTab="handleSwitchTab" />
         <MacroManagement v-if="activeTab === 'macro'" @switchTab="handleSwitchTab" />
         <PerformanceSettings v-if="activeTab === 'performance'" />
         <DeviceInfo v-if="activeTab === 'device'" />
@@ -272,10 +272,14 @@ function hideNotification() {
   notification.value.show = false
 }
 
+// 子标签页状态（用于跨组件传递）
+const pendingSubTab = ref<string | null>(null)
+
 /**
  * 处理子组件切换标签页的请求
  */
-function handleSwitchTab(tab: string) {
+function handleSwitchTab(tab: string, subTab?: string) {
+  pendingSubTab.value = subTab || null
   activeTab.value = tab
 }
 
