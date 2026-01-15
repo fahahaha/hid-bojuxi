@@ -136,8 +136,8 @@
         <BasicSettings v-if="activeTab === 'basic'" />
         <DpiSettings v-if="activeTab === 'dpi'" />
         <BacklightSettings v-if="activeTab === 'backlight'" />
-        <ButtonMapping v-if="activeTab === 'buttons'" />
-        <MacroManagement v-if="activeTab === 'macro'" />
+        <ButtonMapping v-if="activeTab === 'buttons'" @switchTab="handleSwitchTab" />
+        <MacroManagement v-if="activeTab === 'macro'" @switchTab="handleSwitchTab" />
         <PerformanceSettings v-if="activeTab === 'performance'" />
         <DeviceInfo v-if="activeTab === 'device'" />
       </div>
@@ -270,6 +270,13 @@ function showNotification(type: string, title: string, message: string) {
 
 function hideNotification() {
   notification.value.show = false
+}
+
+/**
+ * 处理子组件切换标签页的请求
+ */
+function handleSwitchTab(tab: string) {
+  activeTab.value = tab
 }
 
 // 点击外部关闭下拉菜单

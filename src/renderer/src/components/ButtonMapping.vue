@@ -225,29 +225,28 @@
 
             <!-- 宏标签页 -->
             <div v-if="activeTab === 'macro'" class="tab-content">
-              <!-- 将宏绑定到按键 -->
-              <div class="macro-binding-area">
-                <h5 class="section-subtitle">
-                  <i class="fa fa-link"></i>
-                  {{ t('buttonMapping.macro.binding.title') }}
-                </h5>
-                <p class="section-hint">{{ t('buttonMapping.macro.binding.hint') }}</p>
+              <!-- 去添加/修改宏按钮 -->
+              <button @click="goToMacroManagement" class="go-macro-btn">
+                <i class="fa fa-plus"></i>
+                {{ t('buttonMapping.macro.goToMacro') }}
+              </button>
 
-                <div class="button-grid macro-binding-grid">
-                  <button
-                    v-for="index in MAX_MACRO_COUNT"
-                    :key="index - 1"
-                    @click="bindMacroToButton(index - 1)"
-                    class="function-button"
-                    :class="{
-                      active: isCurrentMacroBinding(index - 1),
-                      disabled: !isMacroAvailable(index - 1)
-                    }"
-                    :disabled="!isMacroAvailable(index - 1)"
-                  >
-                    {{ getMacroButtonLabel(index - 1) }}
-                  </button>
-                </div>
+              <!-- 宏按钮列表 -->
+              <div class="button-grid">
+                <button
+                  v-for="macro in availableMacros"
+                  :key="macro.index"
+                  @click="bindMacroToButton(macro.index)"
+                  class="function-button"
+                  :class="{ active: isCurrentMacroBinding(macro.index) }"
+                >
+                  {{ macro.name }}
+                </button>
+              </div>
+
+              <!-- 无可用宏提示 -->
+              <div v-if="availableMacros.length === 0" class="empty-macro-hint">
+                {{ t('buttonMapping.macro.noAvailableMacro') }}
               </div>
             </div>
           </div>
@@ -267,6 +266,10 @@ import { useConfirmBox } from '../composables/useConfirmBox'
 import {
   useMacroStorage
 } from '../composables/useMacroStorage'
+
+const emit = defineEmits<{
+  (e: 'switchTab', tab: string): void
+}>()
 import {
   mouseButtons,
   multimediaButtons,
@@ -285,13 +288,27 @@ const {
   setButtonMapping
 } = useWebHID()
 const {
+  macros,
   getMacro,
-  validateMacro,
-  MAX_MACRO_COUNT
+  validateMacro
 } = useMacroStorage()
 const { t, ta } = useI18n()
 const { error: showError, success: showSuccess, warning: showWarning } = useMessageBox()
 const { confirm: showConfirm } = useConfirmBox()
+
+// 可用的宏列表（只显示有事件的宏）
+const availableMacros = computed(() => {
+  return macros.value
+    .map((macro, index) => ({ ...macro, index }))
+    .filter(macro => macro.events.length > 0)
+})
+
+/**
+ * 跳转到宏管理页面
+ */
+function goToMacroManagement() {
+  emit('switchTab', 'macro')
+}
 
 // 按键映射数据（8个按键）
 // 博巨矽协议按键顺序: 左键(0), 中键(1), 右键(2), 前进(3), 后退(4), 滚轮前滚(5), 滚轮后滚(6), DPI键(7)
@@ -553,25 +570,6 @@ async function resetButton() {
 }
 
 // ==================== 宏绑定相关函数 ====================
-
-/**
- * 检查宏是否可用（有事件）
- */
-function isMacroAvailable(macroIndex: number): boolean {
-  const macro = getMacro(macroIndex)
-  return macro !== null && macro.events.length > 0
-}
-
-/**
- * 获取宏按钮的显示标签
- */
-function getMacroButtonLabel(macroIndex: number): string {
-  const macro = getMacro(macroIndex)
-  if (macro && macro.name) {
-    return macro.name
-  }
-  return t('buttonMapping.displayNames.macro', { index: String(macroIndex + 1) })
-}
 
 /**
  * 检查当前按键是否绑定了指定的宏
@@ -1259,42 +1257,33 @@ onMounted(() => {
   margin-right: 0.5rem;
 }
 
-/* 宏绑定区域 */
-.macro-binding-area {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: var(--bg-tertiary);
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-primary);
-}
-
-.macro-binding-area .section-subtitle {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin: 0;
+/* 去添加/修改宏按钮 */
+.go-macro-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px dashed var(--color-primary);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.macro-binding-area .section-hint {
-  margin: 0;
-  font-size: 0.75rem;
+.go-macro-btn:hover {
+  background-color: var(--bg-active);
+}
+
+/* 无可用宏提示 */
+.empty-macro-hint {
+  padding: 2rem 1rem;
+  text-align: center;
   color: var(--text-tertiary);
-}
-
-/* 宏绑定按钮网格 */
-.macro-binding-grid {
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
-}
-
-.macro-binding-grid .function-button.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: var(--bg-tertiary);
+  font-size: 0.875rem;
 }
 </style>

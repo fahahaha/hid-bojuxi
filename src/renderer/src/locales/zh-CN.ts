@@ -245,6 +245,9 @@ export default {
       addMouse: '鼠标按键',
       addXY: 'XY光标',
       xyNotSupported: 'XY坐标功能暂未开放',
+      goToMacro: '去添加/修改宏',
+      goToBinding: '去绑定到按键',
+      noAvailableMacro: '暂无可用宏，请先添加宏',
       binding: {
         title: '绑定宏到当前按键',
         hint: '点击下方宏按钮直接绑定到当前选中的按键，灰色按钮表示该宏暂无事件',

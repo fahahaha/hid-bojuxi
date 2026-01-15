@@ -1,13 +1,19 @@
 <template>
   <div class="macro-management-container">
-    <p class="section-description">{{ t('macroManagement.description') }}</p>
+    <div class="section-header">
+      <p class="section-description">{{ t('macroManagement.description') }}</p>
+    </div>
 
     <div class="macro-layout">
       <!-- 左侧：宏列表和管理 -->
       <div class="macro-list-section">
-        <h5 class="section-subtitle">{{ t('buttonMapping.macro.list') }}</h5>
-        <p class="section-hint">{{ t('buttonMapping.macro.listHint') }}</p>
-
+        <div class="section-subtitle-contain">
+          <h5 class="section-subtitle">{{ t('buttonMapping.macro.list') }}</h5>
+          <button @click="goToButtonMapping" class="go-binding-btn">
+            <i class="fa fa-link"></i>
+            {{ t('buttonMapping.macro.goToBinding') }}
+          </button>
+        </div>
         <div class="macro-list">
           <div v-if="macros.length === 0" class="empty-macros">
             <i class="fa fa-info-circle"></i>
@@ -339,6 +345,17 @@ import {
   type MacroEvent,
   type Macro
 } from '../composables/useMacroStorage'
+
+const emit = defineEmits<{
+  (e: 'switchTab', tab: string): void
+}>()
+
+/**
+ * 跳转到按键映射页面
+ */
+function goToButtonMapping() {
+  emit('switchTab', 'buttons')
+}
 
 const {
   isConnected,
@@ -895,10 +912,38 @@ onUnmounted(() => {
   margin-bottom: 1.5rem;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
 .section-description {
   color: var(--text-tertiary);
   font-size: 0.875rem;
-  margin-bottom: 1.5rem;
+  margin: 0;
+}
+
+/* 去绑定到按键按钮 */
+.go-binding-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px dashed var(--color-primary);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.go-binding-btn:hover {
+  background-color: var(--bg-active);
 }
 
 .macro-layout {
@@ -915,7 +960,11 @@ onUnmounted(() => {
   gap: 1rem;
   width: 100%;
 }
-
+.section-subtitle-contain{
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+}
 .section-subtitle {
   font-size: 0.875rem;
   font-weight: 600;

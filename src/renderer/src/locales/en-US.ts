@@ -246,6 +246,9 @@ export default {
       addMouse: 'Mouse Button',
       addXY: 'XY cursor',
       xyNotSupported: 'XY coordinate feature is not available yet',
+      goToMacro: 'Add/Edit Macro',
+      goToBinding: 'Bind to Button',
+      noAvailableMacro: 'No available macros, please add a macro first',
       binding: {
         title: 'Bind Macro to Current Button',
         hint: 'Click macro button below to bind to current selected button, grayed buttons have no events',
