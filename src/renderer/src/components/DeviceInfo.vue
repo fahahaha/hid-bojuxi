@@ -138,13 +138,13 @@ async function restoreDefaults() {
     const result = await factoryReset()
 
     if (result.success) {
-      // 清除本地宏缓存
-      try {
-        localStorage.removeItem(MACRO_STORAGE_KEY)
-        console.log('[恢复出厂设置] 已清除本地宏缓存')
-      } catch (err) {
-        console.error('[恢复出厂设置] 清除宏缓存失败:', err)
-      }
+      // 不清除本地宏缓存
+      // try {
+      //   localStorage.removeItem(MACRO_STORAGE_KEY)
+      //   console.log('[恢复出厂设置] 已清除本地宏缓存')
+      // } catch (err) {
+      //   console.error('[恢复出厂设置] 清除宏缓存失败:', err)
+      // }
 
       // 重新获取基础设置
       await getBasicSettings()

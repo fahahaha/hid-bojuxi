@@ -46,6 +46,9 @@ const deviceStatus = ref({
   dpiLevel: 0, // 当前 DPI 档位 (0-6)
   dpiLevels: [] as number[], // 所有 DPI 档位值
   dpiTotalLevels: 0, // 总档位数 (0=1档, 6=7档)
+  dpiMin: 50, // DPI 最小值
+  dpiMax: 16000, // DPI 最大值
+  dpiStep: 50, // DPI 步进值
   backlight: '--',
   scrollDirection: 0 //正向0，反向1
 })
@@ -592,6 +595,10 @@ export function useWebHID() {
           protocol: currentProtocol.value.name,
           status: '已连接'
         }
+        // 更新 DPI 范围参数
+        if (info.dpiMin !== undefined) deviceStatus.value.dpiMin = info.dpiMin
+        if (info.dpiMax !== undefined) deviceStatus.value.dpiMax = info.dpiMax
+        if (info.dpiStep !== undefined) deviceStatus.value.dpiStep = info.dpiStep
       } else {
         // 如果无法获取详细信息，使用基本信息
         deviceInfo.value = {
@@ -961,9 +968,10 @@ export function useWebHID() {
         return { success: false, message: '无法获取当前设置' }
       }
 
-      // 验证 DPI 值范围（50-16000，步进 50）
-      if (value < 50 || value > 16000 || value % 50 !== 0) {
-        return { success: false, message: 'DPI 值必须在 50-16000 范围内，且为 50 的倍数' }
+      // 验证 DPI 值范围
+      const { dpiMin, dpiMax, dpiStep } = deviceStatus.value
+      if (value < dpiMin || value > dpiMax || value % dpiStep !== 0) {
+        return { success: false, message: `DPI 值必须在 ${dpiMin}-${dpiMax} 范围内，且为 ${dpiStep} 的倍数` }
       }
 
       // 复制当前设置并修改指定档位的 DPI 值

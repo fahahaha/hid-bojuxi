@@ -86,6 +86,9 @@ export interface DeviceProtocol {
       name: string
       model: string
       firmwareVersion: string
+      dpiMin?: number
+      dpiMax?: number
+      dpiStep?: number
     }
     /** 解析电池电量 */
     battery: (response: Uint8Array) => number

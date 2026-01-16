@@ -559,17 +559,17 @@ export const bojuxiProtocol: DeviceProtocol = {
       const versionMinor = versionRaw & 0xff
       const firmwareVersion = `V${versionMajor}.${versionMinor}`
 
-      // Byte 12-14: sensor_id (3 bytes)
-      const sensorId = `${response[12].toString(16)}${response[13].toString(16)}${response[14].toString(16)}`
+      // Byte 12-13: sensor_id (3 bytes)
+      const sensorId = `${response[12].toString(16)}${response[13].toString(16)}`
 
-      // Byte 15-16: dpi_step
-      const dpiStep = response[15] | (response[16] << 8)
+      // Byte 14-15: dpi_step
+      const dpiStep = response[14] | (response[15] << 8)
 
       // Byte 17-18: dpi_min
-      const dpiMin = response[17] | (response[18] << 8)
+      const dpiMin = response[16] | (response[17] << 8)
 
       // Byte 19-20: dpi_max
-      const dpiMax = response[19] | (response[20] << 8)
+      const dpiMax = response[18] | (response[19] << 8)
 
       console.log('[Bojuxi] 设备信息:', {
         deviceId,
@@ -582,7 +582,10 @@ export const bojuxiProtocol: DeviceProtocol = {
       return {
         name: 'Bojuxi Gaming Mouse',
         model: `Device ID: ${deviceId}, Sensor: ${sensorId}`,
-        firmwareVersion
+        firmwareVersion,
+        dpiMin,
+        dpiMax,
+        dpiStep
       }
     },
 

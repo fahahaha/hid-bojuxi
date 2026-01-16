@@ -84,8 +84,7 @@ const {
   setScrollDirection,
   getCurrentProtocol,
   isConnected,
-  deviceStatus,
-  connectionMode
+  deviceStatus
 } = useWebHID()
 const { t } = useI18n()
 

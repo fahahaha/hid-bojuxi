@@ -90,10 +90,10 @@ import { useI18n } from '../composables/useI18n'
 const { setDPI, setDPILevelValue, isConnected, deviceStatus } = useWebHID()
 const { t } = useI18n()
 
-// DPI 范围配置
-const dpiMin = 50
-const dpiMax = 16000
-const dpiStep = 50
+// DPI 范围配置（从设备获取）
+const dpiMin = computed(() => deviceStatus.value.dpiMin || 50)
+const dpiMax = computed(() => deviceStatus.value.dpiMax || 16000)
+const dpiStep = computed(() => deviceStatus.value.dpiStep || 50)
 
 // 本地 DPI 值（用于滑动条实时显示）
 const localDpiValues = reactive<Record<number, number>>({})
