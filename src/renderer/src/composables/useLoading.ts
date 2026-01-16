@@ -10,7 +10,7 @@ const isLoadingVisible = ref(false)
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
 // 延迟隐藏时间（毫秒）
-const HIDE_DELAY = 50
+const HIDE_DELAY = 300
 
 /**
  * 全局加载状态管理

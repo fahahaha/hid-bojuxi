@@ -98,9 +98,6 @@ const deviceFeatures = computed(() => {
 // 支持的回报率列表(根据设备特性和连接模式动态调整)
 const reportRates = computed(() => {
   const allRates = deviceFeatures.value?.supportedReportRates || [125, 250, 500, 1000]
-  if (connectionMode.value === 'usb') {
-    return [1000]
-  }
   return allRates
 })
 

@@ -543,9 +543,9 @@ export const bojuxiProtocol: DeviceProtocol = {
       if (response[0] !== PACKET_HEADER.ACK || response[2] !== COMMAND_CODE.GET_DEVICE_INFO) {
         console.warn('[Bojuxi] 无效的设备信息响应')
         return {
-          name: 'Unknown',
-          model: 'Unknown',
-          firmwareVersion: 'Unknown'
+          name: 'Bojuxi Gaming Mouse',
+          model: 'Bojuxi Gaming Mouse',
+          firmwareVersion: 'v0.1'
         }
       }
 
