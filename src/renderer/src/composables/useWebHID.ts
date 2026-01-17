@@ -23,6 +23,9 @@ let cachedBasicSettings: BojuxiBasicSettings | null = null
 // DPI 变化监听器引用
 let dpiChangeListener: ((event: HIDInputReportEvent) => void) | null = null
 
+// 设备参数变更监听器引用 (0xB2)
+let deviceParamChangeListener: ((event: HIDInputReportEvent) => void) | null = null
+
 // 电池状态定时器引用
 let batteryIntervalId: ReturnType<typeof setInterval> | null = null
 
@@ -138,6 +141,85 @@ export function useWebHID() {
       device.removeEventListener('inputreport', dpiChangeListener)
       dpiChangeListener = null
       console.log('[DPI监听] 已停止 DPI 变化监听')
+    }
+  }
+
+  /**
+   * 设置设备参数变更监听器 (0xB2)
+   * 监听设备主动上报的参数变更（DPI档位、板载配置等）
+   */
+  function setupDeviceParamChangeListener(): void {
+    if (!device || !currentProtocol.value) return
+
+    // 如果已有监听器，先移除
+    if (deviceParamChangeListener) {
+      device.removeEventListener('inputreport', deviceParamChangeListener)
+      deviceParamChangeListener = null
+    }
+
+    // 检查协议是否支持设备参数变更监听
+    if (
+      !currentProtocol.value.reporters?.isDeviceParamChangeReport ||
+      !currentProtocol.value.parsers.deviceParamChange
+    ) {
+      console.log('[参数变更监听] 当前协议不支持设备参数变更监听')
+      return
+    }
+
+    const protocol = currentProtocol.value
+
+    // 创建监听器
+    deviceParamChangeListener = async (event: HIDInputReportEvent) => {
+      // 复制数据以避免 Chrome bug
+      const data = new Uint8Array(event.data.byteLength)
+      for (let i = 0; i < event.data.byteLength; i++) {
+        data[i] = event.data.getUint8(i)
+      }
+
+      // 检查是否为设备参数变更通知
+      if (protocol.reporters?.isDeviceParamChangeReport?.(data)) {
+        const paramData = protocol.parsers.deviceParamChange?.(data)
+        if (paramData) {
+          console.log(
+            `[参数变更监听] 检测到参数变更: DPI档位=${paramData.dpiLevel}, DPI值=${paramData.dpiValue}, 板载配置=${paramData.profileId}`
+          )
+
+          // 检查 DPI 档位是否变化
+          const dpiChanged = deviceStatus.value.dpiLevel !== paramData.dpiLevel
+          // 检查板载配置是否变化
+          const profileChanged = deviceStatus.value.currentProfile !== paramData.profileId
+
+          if (dpiChanged) {
+            console.log(`[参数变更监听] DPI档位变化: ${deviceStatus.value.dpiLevel} -> ${paramData.dpiLevel}`)
+            // 更新 DPI 状态
+            deviceStatus.value.dpi = `${paramData.dpiValue}`
+            deviceStatus.value.dpiLevel = paramData.dpiLevel
+          }
+
+          if (profileChanged) {
+            console.log(`[参数变更监听] 板载配置变化: ${deviceStatus.value.currentProfile} -> ${paramData.profileId}`)
+            // 更新板载配置编号
+            deviceStatus.value.currentProfile = paramData.profileId
+            // 重新读取基础设置以同步所有配置
+            await getBasicSettings()
+          }
+        }
+      }
+    }
+
+    // 注册监听器
+    device.addEventListener('inputreport', deviceParamChangeListener)
+    console.log('[参数变更监听] 已启动设备参数变更监听 (0xB2)')
+  }
+
+  /**
+   * 清理设备参数变更监听器
+   */
+  function cleanupDeviceParamChangeListener(): void {
+    if (device && deviceParamChangeListener) {
+      device.removeEventListener('inputreport', deviceParamChangeListener)
+      deviceParamChangeListener = null
+      console.log('[参数变更监听] 已停止设备参数变更监听')
     }
   }
 
@@ -384,12 +466,17 @@ export function useWebHID() {
       // 启动 DPI 变化实时监听
       setupDPIChangeListener()
 
+      // 启动设备参数变更监听 (0xB2)
+      setupDeviceParamChangeListener()
+
       // 监听设备断开
       navigator.hid.addEventListener('disconnect', (event: HIDConnectionEvent) => {
         if (event.device === device) {
           console.log('[设备事件] 设备已断开连接')
           // 清理 DPI 监听器
           cleanupDPIChangeListener()
+          // 清理设备参数变更监听器
+          cleanupDeviceParamChangeListener()
           // 清理电池状态定时器
           if (batteryIntervalId !== null) {
             clearInterval(batteryIntervalId)
@@ -648,7 +735,7 @@ export function useWebHID() {
         return
       }
 
-      const batteryLevel = currentProtocol.value.parsers.battery(response)
+      const batteryLevel = (connectionMode.value === 'usb' ? 100 :currentProtocol.value.parsers.battery(response));
       deviceStatus.value.battery = `${Math.max(0, Math.min(100, batteryLevel))}%`
     } catch (err) {
       console.error('获取电池状态失败:', err)

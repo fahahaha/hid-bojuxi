@@ -127,12 +127,20 @@ export interface DeviceProtocol {
       value: number
       level: number
     } | null
+    /** 解析设备参数变更通知 (0xB2 - 设备主动上报) */
+    deviceParamChange?: (response: Uint8Array) => {
+      dpiLevel: number
+      dpiValue: number
+      profileId: number
+    } | null
   }
 
   /** 报文识别器 (可选) */
   reporters?: {
     /** 判断是否为 DPI 变化通知报文 */
     isDPIChangeReport?: (response: Uint8Array) => boolean
+    /** 判断是否为设备参数变更通知报文 (0xB2) */
+    isDeviceParamChangeReport?: (response: Uint8Array) => boolean
   }
 
   /** 设备特性配置 (可选) */

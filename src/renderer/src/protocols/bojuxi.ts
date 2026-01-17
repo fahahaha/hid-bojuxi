@@ -59,7 +59,9 @@ export const COMMAND_CODE = {
   /** 恢复出厂设置 */
   FACTORY_RESET: 0xa7,
   /** 固件升级 (暂不开发) */
-  FIRMWARE_UPGRADE: 0xa8
+  FIRMWARE_UPGRADE: 0xa8,
+  /** 设备参数变更通知 (设备→PC) */
+  DEVICE_PARAM_CHANGE: 0xb2
 } as const
 
 /** 回报率值映射 */
@@ -704,6 +706,44 @@ export const bojuxiProtocol: DeviceProtocol = {
 
       // Byte 9: wheel_direction
       return response[9]
+    },
+
+    /**
+     * 解析设备参数变更通知 (M08 - 0xB2)
+     * 设备主动上报的参数变更
+     */
+    deviceParamChange: (response: Uint8Array) => {
+      // 检查响应有效性
+      if (response[0] !== PACKET_HEADER.ACK || response[2] !== COMMAND_CODE.DEVICE_PARAM_CHANGE) {
+        return null
+      }
+
+      // Byte 9: DPI当前档位
+      const dpiLevel = response[9]
+      // Byte 11-12: DPI值(X轴)
+      const dpiValue = response[11] | (response[12] << 8)
+      // Byte 16: 当前板载配置编号
+      const profileId = response[16]
+
+      console.log('[设备参数变更通知] DPI档位:', dpiLevel, 'DPI值:', dpiValue, '板载配置:', profileId)
+
+      return {
+        dpiLevel,
+        dpiValue,
+        profileId
+      }
+    }
+  },
+
+  /**
+   * 报文识别器
+   */
+  reporters: {
+    /**
+     * 判断是否为设备参数变更通知 (0xB2)
+     */
+    isDeviceParamChangeReport: (response: Uint8Array) => {
+      return response[0] === PACKET_HEADER.ACK && response[2] === COMMAND_CODE.DEVICE_PARAM_CHANGE
     }
   },
 

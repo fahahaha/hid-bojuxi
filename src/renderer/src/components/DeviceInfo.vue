@@ -99,7 +99,7 @@ import { useI18n } from '../composables/useI18n'
 import { useMessageBox } from '../composables/useMessageBox'
 import { useConfirmBox } from '../composables/useConfirmBox'
 
-const { deviceInfo, deviceStatus, factoryReset, getBasicSettings } = useWebHID()
+const { deviceInfo, deviceStatus, factoryReset, getBasicSettings,connectionMode } = useWebHID()
 const { t } = useI18n()
 const { info: showInfo, success: showSuccess, error: showError } = useMessageBox()
 const { confirm: showConfirm } = useConfirmBox()
@@ -117,7 +117,7 @@ const chargeStatus = computed(() => {
   if (!deviceInfo.value || deviceInfo.value.status !== '已连接') {
     return t('deviceInfo.battery.notConnected')
   }
-  return t('deviceInfo.battery.notCharging')
+  return connectionMode.value === 'usb' ? t('deviceStatus.charging') :t('deviceInfo.battery.notCharging')
 })
 
 function checkUpdate() {
