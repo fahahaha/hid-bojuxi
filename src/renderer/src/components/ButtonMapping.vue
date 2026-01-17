@@ -811,7 +811,7 @@ onMounted(() => {
 
 @media (min-width: 1024px) {
   .mapping-layout {
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 450px 1fr;
   }
 }
 
@@ -836,8 +836,8 @@ onMounted(() => {
 /* 鼠标按键基础样式 */
 .mouse-mode .mouse-key {
   position: absolute;
+  width: 110px;
   min-height: 32px;
-  min-width: 80px;
   padding: 0.25rem 0.5rem;
   user-select: none;
   border-radius: 0.5rem;
@@ -893,7 +893,7 @@ onMounted(() => {
   top: 50%;
   transform: translateY(-50%);
   height: 0;
-  border-bottom: 2px solid var(--mouse-key-line);
+  border-bottom: 1px solid var(--mouse-key-line);
   z-index: -1;
   pointer-events: none;
 }
@@ -914,8 +914,8 @@ onMounted(() => {
 
 /* 按键 1 - 左键 */
 .mouse-mode .key0 {
-  top: 15px;
-  left: -70px;
+  top: 5px;
+  left: -90px;
 }
 
 .mouse-mode .key0:before {
@@ -929,77 +929,77 @@ onMounted(() => {
 
 /* 按键 2 - 右键 */
 .mouse-mode .key1 {
-  top: 15px;
-  right: -72px;
+  top: 5px;
+  right: -82px;
 }
 
 .mouse-mode .key1:before {
   right: 100%;
-  width: 86px;
+  width: 76px;
 }
 
 .mouse-mode .key1:after {
-  right: calc(100% + 86px - 4px);
+  right: calc(100% + 76px - 4px);
 }
 
 /* 按键 3 - 中键 */
 .mouse-mode .key2 {
   top: 65px;
-  right: -72px;
+  right: -82px;
 }
 
 .mouse-mode .key2:before {
   right: 100%;
-  width: 118px;
+  width: 98px;
 }
 
 .mouse-mode .key2:after {
-  right: calc(100% + 118px - 4px);
+  right: calc(100% + 98px - 4px);
 }
 
 /* 按键 4 - 前进 */
 .mouse-mode .key3 {
-  top: 132px;
-  left: -70px;
+  top: 112px;
+  left: -90px;
 }
 
 .mouse-mode .key3:before {
   left: 100%;
-  width: 39px;
+  width: 29px;
 }
 
 .mouse-mode .key3:after {
-  left: calc(100% + 39px - 4px);
+  left: calc(100% + 29px - 4px);
 }
 
 /* 按键 5 - 后退 */
 .mouse-mode .key4 {
   top: 180px;
-  left: -70px;
+  left: -90px;
 }
 
 .mouse-mode .key4:before {
   left: 100%;
-  width: 39px;
+  width: 29px;
 }
 
 .mouse-mode .key4:after {
-  left: calc(100% + 39px - 4px);
+  left: calc(100% + 29px - 4px);
 }
 
 /* 按键 6 - DPI键 */
 .mouse-mode .key5 {
   top: 125px;
-  right: -72px;
+  right: -82px;
 }
 
 .mouse-mode .key5:before {
   right: 100%;
-  width: 116px;
+  width: 97px;
 }
 
 .mouse-mode .key5:after {
-  right: calc(100% + 116px - 4px);
+  right: calc(100% + 97px - 4px);
 }
 
 .button-settings {
