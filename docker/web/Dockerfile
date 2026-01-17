@@ -1,29 +1,11 @@
-# 多阶段构建 Dockerfile
-# 阶段 1: 构建应用
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# 复制 package 文件
-COPY package*.json ./
-
-# 安装依赖
-RUN npm ci
-
-# 复制源代码
-COPY . .
-
-# 构建 Web 应用
-RUN npm run build:web
-
-# 阶段 2: 生产环境
+# 生产环境 Dockerfile（使用已构建的 dist-web）
 FROM nginx:alpine
 
-# 复制自定义 nginx 配置
+# 复制自定义 nginx 配置（相对于项目根目录）
 COPY docker/web/nginx.conf /etc/nginx/conf.d/default.conf
 
-# 从构建阶段复制打包好的文件
-COPY --from=builder /app/dist-web /usr/share/nginx/html
+# 复制已构建好的文件（相对于项目根目录）
+COPY dist-web /usr/share/nginx/html
 
 # 暴露端口
 EXPOSE 80

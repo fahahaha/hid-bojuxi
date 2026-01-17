@@ -12,6 +12,10 @@
         </div>
 
         <div class="header-right">
+          <a :href="downloadUrl" download class="header-btn btn-download">
+            <i class="fa fa-download"></i>
+            <span>{{ t('header.download') }}</span>
+          </a>
           <!-- 板载配置选择 -->
           <div class="profile-selector">
             <button class="header-btn btn-profile" @click="toggleProfileDropdown">
@@ -242,6 +246,8 @@ const { isLoading } = useLoading()
 const activeTab = ref('basic')
 const showLanguageDropdown = ref(false)
 const showProfileDropdown = ref(false)
+// 下载链接：使用固定文件名 + 时间戳防缓存
+const downloadUrl = computed(() => `/downloads/BHub-setup.exe?t=${Date.now()}`)
 
 // 板载配置列表 - 根据设备最大配置数动态生成
 const profiles = computed(() => {

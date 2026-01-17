@@ -16,6 +16,7 @@ export default {
     title: 'Shenzhen BJX Mouse Driver',
     subtitle: 'Mouse supports multiple solutions',
     theme: 'Theme',
+    download: 'Download',
     connectionMode: {
       label: 'Mode',
       usb: 'USB',

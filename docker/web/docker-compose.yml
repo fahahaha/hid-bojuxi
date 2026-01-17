@@ -5,9 +5,10 @@ services:
     build:
       context: ../../
       dockerfile: docker/web/Dockerfile
-    container_name: BHub-web
+    image: bhub-web
+    container_name: bhub-web
     ports:
-      - '8080:80'
+      - '8888:80'
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -16,4 +17,4 @@ services:
 
 networks:
   app-network:
-    driver: bridge
+    external: true

@@ -16,6 +16,7 @@ export default {
     title: '深圳博巨矽鼠标驱动',
     subtitle: '支持多种方案鼠标',
     theme: '主题',
+    download: '下载',
     connectionMode: {
       label: '连接模式',
       usb: 'USB',
