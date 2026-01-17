@@ -23,8 +23,7 @@ export default {
     },
     profile: {
       label: 'Profile',
-      profile1: 'Profile 1',
-      profile2: 'Profile 2'
+      profile: 'Profile {n}'
     }
   },
   footer: {

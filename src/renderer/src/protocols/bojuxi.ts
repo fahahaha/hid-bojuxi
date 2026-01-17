@@ -320,38 +320,23 @@ export const bojuxiProtocol: DeviceProtocol = {
         0x00 // 无数据
       ]),
 
-    /**
-     * 获取回报率
-     * 通过读取基础设置获取
-     * @param mode 连接模式
-     */
-    getReportRate: (mode: ConnectionMode = 'usb') =>
-      createPacket([
-        PACKET_HEADER.SEND,
-        getConnectionModeByte(mode),
-        COMMAND_CODE.GET_BASIC_SETTINGS,
-        0x04, // 数据长度
-        0x01, // mode
-        0x00, // table_base_id
-        0x00, // table_config_id
-        0x00 // reserved
-      ]),
 
     /**
-     * 获取 DPI
-     * 通过读取基础设置获取
+     * 获取 getBasicSettings
+     * 获取基础配置信息（DPI、回报率、正反方向等等）
      * @param mode 连接模式
+     * @param profileId 板载配置编号（默认使用当前配置）
      */
-    getDPI: (mode: ConnectionMode = 'usb') =>
+    getBasicSettings: (mode: ConnectionMode = 'usb', profileId: number = 0) =>
       createPacket([
         PACKET_HEADER.SEND,
         getConnectionModeByte(mode),
         COMMAND_CODE.GET_BASIC_SETTINGS,
         0x04,
-        0x01,
-        0x00,
-        0x00,
-        0x00
+        0x01, // mode
+        0x00, // table_sub_id
+        profileId, // profile_id
+        0x00 // reserved
       ]),
 
     /**
@@ -364,35 +349,20 @@ export const bojuxiProtocol: DeviceProtocol = {
      * 获取按键映射
      * 通过读取基础设置获取
      * @param mode 连接模式
+     * @param profileId 板载配置编号（默认使用当前配置）
      */
-    getButtonMapping: (mode: ConnectionMode = 'usb') =>
+    getButtonMapping: (mode: ConnectionMode = 'usb', profileId: number = 0) =>
       createPacket([
         PACKET_HEADER.SEND,
         getConnectionModeByte(mode),
         COMMAND_CODE.GET_BASIC_SETTINGS,
         0x04,
-        0x01,
-        0x00,
-        0x00,
-        0x00
+        0x01, // mode
+        0x00, // table_sub_id
+        profileId, // profile_id
+        0x00 // reserved
       ]),
 
-    /**
-     * 获取滚轮方向
-     * 通过读取基础设置获取
-     * @param mode 连接模式
-     */
-    getScrollDirection: (mode: ConnectionMode = 'usb') =>
-      createPacket([
-        PACKET_HEADER.SEND,
-        getConnectionModeByte(mode),
-        COMMAND_CODE.GET_BASIC_SETTINGS,
-        0x04,
-        0x01,
-        0x00,
-        0x00,
-        0x00
-      ]),
 
     // ========================================================================
     // 设置命令
@@ -571,12 +541,24 @@ export const bojuxiProtocol: DeviceProtocol = {
       // Byte 19-20: dpi_max
       const dpiMax = response[18] | (response[19] << 8)
 
+      // Byte 23: current_profile - 当前选择的板载配置编号
+      const currentProfile = response[23]
+
+      // Byte 24: configured_profiles - 已配置的板载配置总数
+      const configuredProfiles = response[24]
+
+      // Byte 25: max_profiles - 设备最大支持的板载配置数量
+      const maxProfiles = response[25]
+
       console.log('[Bojuxi] 设备信息:', {
         deviceId,
         firmwareVersion,
         sensorId,
         dpiRange: `${dpiMin}-${dpiMax}`,
-        dpiStep
+        dpiStep,
+        currentProfile,
+        configuredProfiles,
+        maxProfiles
       })
 
       return {
@@ -585,7 +567,10 @@ export const bojuxiProtocol: DeviceProtocol = {
         firmwareVersion,
         dpiMin,
         dpiMax,
-        dpiStep
+        dpiStep,
+        currentProfile,
+        configuredProfiles,
+        maxProfiles
       }
     },
 
@@ -803,11 +788,13 @@ export interface BojuxiBatteryInfo {
  * 构建 A1 基础设置配置命令
  * @param settings 基础设置参数
  * @param mode 连接模式
+ * @param profileId 板载配置编号
  * @returns 64 字节命令数据
  */
 export function buildSetBasicSettingsCommand(
   settings: BojuxiBasicSettings,
-  mode: ConnectionMode = 'usb'
+  mode: ConnectionMode = 'usb',
+  profileId?: number
 ): number[] {
   const packet: number[] = []
 
@@ -822,10 +809,10 @@ export function buildSetBasicSettingsCommand(
 
   // Byte 4: mode (bit0:USB, bit1:2.4G)
   packet.push(settings.mode || 0x01)
-  // Byte 5: table_base_id
+  // Byte 5: table_sub_id (子表编号，固定0x00)
   packet.push(settings.tableBaseId || 0x00)
-  // Byte 6: table_config_id
-  packet.push(settings.tableConfigId || 0x00)
+  // Byte 6: profile_id (板载配置编号)
+  packet.push(profileId !== undefined ? profileId : (settings.tableConfigId || 0x00))
   // Byte 7: reserved
   packet.push(0x00)
 

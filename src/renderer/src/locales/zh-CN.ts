@@ -23,8 +23,7 @@ export default {
     },
     profile: {
       label: '板载配置',
-      profile1: '板载配置1',
-      profile2: '板载配置2'
+      profile: '板载配置{n}'
     }
   },
   footer: {

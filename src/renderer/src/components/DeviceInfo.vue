@@ -124,7 +124,7 @@ function checkUpdate() {
   showInfo(t('deviceInfo.battery.checkingUpdate'))
 }
 
-const MACRO_STORAGE_KEY = 'mouse_macros'
+// const MACRO_STORAGE_KEY = 'mouse_macros'
 
 async function restoreDefaults() {
   const confirmed = await showConfirm(t('deviceInfo.battery.restoreConfirm'), {

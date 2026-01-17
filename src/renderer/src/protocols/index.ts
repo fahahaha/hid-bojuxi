@@ -15,16 +15,13 @@ export interface DeviceProtocol {
     getDeviceInfo: number[] | ((connectionMode: ConnectionMode) => number[])
     /** 获取电池状态命令 (支持连接模式参数) */
     getBattery: number[] | ((connectionMode: ConnectionMode) => number[])
-    /** 获取回报率命令 (支持连接模式参数) */
-    getReportRate: number[] | ((connectionMode: ConnectionMode) => number[])
-    /** 获取 DPI 命令 (支持连接模式参数) */
-    getDPI: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取 基础配置信息 命令 (支持连接模式参数和板载配置编号) */
+    getBasicSettings: number[] | ((connectionMode: ConnectionMode, profileId?: number) => number[])
     /** 获取背光模式命令 (支持连接模式参数) */
     getBacklight: number[] | ((connectionMode: ConnectionMode) => number[])
-    /** 获取按键映射命令 (支持连接模式参数) */
-    getButtonMapping: number[] | ((connectionMode: ConnectionMode) => number[])
+    /** 获取按键映射命令 (支持连接模式参数和板载配置编号) */
+    getButtonMapping: number[] | ((connectionMode: ConnectionMode, profileId?: number) => number[])
     /** 获取 滚轮 命令 (支持连接模式参数) */
-    getScrollDirection?: number[] | ((connectionMode: ConnectionMode) => number[])
     /** 获取宏列表命令 (支持连接模式参数) */
     getMacroList?: number[] | ((connectionMode: ConnectionMode) => number[])
     /** 获取宏数据命令 */
@@ -89,6 +86,9 @@ export interface DeviceProtocol {
       dpiMin?: number
       dpiMax?: number
       dpiStep?: number
+      currentProfile?: number
+      configuredProfiles?: number
+      maxProfiles?: number
     }
     /** 解析电池电量 */
     battery: (response: Uint8Array) => number

@@ -16,7 +16,7 @@
           <div class="profile-selector">
             <button class="header-btn btn-profile" @click="toggleProfileDropdown">
               <i class="fa fa-layer-group"></i>
-              <span>{{ t('header.profile.label') }} {{ selectedProfile }}</span>
+              <span>{{ t('header.profile.label') }} {{ selectedProfile + 1 }}</span>
               <i class="fa fa-chevron-down" :class="{ 'rotate-180': showProfileDropdown }"></i>
             </button>
             <div v-if="showProfileDropdown" class="profile-dropdown">
@@ -232,7 +232,8 @@ const {
   connectDevice,
   autoConnectDevice,
   connectionMode,
-  getCurrentProtocol
+  getCurrentProtocol,
+  switchProfile
 } = useWebHID()
 const { locale, setLocale, t } = useI18n()
 const { theme, toggleTheme } = useTheme()
@@ -241,13 +242,27 @@ const { isLoading } = useLoading()
 const activeTab = ref('basic')
 const showLanguageDropdown = ref(false)
 const showProfileDropdown = ref(false)
-const selectedProfile = ref(1)
 
-// 板载配置列表
-const profiles = computed(() => [
-  { id: 1, name: t('header.profile.profile1') },
-  { id: 2, name: t('header.profile.profile2') }
-])
+// 板载配置列表 - 根据设备最大配置数动态生成
+const profiles = computed(() => {
+  const maxProfiles = deviceStatus.value.maxProfiles || 1
+  const profileList: Array<{ id: number; name: string }> = []
+  for (let i = 0; i < maxProfiles; i++) {
+    profileList.push({
+      id: i,
+      name: t('header.profile.profile', { n: i + 1 })
+    })
+  }
+  return profileList
+})
+
+// 当前选中的板载配置 - 从设备状态获取
+const selectedProfile = computed({
+  get: () => deviceStatus.value.currentProfile,
+  set: (_value) => {
+    // 这里会在selectProfile函数中处理
+  }
+})
 
 // 检查当前协议是否支持双模式
 const supportsDualMode = computed(() => {
@@ -310,10 +325,17 @@ function toggleProfileDropdown() {
   showLanguageDropdown.value = false
 }
 
-function selectProfile(profileId: number) {
-  selectedProfile.value = profileId
+async function selectProfile(profileId: number) {
   showProfileDropdown.value = false
-  // TODO: 这里可以添加切换板载配置的实际逻辑
+
+  if (!isConnected.value) {
+    showNotification('warning', t('notification.connectFailed'), '请先连接设备')
+    return
+  }
+
+  // 切换板载配置并重新读取基础设置
+  await switchProfile(profileId)
+  showNotification('success', '切换成功', `已切换到板载配置 ${profileId + 1}`)
 }
 
 function showNotification(type: string, title: string, message: string) {

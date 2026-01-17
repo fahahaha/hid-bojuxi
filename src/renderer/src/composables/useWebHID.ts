@@ -50,7 +50,9 @@ const deviceStatus = ref({
   dpiMax: 16000, // DPI 最大值
   dpiStep: 50, // DPI 步进值
   backlight: '--',
-  scrollDirection: 0 //正向0，反向1
+  scrollDirection: 0, //正向0，反向1
+  currentProfile: 0, // 当前板载配置编号
+  maxProfiles: 1 // 最大板载配置数量
 })
 
 /**
@@ -68,6 +70,10 @@ function resolveCommand(
   }
   return command
 }
+
+/** * 解析命令：支持静态数组或函数形式的命令（带板载配置参数） * @param command 命令（数组或函数） * @param mode 连接模式 * @param profileId 板载配置编号 * @returns 命令数组 */function resolveCommand2(  command: number[] | ((connectionMode: ConnectionMode, profileId?: number) => number[]),  mode: ConnectionMode,  profileId?: number): number[] {  if (typeof command === 'function') {    return command(mode, profileId)  }  return command}
+
+
 
 export function useWebHID() {
   /**
@@ -599,6 +605,9 @@ export function useWebHID() {
         if (info.dpiMin !== undefined) deviceStatus.value.dpiMin = info.dpiMin
         if (info.dpiMax !== undefined) deviceStatus.value.dpiMax = info.dpiMax
         if (info.dpiStep !== undefined) deviceStatus.value.dpiStep = info.dpiStep
+        // 更新板载配置信息
+        if (info.currentProfile !== undefined) deviceStatus.value.currentProfile = info.currentProfile
+        if (info.maxProfiles !== undefined) deviceStatus.value.maxProfiles = info.maxProfiles
       } else {
         // 如果无法获取详细信息，使用基本信息
         deviceInfo.value = {
@@ -648,101 +657,8 @@ export function useWebHID() {
     }
   }
 
-  /**
-   * 获取当前回报率
-   */
-  async function getCurrentReportRate(): Promise<void> {
-    if (!device || !currentProtocol.value) return
 
-    try {
-      const command = resolveCommand(
-        currentProtocol.value.commands.getReportRate,
-        connectionMode.value
-      )
-      const response = await sendCommandAndWait(command)
 
-      if (!response || response.length < 1) {
-        deviceStatus.value.reportRate = '1000 Hz'
-        return
-      }
-
-      const rate = currentProtocol.value.parsers.reportRate(response)
-      deviceStatus.value.reportRate = `${rate} Hz`
-    } catch (err) {
-      console.error('获取回报率失败:', err)
-      deviceStatus.value.reportRate = '1000 Hz'
-    }
-  }
-
-  /**
-   * 获取当前 DPI
-   */
-  async function getCurrentDPI(): Promise<void> {
-    if (!device || !currentProtocol.value) return
-
-    try {
-      const command = resolveCommand(currentProtocol.value.commands.getDPI, connectionMode.value)
-      const response = await sendCommandAndWait(command)
-
-      if (!response || response.length < 3) {
-        deviceStatus.value.dpi = '2000'
-        deviceStatus.value.dpiLevel = 1
-        return
-      }
-
-      const dpiData = currentProtocol.value.parsers.dpi(response)
-      deviceStatus.value.dpi = `${dpiData.value}`
-      deviceStatus.value.dpiLevel = dpiData.level
-
-      // 同时更新回报率状态
-      if (dpiData.reportRate !== undefined) {
-        const rateMap: Record<number, number> = {
-          1: 125,
-          2: 250,
-          3: 500,
-          4: 1000
-        }
-        deviceStatus.value.reportRateIndex = dpiData.reportRate
-        deviceStatus.value.reportRate = `${rateMap[dpiData.reportRate] || 1000} Hz`
-      }
-    } catch (err) {
-      console.error('获取 DPI 失败:', err)
-      deviceStatus.value.dpi = '2000'
-      deviceStatus.value.dpiLevel = 1
-    }
-  }
-
-  /**
-   * 和DPI一样，获取当前滚轮方向
-   */
-  async function getCurrentScrollDirection(): Promise<void> {
-    if (
-      !device ||
-      !currentProtocol.value ||
-      !currentProtocol.value.commands.getScrollDirection ||
-      !currentProtocol.value.parsers.scrollDirection
-    )
-      return
-
-    try {
-      const command = resolveCommand(
-        currentProtocol.value.commands.getScrollDirection,
-        connectionMode.value
-      )
-      const response = await sendCommandAndWait(command)
-
-      if (!response || response.length < 3) {
-        deviceStatus.value.scrollDirection = 0
-        return
-      }
-
-      const scrollDirectionData = currentProtocol.value.parsers.scrollDirection(response)
-      deviceStatus.value.scrollDirection = scrollDirectionData
-    } catch (err) {
-      console.error('获取 滚轮方向 失败:', err)
-      deviceStatus.value.scrollDirection = 0
-    }
-  }
 
   /**
    * 获取基础设置（回报率、DPI、滚轮方向）
@@ -752,8 +668,13 @@ export function useWebHID() {
     if (!device || !currentProtocol.value) return
 
     try {
-      // 使用 getDPI 命令（实际上是 A2 命令，返回所有基础设置）
-      const command = resolveCommand(currentProtocol.value.commands.getDPI, connectionMode.value)
+      // 使用 getBasicSettings 命令（A2 命令，返回所有基础设置）
+      // 传入当前板载配置编号
+      const command = resolveCommand2(
+        currentProtocol.value.commands.getBasicSettings,
+        connectionMode.value,
+        deviceStatus.value.currentProfile
+      )
       const response = await sendCommandAndWait(command)
 
       if (!response || response.length < 10) {
@@ -824,6 +745,22 @@ export function useWebHID() {
   }
 
   /**
+   * 切换板载配置
+   * @param profileId 板载配置编号
+   */
+  async function switchProfile(profileId: number): Promise<void> {
+    if (!device || !currentProtocol.value) return
+
+    console.log(`[板载配置] 切换到配置 ${profileId}`)
+
+    // 更新当前板载配置编号
+    deviceStatus.value.currentProfile = profileId
+
+    // 重新读取基础设置
+    await getBasicSettings()
+  }
+
+  /**
    * 获取背光模式
    */
   async function getBacklightMode(): Promise<void> {
@@ -872,8 +809,12 @@ export function useWebHID() {
         pollingRate: HZ_TO_POLLING_RATE[rate] || 0x08
       }
 
-      // 构建并发送 A1 命令，等待 ACK 响应
-      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      // 构建并发送 A1 命令，等待 ACK 响应，传入当前板载配置编号
+      const command = buildSetBasicSettingsCommand(
+        newSettings,
+        connectionMode.value,
+        deviceStatus.value.currentProfile
+      )
       console.log(
         '[设置回报率] 发送 A1 命令:',
         command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
@@ -924,8 +865,12 @@ export function useWebHID() {
         dpiCurrentLevel: level - 1
       }
 
-      // 构建并发送 A1 命令，等待 ACK 响应
-      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      // 构建并发送 A1 命令，等待 ACK 响应，传入当前板载配置编号
+      const command = buildSetBasicSettingsCommand(
+        newSettings,
+        connectionMode.value,
+        deviceStatus.value.currentProfile
+      )
       console.log(
         '[设置DPI档位] 发送 A1 命令:',
         command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
@@ -984,8 +929,12 @@ export function useWebHID() {
         dpiLevels: newDpiLevels
       }
 
-      // 构建并发送 A1 命令，等待 ACK 响应
-      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      // 构建并发送 A1 命令，等待 ACK 响应，传入当前板载配置编号
+      const command = buildSetBasicSettingsCommand(
+        newSettings,
+        connectionMode.value,
+        deviceStatus.value.currentProfile
+      )
       console.log(
         '[设置DPI值] 发送 A1 命令:',
         command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
@@ -1132,8 +1081,12 @@ export function useWebHID() {
         wheelDirection: direction
       }
 
-      // 构建并发送 A1 命令，等待 ACK 响应
-      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      // 构建并发送 A1 命令，等待 ACK 响应，传入当前板载配置编号
+      const command = buildSetBasicSettingsCommand(
+        newSettings,
+        connectionMode.value,
+        deviceStatus.value.currentProfile
+      )
       console.log(
         '[设置滚轮方向] 发送 A1 命令:',
         command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
@@ -1215,8 +1168,12 @@ export function useWebHID() {
         buttonMappings: buttonMappings
       }
 
-      // 构建并发送 A1 命令，等待 ACK 响应
-      const command = buildSetBasicSettingsCommand(newSettings, connectionMode.value)
+      // 构建并发送 A1 命令，等待 ACK 响应，传入当前板载配置编号
+      const command = buildSetBasicSettingsCommand(
+        newSettings,
+        connectionMode.value,
+        deviceStatus.value.currentProfile
+      )
       console.log(
         '[设置按键映射] 发送 A1 命令:',
         command.map((b) => '0x' + b.toString(16).padStart(2, '0')).join(' ')
@@ -1550,10 +1507,8 @@ export function useWebHID() {
     autoConnectDevice,
     // 基础设置获取（一次性获取回报率、DPI、滚轮方向）
     getBasicSettings,
-    // 单独获取方法（供后续单独刷新使用）
-    getCurrentReportRate,
-    getCurrentDPI,
-    getCurrentScrollDirection,
+    // 板载配置切换
+    switchProfile,
     // 设置方法
     setReportRate,
     setDPI,
