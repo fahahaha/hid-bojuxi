@@ -5,7 +5,7 @@ services:
     build:
       context: ../../
       dockerfile: docker/web/Dockerfile
-    container_name: webhid-bojuxi-web
+    container_name: BHub-web
     ports:
       - '8080:80'
     restart: unless-stopped
