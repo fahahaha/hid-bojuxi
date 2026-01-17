@@ -457,6 +457,7 @@ onUnmounted(() => {
   color: var(--text-secondary);
   height: 2.25rem;
   box-sizing: border-box;
+  line-height: 1;
 }
 
 .header-btn:hover {
