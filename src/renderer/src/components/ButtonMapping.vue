@@ -1015,9 +1015,9 @@ onMounted(() => {
 
 .panel-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  gap: 10px;
 }
 
 .panel-title {
@@ -1027,16 +1027,19 @@ onMounted(() => {
 }
 
 .reset-button {
-  font-size: 0.875rem;
-  color: var(--text-tertiary);
-  background: none;
+  padding: 0.3rem 0.8rem;
+  background-color: var(--color-primary);
+  color: white;
   border: none;
+  border-radius: 0.5rem;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .reset-button:hover:not(:disabled) {
-  color: var(--color-primary);
+  background-color: #1557cc;
 }
 
 .reset-button:disabled {
@@ -1045,7 +1048,7 @@ onMounted(() => {
 }
 
 .reset-button i {
-  margin-right: 0.25rem;
+  margin-right: 0.5rem;
 }
 
 .settings-form {
@@ -1089,6 +1092,8 @@ onMounted(() => {
 
 .tab-content {
   min-height: 200px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 /* 按钮网格 */
