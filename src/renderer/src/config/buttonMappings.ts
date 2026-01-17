@@ -121,6 +121,39 @@ export const mouseButtons: ButtonMapping[] = [
 ]
 
 /**
+ * 生成板载配置按钮（根据最大板载数动态生成）
+ * @param maxProfiles 最大板载配置数量
+ * @returns 板载配置按钮数组
+ */
+export function getProfileButtons(maxProfiles: number): ButtonMapping[] {
+  const buttons: ButtonMapping[] = [
+    {
+      id: 'profile_cycle',
+      name: '板载配置切换',
+      nameKey: 'buttonMapping.mouseButtons.profileCycle',
+      type: ButtonType.FUNCTION,
+      code: [0x06, 0x03, 0xff, 0x00],
+      category: '板载配置',
+      categoryKey: 'buttonMapping.categories.profile'
+    }
+  ]
+
+  for (let i = 0; i < maxProfiles && i < 10; i++) {
+    buttons.push({
+      id: `profile_${i}`,
+      name: `板载配置${i + 1}`,
+      nameKey: 'buttonMapping.mouseButtons.profileN',
+      type: ButtonType.FUNCTION,
+      code: [0x06, 0x03, i, 0x00],
+      category: '板载配置',
+      categoryKey: 'buttonMapping.categories.profile'
+    })
+  }
+
+  return buttons
+}
+
+/**
  * DPI 功能按键（博巨矽协议）
  * 格式: [0x05, 0x00, DPI change, 0x00]
  * DPI change: 0x00=DPI+不循环, 0x01=DPI-不循环, 0x02=DPI+循环, 0x03=DPI-循环
@@ -686,6 +719,30 @@ export function getButtonDisplayName(code: number[], t?: TranslateFunction): str
       return parts.join('+')
     } catch {
       // 解析失败，返回未知
+    }
+  }
+
+  // 检查是否是功能按键 (0x06)
+  if (typeCode === BUTTON_TYPE_CODE.FUNCTION) {
+    const functionId = code[1]
+    const param = code[2]
+
+    // Function ID 0x03: 板载配置切换
+    if (functionId === 0x03) {
+      if (param === 0xff) {
+        // 循环切换
+        if (t) {
+          return t('buttonMapping.displayNames.profileCycle')
+        }
+        return '板载配置切换'
+      } else {
+        // 切换到指定配置
+        const profileNum = param + 1
+        if (t) {
+          return t('buttonMapping.displayNames.profileN', { n: String(profileNum) })
+        }
+        return `板载配置${profileNum}`
+      }
     }
   }
 

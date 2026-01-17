@@ -131,7 +131,9 @@ export default {
       middle: 'Middle Click',
       back: 'Back',
       forward: 'Forward',
-      disabled: 'Disabled'
+      disabled: 'Disabled',
+      profileCycle: 'Profile Cycle',
+      profileN: 'Profile {n}'
     },
     // DPI buttons
     dpiButtons: {
@@ -173,7 +175,9 @@ export default {
       scrollRight: 'Scroll→',
       scroll: 'Scroll',
       none: 'None',
-      unknown: 'Unknown({code})'
+      unknown: 'Unknown({code})',
+      profileCycle: 'Profile Cycle',
+      profileN: 'Profile {n}'
     },
     // Categories
     categories: {
@@ -183,7 +187,8 @@ export default {
       volume: 'Volume Control',
       playback: 'Playback Control',
       system: 'System Functions',
-      browser: 'Browser'
+      browser: 'Browser',
+      profile: 'Profile'
     },
     // Modifiers
     modifiers: {

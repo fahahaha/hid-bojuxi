@@ -56,13 +56,13 @@
             <div v-if="activeTab === 'mouse'" class="tab-content">
               <div class="button-grid">
                 <button
-                  v-for="btn in mouseButtons"
+                  v-for="btn in filteredMouseButtons"
                   :key="btn.id"
                   @click="applyMapping(btn.code)"
                   class="function-button"
                   :class="{ active: isCurrentMapping(btn.code) }"
                 >
-                  {{ t(btn.nameKey || '') || btn.name }}
+                  {{ getButtonName(btn) }}
                 </button>
               </div>
             </div>
@@ -283,13 +283,15 @@ import {
   createKeyboardMapping,
   getButtonDisplayName,
   defaultButtonMappings,
+  getProfileButtons,
   type ButtonMapping
 } from '../config/buttonMappings'
 
 const {
   isConnected,
   getButtonMapping,
-  setButtonMapping
+  setButtonMapping,
+  deviceStatus
 } = useWebHID()
 const {
   macros,
@@ -324,6 +326,27 @@ const buttonMappings = ref<number[][]>([...defaultButtonMappings])
 const uiToDeviceIndex = [0, 2, 1, 3, 4, 7] // UI索引 → 设备索引
 
 const buttonNames = computed(() => ta('buttonMapping.buttonNames'))
+
+// 根据最大板载配置数动态生成鼠标按钮列表
+const filteredMouseButtons = computed(() => {
+  const maxProfiles = deviceStatus.value.maxProfiles || 1
+  return [...mouseButtons, ...getProfileButtons(maxProfiles)]
+})
+
+/**
+ * 获取按钮显示名称（处理动态参数）
+ */
+function getButtonName(btn: ButtonMapping): string {
+  if (!btn.nameKey) return btn.name
+
+  // 如果是板载配置按钮（profile_0, profile_1...），传递参数 n
+  if (btn.id.startsWith('profile_') && btn.id !== 'profile_cycle') {
+    const profileIndex = parseInt(btn.id.replace('profile_', ''))
+    return t(btn.nameKey, { n: String(profileIndex + 1) })
+  }
+
+  return t(btn.nameKey) || btn.name
+}
 
 const selectedButton = ref(0)
 const activeTab = ref('mouse')

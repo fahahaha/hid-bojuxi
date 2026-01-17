@@ -130,7 +130,9 @@ export default {
       middle: '中键',
       back: '后退',
       forward: '前进',
-      disabled: '禁用'
+      disabled: '禁用',
+      profileCycle: '板载配置切换',
+      profileN: '板载配置{n}'
     },
     // DPI按键
     dpiButtons: {
@@ -172,7 +174,9 @@ export default {
       scrollRight: '滚轮→',
       scroll: '滚轮',
       none: '无',
-      unknown: '未知({code})'
+      unknown: '未知({code})',
+      profileCycle: '板载配置切换',
+      profileN: '板载配置{n}'
     },
     // 分类
     categories: {
@@ -182,7 +186,8 @@ export default {
       volume: '音量控制',
       playback: '播放控制',
       system: '系统功能',
-      browser: '浏览器'
+      browser: '浏览器',
+      profile: '板载配置'
     },
     // 修饰键
     modifiers: {
