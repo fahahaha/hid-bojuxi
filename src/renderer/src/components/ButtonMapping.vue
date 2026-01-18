@@ -128,42 +128,42 @@
                     <option value="">{{ t('buttonMapping.keyboard.selectKeyPlaceholder') }}</option>
                     <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
                       <option v-for="key in alphabetKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.number')">
                       <option v-for="key in numberKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.function')">
                       <option v-for="key in functionKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
                       <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.special')">
                       <option v-for="key in specialKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
                       <option v-for="key in punctuationKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
                       <option v-for="key in numpadKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
                       <option v-for="key in modifierAsKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                   </select>
@@ -175,42 +175,42 @@
                     <option value="">{{ t('buttonMapping.keyboard.key2Placeholder') }}</option>
                     <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
                       <option v-for="key in alphabetKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.number')">
                       <option v-for="key in numberKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.function')">
                       <option v-for="key in functionKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
                       <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.special')">
                       <option v-for="key in specialKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
                       <option v-for="key in punctuationKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
                       <option v-for="key in numpadKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                     <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
                       <option v-for="key in modifierAsKeys" :key="key" :value="key">
-                        {{ key }}
+                        {{ getKeyDisplayName(key) }}
                       </option>
                     </optgroup>
                   </select>
@@ -486,6 +486,83 @@ const modifierAsKeys = [
   'RightAlt',
   'RightGUI'
 ]
+
+/**
+ * 键盘按键显示名称映射表
+ */
+const keyDisplayNameMap: Record<string, string> = {
+  // 特殊键
+  'Escape': 'Esc',
+  'Enter': 'Enter',
+  'Backspace': 'Backspace',
+  'Tab': 'Tab',
+  'Space': 'Space',
+  'CapsLock': 'Caps Lock',
+  'Insert': 'Insert',
+  'Delete': 'Delete',
+  'Home': 'Home',
+  'End': 'End',
+  'PageUp': 'Page Up',
+  'PageDown': 'Page Down',
+  'Up': 'Up',
+  'Down': 'Down',
+  'Left': 'Left',
+  'Right': 'Right',
+  'PrintScreen': 'Print Screen',
+  'ScrollLock': 'Scroll Lock',
+  'Pause': 'Pause',
+  'App': 'Menu',
+
+  // 标点符号
+  'Minus': '-',
+  'Equal': '=',
+  'LeftBracket': '[',
+  'RightBracket': ']',
+  'Backslash': '\\',
+  'Semicolon': ';',
+  'Quote': "'",
+  'Grave': '`',
+  'Comma': ',',
+  'Period': '.',
+  'Slash': '/',
+
+  // 小键盘
+  'NumLock': 'Num Lock',
+  'Numpad0': 'Num 0',
+  'Numpad1': 'Num 1',
+  'Numpad2': 'Num 2',
+  'Numpad3': 'Num 3',
+  'Numpad4': 'Num 4',
+  'Numpad5': 'Num 5',
+  'Numpad6': 'Num 6',
+  'Numpad7': 'Num 7',
+  'Numpad8': 'Num 8',
+  'Numpad9': 'Num 9',
+  'NumpadDecimal': 'Num Del',
+  'NumpadDivide': 'Num /',
+  'NumpadMultiply': 'Num *',
+  'NumpadMinus': 'Num -',
+  'NumpadPlus': 'Num +',
+  'NumpadEnter': 'Num Enter',
+  'NumpadEqual': 'Num =',
+
+  // 修饰键
+  'LeftControl': 'Left Ctrl',
+  'LeftShift': 'Left Shift',
+  'LeftAlt': 'Left Alt',
+  'LeftGUI': 'Left Windows',
+  'RightControl': 'Right Ctrl',
+  'RightShift': 'Right Shift',
+  'RightAlt': 'Right Alt',
+  'RightGUI': 'Right Windows'
+}
+
+/**
+ * 获取按键的显示名称
+ */
+function getKeyDisplayName(key: string): string {
+  return keyDisplayNameMap[key] || key
+}
 
 /**
  * 选择按键
