@@ -2,6 +2,20 @@
   <div class="macro-management-container">
     <div class="section-header">
       <p class="section-description">{{ t('macroManagement.description') }}</p>
+      <div v-if="isRecording" class="recording-status">
+        <i class="fa fa-circle recording-pulse"></i>
+        <span>{{ t('buttonMapping.macro.recording') }}</span>
+      </div>
+
+      <div v-if="!isConnected" class="macro-notice">
+        <i class="fa fa-info-circle"></i>
+        {{ t('buttonMapping.macro.connectFirst') }}
+      </div>
+
+<!--      <div v-if="isConnected && selectedMacroForEdit === null" class="macro-notice">-->
+<!--        <i class="fa fa-info-circle"></i>-->
+<!--        {{ t('buttonMapping.macro.selectFirst') }}-->
+<!--      </div>-->
     </div>
 
     <div class="macro-layout">
@@ -61,39 +75,11 @@
       <div class="macro-edit-section">
         <!-- 宏录制控制 -->
         <div class="macro-record-area">
-          <h5 class="section-subtitle">
-            <i class="fa fa-circle-notch"></i>
-            {{ t('buttonMapping.macro.record') }}
-          </h5>
+<!--          <h5 class="section-subtitle">-->
+<!--            <i class="fa fa-circle-notch"></i>-->
+<!--            {{ t('buttonMapping.macro.record') }}-->
+<!--          </h5>-->
 
-          <button
-            @click="toggleMacroRecord"
-            :disabled="!isConnected || selectedMacroForEdit === null"
-            :class="isRecording ? 'stop-record-btn' : 'start-record-btn'"
-            class="record-control-btn"
-          >
-            <i :class="isRecording ? 'fa fa-stop' : 'fa fa-circle'"></i>
-            {{
-              isRecording
-                ? t('buttonMapping.macro.stopRecord')
-                : t('buttonMapping.macro.startRecord')
-            }}
-          </button>
-
-          <div v-if="isRecording" class="recording-status">
-            <i class="fa fa-circle recording-pulse"></i>
-            <span>{{ t('buttonMapping.macro.recording') }}</span>
-          </div>
-
-          <div v-if="!isConnected" class="macro-notice">
-            <i class="fa fa-info-circle"></i>
-            {{ t('buttonMapping.macro.connectFirst') }}
-          </div>
-
-          <div v-if="isConnected && selectedMacroForEdit === null" class="macro-notice">
-            <i class="fa fa-info-circle"></i>
-            {{ t('buttonMapping.macro.selectFirst') }}
-          </div>
         </div>
 
         <!-- 宏事件列表 -->
@@ -105,6 +91,19 @@
                 {{ currentEditingMacro.name }}
               </span>
             </h5>
+            <button
+              @click="toggleMacroRecord"
+              :disabled="!isConnected || selectedMacroForEdit === null"
+              :class="isRecording ? 'stop-record-btn' : 'start-record-btn'"
+              class="record-control-btn"
+            >
+              <i :class="isRecording ? 'fa fa-stop' : 'fa fa-circle'"></i>
+              {{
+                isRecording
+                  ? t('buttonMapping.macro.stopRecord')
+                  : t('buttonMapping.macro.startRecord')
+              }}
+            </button>
             <div class="events-actions">
               <button
                 @click="clearAllMacroEvents"
@@ -213,7 +212,6 @@
             </div>
           </div>
         </div>
-
         <!-- 循环模式设置 -->
 <!--        <div v-if="selectedMacroForEdit !== null" class="macro-loop-settings">-->
 <!--          <div class="form-group">-->
@@ -910,13 +908,14 @@ onUnmounted(() => {
   box-shadow: var(--shadow-sm);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
+  min-height: 500px;
 }
 
 .section-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  gap: 1rem;
+  min-height: 50px;
 }
 
 .section-description {
@@ -985,8 +984,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  min-height: 150px;
-  max-height: 300px;
+  min-height: 250px;
+  max-height: 250px;
   overflow-y: auto;
   padding: 0.5rem;
   border: 1px solid var(--border-primary);
@@ -1099,7 +1098,6 @@ onUnmounted(() => {
 .macro-edit-section {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
   width: 100%;
 }
 
@@ -1110,7 +1108,7 @@ onUnmounted(() => {
 }
 
 .record-control-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -1149,7 +1147,7 @@ onUnmounted(() => {
 }
 
 .recording-status {
-  padding: 0.75rem;
+  padding: 0.5rem;
   background-color: rgba(114, 46, 209, 0.1);
   border-radius: 0.375rem;
   font-size: 0.875rem;
@@ -1185,7 +1183,7 @@ onUnmounted(() => {
 .macro-events-area {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .events-header {
@@ -1237,9 +1235,10 @@ onUnmounted(() => {
 .events-list {
   border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
-  max-height: 250px;
+  max-height: 370px;
   overflow-y: auto;
   background-color: var(--bg-primary);
+  min-height: 370px;
 }
 
 .empty-events {
@@ -1471,6 +1470,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-primary);
   width: 100%;
   height: max-content;
+  margin-top: 50px;
 }
 
 .macro-loop-settings .form-group {

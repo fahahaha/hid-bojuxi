@@ -694,7 +694,8 @@ export function useWebHID() {
         if (info.dpiStep !== undefined) deviceStatus.value.dpiStep = info.dpiStep
         // 更新板载配置信息
         if (info.currentProfile !== undefined) deviceStatus.value.currentProfile = info.currentProfile
-        if (info.maxProfiles !== undefined) deviceStatus.value.maxProfiles = info.maxProfiles
+        // if (info.maxProfiles !== undefined) deviceStatus.value.maxProfiles = info.maxProfiles 临时更改
+        if (info.maxProfiles !== undefined) deviceStatus.value.maxProfiles = 2
       } else {
         // 如果无法获取详细信息，使用基本信息
         deviceInfo.value = {

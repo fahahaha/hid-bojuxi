@@ -203,14 +203,14 @@
     <ConfirmBox />
 
     <!-- 全局加载遮罩层 -->
-    <Transition name="fade">
-      <div v-if="isLoading" class="loading-overlay">
-        <div class="loading-spinner">
-          <div class="spinner"></div>
-          <p class="loading-text">通信中...</p>
-        </div>
-      </div>
-    </Transition>
+<!--    <Transition name="fade">-->
+<!--      <div v-if="isLoading" class="loading-overlay">-->
+<!--        <div class="loading-spinner">-->
+<!--          <div class="spinner"></div>-->
+<!--          <p class="loading-text">通信中...</p>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </Transition>-->
   </div>
 </template>
 
@@ -277,9 +277,9 @@ const supportsDualMode = computed(() => {
 })
 
 const tabs = computed(() => [
+  { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-computer-mouse' },
   { id: 'basic', label: t('tabs.basic'), icon: 'fa fa-sliders' },
   { id: 'dpi', label: t('tabs.dpi'), icon: 'fa fa-tachometer' },
-  { id: 'buttons', label: t('tabs.buttons'), icon: 'fa fa-computer-mouse' },
   { id: 'macro', label: t('tabs.macro'), icon: 'fa fa-code' },
   { id: 'performance', label: t('tabs.performance'), icon: 'fa fa-gauge-high' },
   { id: 'backlight', label: t('tabs.backlight'), icon: 'fa fa-lightbulb' },
