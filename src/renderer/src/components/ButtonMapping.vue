@@ -406,8 +406,8 @@ watch(() => props.initialSubTab, (newVal) => {
 // 标签页配置
 const tabs = computed(() => [
   { id: 'mouse', name: t('buttonMapping.tabs.mouse'), icon: 'fa fa-mouse-pointer' },
-  { id: 'multimedia', name: t('buttonMapping.tabs.multimedia'), icon: 'fa fa-music' },
   { id: 'keyboard', name: t('buttonMapping.tabs.keyboard'), icon: 'fa fa-keyboard' },
+  { id: 'multimedia', name: t('buttonMapping.tabs.multimedia'), icon: 'fa fa-music' },
   { id: 'macro', name: t('buttonMapping.tabs.macro'), icon: 'fa fa-code' }
 ])
 

@@ -219,7 +219,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useWebHID } from './composables/useWebHID'
 import { useI18n } from './composables/useI18n'
 import { useTheme } from './composables/useTheme'
-import { useLoading } from './composables/useLoading'
+// import { useLoading } from './composables/useLoading'
 import BasicSettings from './components/BasicSettings.vue'
 import DpiSettings from './components/DpiSettings.vue'
 import BacklightSettings from './components/BacklightSettings.vue'
@@ -241,9 +241,9 @@ const {
 } = useWebHID()
 const { locale, setLocale, t } = useI18n()
 const { theme, toggleTheme } = useTheme()
-const { isLoading } = useLoading()
+// const { isLoading } = useLoading()
 
-const activeTab = ref('basic')
+const activeTab = ref('buttons')
 const showLanguageDropdown = ref(false)
 const showProfileDropdown = ref(false)
 // 下载链接：使用固定文件名 + 时间戳防缓存
