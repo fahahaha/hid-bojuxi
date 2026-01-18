@@ -13,8 +13,8 @@ export default {
     unsupported: 'Not Supported'
   },
   header: {
-    title: 'Shenzhen BJX Mouse Driver',
-    subtitle: 'Mouse supports multiple solutions',
+    title: 'Shenzhen BJX Driver',
+    subtitle: 'Integrated solution',
     theme: 'Theme',
     download: 'Download',
     connectionMode: {

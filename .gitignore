@@ -23,3 +23,4 @@ build
 docker/volumes
 docker/*.log
 *.exe
+/src/renderer/public/downloads/

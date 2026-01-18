@@ -13,8 +13,8 @@ export default {
     unsupported: '不支持'
   },
   header: {
-    title: '深圳博巨矽鼠标驱动',
-    subtitle: '支持多种方案鼠标',
+    title: '深圳博巨矽驱动',
+    subtitle: '“软硬件+网页驱动+客户端”一体化解决方案',
     theme: '主题',
     download: '下载',
     connectionMode: {
