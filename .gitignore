@@ -22,3 +22,4 @@ build
 # Docker临时文件（如果有）
 docker/volumes
 docker/*.log
+*.exe
