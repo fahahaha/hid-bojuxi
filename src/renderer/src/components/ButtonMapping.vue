@@ -67,20 +67,6 @@
               </div>
             </div>
 
-            <!-- DPI功能标签页 -->
-            <div v-if="activeTab === 'dpi'" class="tab-content">
-              <div class="button-grid">
-                <button
-                  v-for="btn in dpiButtons"
-                  :key="btn.id"
-                  @click="applyMapping(btn.code)"
-                  class="function-button"
-                  :class="{ active: isCurrentMapping(btn.code) }"
-                >
-                  {{ t(btn.nameKey || '') || btn.name }}
-                </button>
-              </div>
-            </div>
 
             <!-- 多媒体标签页 -->
             <div v-if="activeTab === 'multimedia'" class="tab-content">
@@ -330,7 +316,7 @@ const buttonNames = computed(() => ta('buttonMapping.buttonNames'))
 // 根据最大板载配置数动态生成鼠标按钮列表
 const filteredMouseButtons = computed(() => {
   const maxProfiles = deviceStatus.value.maxProfiles || 1
-  return [...mouseButtons, ...getProfileButtons(maxProfiles)]
+  return [...mouseButtons, ...getProfileButtons(maxProfiles),...dpiButtons]
 })
 
 /**
@@ -361,7 +347,6 @@ watch(() => props.initialSubTab, (newVal) => {
 // 标签页配置
 const tabs = computed(() => [
   { id: 'mouse', name: t('buttonMapping.tabs.mouse'), icon: 'fa fa-mouse-pointer' },
-  { id: 'dpi', name: t('buttonMapping.tabs.dpi'), icon: 'fa fa-tachometer' },
   { id: 'multimedia', name: t('buttonMapping.tabs.multimedia'), icon: 'fa fa-music' },
   { id: 'keyboard', name: t('buttonMapping.tabs.keyboard'), icon: 'fa fa-keyboard' },
   { id: 'macro', name: t('buttonMapping.tabs.macro'), icon: 'fa fa-code' }
