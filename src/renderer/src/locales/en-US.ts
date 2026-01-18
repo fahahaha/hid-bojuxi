@@ -224,6 +224,8 @@ export default {
       newMacro: 'New Macro',
       deleteMacro: 'Delete Selected Macro',
       deleteConfirm: 'Are you sure you want to delete {name}? This action cannot be undone.',
+      cancelDelete: 'Cancel Delete',
+      confirmDelete: 'Confirm Delete',
       maxReached: 'Maximum of {max} macros can be created',
       record: 'Macro Recording',
       startRecord: 'Start Recording',

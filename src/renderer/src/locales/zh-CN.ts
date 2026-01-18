@@ -223,6 +223,8 @@ export default {
       newMacro: '新建宏',
       deleteMacro: '删除选中宏',
       deleteConfirm: '确定要删除{name}吗？此操作不可撤销。',
+      cancelDelete: '取消删除',
+      confirmDelete: '确认删除',
       maxReached: '最多只能创建 {max} 个宏',
       record: '宏录制',
       startRecord: '开始录制',

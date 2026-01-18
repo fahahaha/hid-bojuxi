@@ -117,7 +117,7 @@
             </div>
           </div>
 
-          <div class="events-list">
+          <div class="events-list" ref="eventsListRef">
             <div v-if="currentEditingMacro.events.length === 0" class="empty-events">
               {{ t('buttonMapping.macro.emptyEvents') }}
             </div>
@@ -203,7 +203,7 @@
               <!-- 删除按钮 -->
               <button
                 class="event-delete-btn"
-                @click.stop="removeEventAtIndex(index)"
+                @click.stop="toggleDeleteEventDropdown(index, $event)"
                 :disabled="isRecording"
                 :title="t('buttonMapping.macro.deleteEvent')"
               >
@@ -282,6 +282,28 @@
             >
               <i class="fa fa-crosshairs"></i>
               {{ t('buttonMapping.macro.addXY') }}
+            </button>
+          </div>
+
+          <!-- 删除事件下拉框 -->
+          <div
+            v-if="showDeleteEventDropdown !== null"
+            class="delete-event-dropdown"
+            :style="{ top: deleteEventDropdownPosition.top + 'px', left: deleteEventDropdownPosition.left + 'px' }"
+          >
+            <button
+              class="dropdown-option"
+              @click.stop="showDeleteEventDropdown = null"
+            >
+              <i class="fa fa-times"></i>
+              {{ t('buttonMapping.macro.cancelDelete') }}
+            </button>
+            <button
+              class="dropdown-option danger"
+              @click.stop="removeEventAtIndex(showDeleteEventDropdown)"
+            >
+              <i class="fa fa-check"></i>
+              {{ t('buttonMapping.macro.confirmDelete') }}
             </button>
           </div>
         </Teleport>
@@ -396,6 +418,9 @@ const editingDelayIndex = ref<number | null>(null)
 const editingDelayValue = ref<number>(0)
 const showAddEventDropdown = ref<number | null>(null)
 const dropdownPosition = ref({ top: 0, left: 0 })
+const showDeleteEventDropdown = ref<number | null>(null)
+const deleteEventDropdownPosition = ref({ top: 0, left: 0 })
+const eventsListRef = ref<HTMLElement | null>(null)
 
 /**
  * 选择宏进行编辑
@@ -479,6 +504,12 @@ async function deleteSelectedMacro() {
     console.log('[宏管理] 宏已删除')
   } else {
     showError(t('buttonMapping.macro.saveError', { message: 'Failed to delete macro' }))
+  }
+}
+
+function scrollToBottom() {
+  if (eventsListRef.value) {
+    eventsListRef.value.scrollTop = eventsListRef.value.scrollHeight
   }
 }
 
@@ -715,7 +746,24 @@ async function removeEventAtIndex(index: number) {
     updateMacro(selectedMacroForEdit.value, currentEditingMacro.value)
     await saveMacroToDevice()
   }
+  showDeleteEventDropdown.value = null
   console.log('[宏管理] 已删除事件:', index)
+}
+
+function toggleDeleteEventDropdown(index: number, event: MouseEvent) {
+  if (isRecording.value) return
+  showAddEventDropdown.value = null
+  if (showDeleteEventDropdown.value === index) {
+    showDeleteEventDropdown.value = null
+  } else {
+    const button = event.currentTarget as HTMLElement
+    const rect = button.getBoundingClientRect()
+    deleteEventDropdownPosition.value = {
+      top: rect.bottom + 4,
+      left: rect.right - 140
+    }
+    showDeleteEventDropdown.value = index
+  }
 }
 
 function startEditDelay(index: number) {
@@ -746,6 +794,7 @@ function cancelEditDelay() {
 
 function toggleAddEventDropdown(index: number, event: MouseEvent) {
   if (isRecording.value) return
+  showDeleteEventDropdown.value = null
   if (showAddEventDropdown.value === index) {
     showAddEventDropdown.value = null
   } else {
@@ -807,6 +856,9 @@ function handleClickOutsideDropdown(event: MouseEvent) {
   if (!target.closest('.add-event-dropdown') && !target.closest('.add-event-btn')) {
     closeAddEventDropdown()
   }
+  if (!target.closest('.delete-event-dropdown') && !target.closest('.event-delete-btn')) {
+    showDeleteEventDropdown.value = null
+  }
 }
 
 // ==================== 键盘录制事件处理 ====================
@@ -840,6 +892,7 @@ function handleKeyDown(e: KeyboardEvent) {
 
   recordedEvents.value.push(event)
   currentEditingMacro.value.events.push(event)
+  scrollToBottom()
   console.log('[宏录制] 按键按下:', event)
 }
 
@@ -879,6 +932,7 @@ function handleKeyUp(e: KeyboardEvent) {
 
   recordedEvents.value.push(event)
   currentEditingMacro.value.events.push(event)
+  scrollToBottom()
 
   lastActionTime.value = now
   pressedKeys.value.delete(e.key)
@@ -931,18 +985,18 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  border: 1px dashed var(--color-primary);
   border-radius: 0.5rem;
-  background: transparent;
-  color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: white;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
   font-weight: 500;
+  border: none;
 }
 
 .go-binding-btn:hover {
-  background-color: var(--bg-active);
+  background-color: #1557cc;
 }
 
 .macro-layout {
@@ -1211,20 +1265,23 @@ onUnmounted(() => {
 }
 
 .event-action-btn {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-primary);
+  color: white;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
   transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .event-action-btn:hover:not(:disabled) {
-  color: var(--color-primary);
+  background-color: #1557cc;
 }
 
 .event-action-btn:disabled {
@@ -1557,7 +1614,8 @@ onUnmounted(() => {
 <!-- 全局样式 (用于 Teleport 到 body 的元素) -->
 <style>
 /* 添加事件下拉框 */
-.add-event-dropdown {
+.add-event-dropdown,
+.delete-event-dropdown {
   position: fixed;
   background-color: var(--bg-primary);
   border: 1px solid var(--border-primary);
@@ -1568,7 +1626,8 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.add-event-dropdown .dropdown-option {
+.add-event-dropdown .dropdown-option,
+.delete-event-dropdown .dropdown-option {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1583,9 +1642,19 @@ onUnmounted(() => {
   text-align: left;
 }
 
-.add-event-dropdown .dropdown-option:hover {
+.add-event-dropdown .dropdown-option:hover,
+.delete-event-dropdown .dropdown-option:hover {
   background-color: var(--bg-hover);
   color: var(--color-primary);
+}
+
+.delete-event-dropdown .dropdown-option.danger {
+  color: var(--color-danger);
+}
+
+.delete-event-dropdown .dropdown-option.danger:hover {
+  background-color: rgba(245, 63, 63, 0.05);
+  color: var(--color-danger);
 }
 
 .add-event-dropdown .dropdown-option.disabled {
@@ -1598,7 +1667,8 @@ onUnmounted(() => {
   color: var(--text-tertiary);
 }
 
-.add-event-dropdown .dropdown-option i {
+.add-event-dropdown .dropdown-option i,
+.delete-event-dropdown .dropdown-option i {
   font-size: 0.875rem;
   width: 1rem;
   text-align: center;
