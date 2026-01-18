@@ -92,120 +92,179 @@
 
             <!-- 键盘按键标签页 -->
             <div v-if="activeTab === 'keyboard'" class="tab-content">
-              <div class="keyboard-settings">
-                <div class="form-group">
-                  <label class="form-label">{{ t('buttonMapping.keyboard.modifiers') }}</label>
-                  <div class="button-grid modifier-buttons">
-                    <button
-                      v-for="modifier in modifierKeys"
-                      :key="modifier.id"
-                      @click="toggleModifier(modifier.value)"
-                      class="function-button"
-                      :class="{ active: selectedModifiers.includes(modifier.value) }"
-                    >
-                      {{ modifier.name }}
-                    </button>
+              <div class="keyboard-layout">
+                <!-- 左侧：键盘单键 -->
+                <div class="keyboard-single">
+                  <div class="keyboard-section-title">{{ t('buttonMapping.keyboard.singleKey') }}</div>
+                  <div class="form-group">
+                    <select v-model="singleKey" @change="applySingleKeyMapping" class="form-select">
+                      <option value="">{{ t('buttonMapping.keyboard.selectKeyPlaceholder') }}</option>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
+                        <option v-for="key in alphabetKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.number')">
+                        <option v-for="key in numberKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.function')">
+                        <option v-for="key in functionKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
+                        <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.special')">
+                        <option v-for="key in specialKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
+                        <option v-for="key in punctuationKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
+                        <option v-for="key in numpadKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
+                        <option v-for="key in modifierAsKeys" :key="key" :value="key">
+                          {{ getKeyDisplayName(key) }}
+                        </option>
+                      </optgroup>
+                    </select>
                   </div>
                 </div>
 
-                <div class="form-group">
-                  <label class="form-label">{{ t('buttonMapping.keyboard.key1') }}</label>
-                  <select v-model="selectedKey" class="form-select">
-                    <option value="">{{ t('buttonMapping.keyboard.selectKeyPlaceholder') }}</option>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
-                      <option v-for="key in alphabetKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.number')">
-                      <option v-for="key in numberKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.function')">
-                      <option v-for="key in functionKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
-                      <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.special')">
-                      <option v-for="key in specialKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
-                      <option v-for="key in punctuationKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
-                      <option v-for="key in numpadKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
-                      <option v-for="key in modifierAsKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                  </select>
-                </div>
+                <!-- 右侧：组合键组合 -->
+                <div class="keyboard-combo">
+                  <div class="keyboard-section-title">{{ t('buttonMapping.keyboard.comboKey') }}</div>
+                  <div class="keyboard-settings">
+                    <div class="form-group">
+                      <label class="form-label">{{ t('buttonMapping.keyboard.modifiers') }}</label>
+                      <div class="button-grid modifier-buttons">
+                        <button
+                          v-for="modifier in modifierKeys"
+                          :key="modifier.id"
+                          @click="toggleModifier(modifier.value)"
+                          class="function-button"
+                          :class="{ active: selectedModifiers.includes(modifier.value) }"
+                        >
+                          {{ modifier.name }}
+                        </button>
+                      </div>
+                    </div>
 
-                <div class="form-group">
-                  <label class="form-label">{{ t('buttonMapping.keyboard.key2') }}</label>
-                  <select v-model="selectedKey2" class="form-select">
-                    <option value="">{{ t('buttonMapping.keyboard.key2Placeholder') }}</option>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
-                      <option v-for="key in alphabetKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.number')">
-                      <option v-for="key in numberKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.function')">
-                      <option v-for="key in functionKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
-                      <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.special')">
-                      <option v-for="key in specialKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
-                      <option v-for="key in punctuationKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
-                      <option v-for="key in numpadKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                    <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
-                      <option v-for="key in modifierAsKeys" :key="key" :value="key">
-                        {{ getKeyDisplayName(key) }}
-                      </option>
-                    </optgroup>
-                  </select>
-                </div>
+                    <div class="button-container">
+                      <div class="form-group">
+                        <label class="form-label">{{ t('buttonMapping.keyboard.key1') }}</label>
+                        <select v-model="selectedKey" class="form-select">
+                          <option value="">{{ t('buttonMapping.keyboard.selectKeyPlaceholder') }}</option>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
+                            <option v-for="key in alphabetKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.number')">
+                            <option v-for="key in numberKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.function')">
+                            <option v-for="key in functionKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
+                            <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.special')">
+                            <option v-for="key in specialKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
+                            <option v-for="key in punctuationKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
+                            <option v-for="key in numpadKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
+                            <option v-for="key in modifierAsKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                        </select>
+                      </div>
+                      <div class="add-icon">+</div>
+                      <div class="form-group">
+                        <label class="form-label">{{ t('buttonMapping.keyboard.key2') }}</label>
+                        <select v-model="selectedKey2" class="form-select">
+                          <option value="">{{ t('buttonMapping.keyboard.key2Placeholder') }}</option>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.alphabet')">
+                            <option v-for="key in alphabetKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.number')">
+                            <option v-for="key in numberKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.function')">
+                            <option v-for="key in functionKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.extendedFunction')">
+                            <option v-for="key in extendedFunctionKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.special')">
+                            <option v-for="key in specialKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.punctuation')">
+                            <option v-for="key in punctuationKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.numpad')">
+                            <option v-for="key in numpadKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                          <optgroup :label="t('buttonMapping.keyboard.groups.modifier')">
+                            <option v-for="key in modifierAsKeys" :key="key" :value="key">
+                              {{ getKeyDisplayName(key) }}
+                            </option>
+                          </optgroup>
+                        </select>
+                      </div>
+                    </div>
 
-                <button @click="applyKeyboardMapping" class="apply-button" :disabled="!canSaveKeyboardMapping">
-                  <i class="fa fa-check"></i>
-                  {{ t('buttonMapping.keyboard.saveKey') }}
-                </button>
+
+                    <button @click="applyKeyboardMapping" class="apply-button" :disabled="!canSaveKeyboardMapping">
+                      <i class="fa fa-check"></i>
+                      {{ t('buttonMapping.keyboard.saveKey') }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -369,6 +428,7 @@ function getMultimediaByCategory(category: string): ButtonMapping[] {
 const selectedModifiers = ref<number[]>([])
 const selectedKey = ref('')
 const selectedKey2 = ref('')
+const singleKey = ref('')
 
 /**
  * 是否可以保存键盘映射（修饰键、按键1、按键2只要有一个选中即可）
@@ -652,6 +712,35 @@ async function applyKeyboardMapping() {
   selectedModifiers.value = []
   selectedKey.value = ''
   selectedKey2.value = ''
+}
+
+/**
+ * 应用键盘单键映射
+ */
+async function applySingleKeyMapping() {
+  if (!singleKey.value) return
+
+  const scancode = keyboardScancodes[singleKey.value]
+  if (scancode === undefined) {
+    console.error('未知的按键:', singleKey.value)
+    return
+  }
+
+  const code = createKeyboardMapping(0, scancode, 0)
+  const deviceIndex = uiToDeviceIndex[selectedButton.value]
+
+  const currentMapping = buttonMappings.value[deviceIndex]
+  const isCurrentLeftClick = currentMapping && currentMapping.every((byte, i) => byte === LEFT_CLICK_CODE[i])
+
+  if (isCurrentLeftClick && !willHaveLeftClickAfterChange(selectedButton.value)) {
+    showError(t('buttonMapping.saveFailedNoLeftClick'))
+    singleKey.value = ''
+    return
+  }
+
+  buttonMappings.value[deviceIndex] = code
+  await saveToDevice()
+  singleKey.value = ''
 }
 
 /**
@@ -1116,7 +1205,6 @@ onMounted(() => {
 .settings-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
 /* 标签页 */
@@ -1200,6 +1288,37 @@ onMounted(() => {
   margin-bottom: 0.75rem;
 }
 
+/* 键盘布局 */
+.keyboard-layout {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.keyboard-single {
+  background-color: var(--bg-tertiary);
+  border-radius: 0.5rem;
+  height: 150px;
+  width: 250px;
+  padding: 0.75rem;
+  border: 1px solid var(--border-primary);
+}
+
+.keyboard-combo {
+  width: 100%;
+
+  padding: 0.75rem;
+  background-color: var(--bg-tertiary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-primary);
+}
+
+.keyboard-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
 /* 键盘设置 */
 .keyboard-settings {
   display: flex;
@@ -1212,7 +1331,15 @@ onMounted(() => {
   flex-direction: column;
   gap: 0.5rem;
 }
-
+.add-icon{
+  align-items: center;
+  align-content: center;
+}
+.button-container{
+  display: flex;
+  flex-direction: row;
+  gap: 1rem
+}
 .form-label {
   display: block;
   font-size: 0.875rem;
@@ -1221,7 +1348,7 @@ onMounted(() => {
 }
 
 .form-select {
-  width: 100%;
+  width: 150px;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-primary);
   border-radius: 0.5rem;

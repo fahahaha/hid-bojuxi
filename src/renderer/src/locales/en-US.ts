@@ -199,6 +199,8 @@ export default {
       win: 'Win'
     },
     keyboard: {
+      singleKey: 'Single Key',
+      comboKey: 'Combo Key',
       modifiers: 'Modifiers (Multiple Selection)',
       selectKey: 'Select Key',
       selectKeyPlaceholder: '-- Select a key --',

@@ -198,6 +198,8 @@ export default {
       win: 'Win'
     },
     keyboard: {
+      singleKey: '单键',
+      comboKey: '组合键',
       modifiers: '修饰键（可多选）',
       selectKey: '选择按键',
       selectKeyPlaceholder: '-- 请选择按键 --',
